@@ -1,3 +1,4 @@
+/* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
 #include "debug.c"
 #include "opcodes.c"
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) {
     cpu->SP = 0xFFFE;
     cpu->wait = 0;
     cpu->REG[A] = 0x11;
+	//TODO: set the rest of the registers and memory values to their initial settings
     printf("value in reg A: 0x%x\n",cpu->REG[A]);
     fread(cpu->MEM, 1, 0x8000, rom);
 
