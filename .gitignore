@@ -1,4 +1,6 @@
 *.gb
 *.gbc
 *.gch
+*~
 test
+.DS_Store
