@@ -1,3 +1,4 @@
+/* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
 #include "common.c"
 
@@ -9,8 +10,11 @@ int8 oneByteSigned(struct cpu_state * cpu) {
     return (int8)readNextByte(cpu);
 }
 
+//read a short from memory. Value is assumed to be little endian.
 uint16 twoByte(struct cpu_state * cpu) {
-    return (uint16)readNextByte(cpu) + ((uint16)readNextByte(cpu) * 0x100);
+	uint16 lsb = (uint16)readNextByte(cpu); //read least significant byte first
+	uint16 msb = ((uint16)readNextByte(cpu)) << 8; //then read most significant byte
+    return lsb | msb;
 }
 
 //compare instruction
@@ -31,21 +35,19 @@ int execute(struct cpu_state * cpu) {
     int8 tempSigned = 0x0;
     uint8 tempByteTwo = 0x0;
     uint8 readByte = 0x0;
-    uint8 tempShort = 0x0;
-    //cpu->FLAGS[HF] = ((cpu->REG[A] & 0xF + value & 0xF)&0x10) > 0 HCF on add
-    //printf("0x");
-    printByteUnsigned(nextByte);
-    //find and execute instruction
+    uint16 tempShort = 0x0;
+    
+    //find and execute next instruction
     switch (nextByte) {
         case 0x00: //NOP
             cpu->wait = 1;
             break;
         case 0x01: //LD BC,d16
-            saveShort(cpu->REG + B, twoByte(cpu));
+            saveShortBigEndian(cpu->REG + B, twoByte(cpu));
             cpu->wait = 12;
             break;
         case 0x02: //LD (BC),A
-            tempShort = getShort(cpu->REG + B);
+            tempShort = getShortLittleEndian(cpu->REG + B);
             cpu->MEM[tempShort] = cpu->REG[A];
             cpu->wait = 8;
             break;
@@ -63,12 +65,12 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0x08: //LD (a16),SP
             tempShort = twoByte(cpu);
-            saveShort(cpu->MEM + tempShort, cpu->SP);
+            saveShortLittleEndian(cpu->MEM + tempShort, cpu->SP);
             break;
         case 0x09:
             break;
         case 0x0A: //LD A,(BC)
-            tempShort = getShort(cpu->REG + B);
+            tempShort = getShortBigEndian(cpu->REG + B);
             cpu->REG[A] = cpu->MEM[tempShort];
             cpu->wait = 8;
             break;
@@ -87,11 +89,11 @@ int execute(struct cpu_state * cpu) {
         case 0x10:
             break;
         case 0x11: //LD DE,d16
-            saveShort(cpu->REG + D, twoByte(cpu));
+            saveShortBigEndian(cpu->REG + D, twoByte(cpu));
             cpu->wait = 12;
             break;
         case 0x12: //LD (DE),A
-            tempShort = getShort(cpu->REG + D);
+            tempShort = getShortBigEndian(cpu->REG + D);
             cpu->MEM[tempShort] = cpu->REG[A];
             cpu->wait = 8;
             break;
@@ -115,7 +117,7 @@ int execute(struct cpu_state * cpu) {
         case 0x19:
             break;
         case 0x1A: //LD A,(DE)
-            tempShort = getShort(cpu->REG + D);
+            tempShort = getShortBigEndian(cpu->REG + D);
             cpu->REG[A] = cpu->MEM[tempShort];
             cpu->wait = 8;
             break;
@@ -141,15 +143,15 @@ int execute(struct cpu_state * cpu) {
             }
             break;
         case 0x21: //LD HL,d16
-            saveShort(cpu->REG + H, twoByte(cpu));
+            saveShortBigEndian(cpu->REG + H, twoByte(cpu));
             cpu->wait = 12;
             break;
         case 0x22: //LD (HL+),A
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->MEM[tempShort] = cpu->REG[A];
-            //decrement the HL
+            //Increment the HL
             tempShort++;
-            saveShort(cpu->REG + H, tempShort);
+            saveShortBigEndian(cpu->REG + H, tempShort);
             cpu->wait = 8;
             break;
         case 0x23:
@@ -176,11 +178,11 @@ int execute(struct cpu_state * cpu) {
         case 0x29:
             break;
         case 0x2A: //LD A,(HL+)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->REG[A] = cpu->MEM[tempShort];
             //decrement the HL
             tempShort++;
-            saveShort(cpu->REG + H, tempShort);
+            saveShortBigEndian(cpu->REG + H, tempShort);
             cpu->wait = 8;
             break;
         case 0x2B:
@@ -209,11 +211,11 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 12;
             break;
         case 0x32: //LD (HL-),A
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->MEM[tempShort] = cpu->REG[A];
             //decrement the HL
             tempShort--;
-            saveShort(cpu->REG + H, tempShort);
+            saveShortBigEndian(cpu->REG + H, tempShort);
             cpu->wait = 8;
             break;
         case 0x33:
@@ -241,11 +243,11 @@ int execute(struct cpu_state * cpu) {
         case 0x39:
             break;
         case 0x3A: //LD A,(HL-)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->REG[A] = cpu->MEM[tempShort];
             //decrement the HL
             tempShort--;
-            saveShort(cpu->REG + H, tempShort);
+            saveShortBigEndian(cpu->REG + H, tempShort);
             cpu->wait = 8;
             break;
         case 0x3B:
@@ -285,7 +287,7 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 4;
             break;
         case 0x46: //LD B,(HL)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->REG[B] = cpu->MEM[tempShort];
             cpu->wait = 8;
             break;
@@ -318,7 +320,7 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 4;
             break;
         case 0x4E: //LD E,(HL)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->REG[C] = cpu->MEM[tempShort];
             cpu->wait = 8;
             break;
@@ -351,7 +353,7 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 4;
             break;
         case 0x56: //LD D,(HL)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->REG[D] = cpu->MEM[tempShort];
             cpu->wait = 8;
             break;
@@ -384,7 +386,7 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 4;
             break;
         case 0x5E: //LD E,(HL)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->REG[E] = cpu->MEM[tempShort];
             cpu->wait = 8;
             break;
@@ -417,7 +419,7 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 4;
             break;
         case 0x66: //LD H,(HL)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->REG[H] = cpu->MEM[tempShort];
             cpu->wait = 8;
             break;
@@ -450,7 +452,7 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 4;
             break;
         case 0x6E: //LD L,(HL)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->REG[L] = cpu->MEM[tempShort];
             cpu->wait = 8;
             break;
@@ -459,39 +461,39 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 4;
             break;
         case 0x70: //LD (HL),B
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->MEM[tempShort] = cpu->REG[B];
             cpu->wait = 8;
             break;
         case 0x71: //LD (HL),C
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->MEM[tempShort] = cpu->REG[C];
             cpu->wait = 8;
             break;
         case 0x72: //LD (HL),D
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->MEM[tempShort] = cpu->REG[D];
             cpu->wait = 8;
             break;
         case 0x73: //LD (HL),E
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->MEM[tempShort] = cpu->REG[E];
             cpu->wait = 8;
             break;
         case 0x74: //LD (HL),H
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->MEM[tempShort] = cpu->REG[H];
             cpu->wait = 8;
             break;
         case 0x75: //LD (HL),L
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->MEM[tempShort] = cpu->REG[L];
             cpu->wait = 8;
             break;
         case 0x76: //HALT
             break;
         case 0x77: //LD (HL),A
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->MEM[tempShort] = cpu->REG[A];
             cpu->wait = 8;
             break;
@@ -520,7 +522,7 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 4;
             break;
         case 0x7E: //LD A,(HL)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             cpu->REG[A] = cpu->MEM[tempShort];
             cpu->wait = 8;
             break;
@@ -664,7 +666,7 @@ int execute(struct cpu_state * cpu) {
             cp(cpu->REG[A], cpu->REG[L], cpu);
             break;
         case 0xBE: //CP (HL)
-            tempShort = getShort(cpu->REG + H);
+            tempShort = getShortBigEndian(cpu->REG + H);
             tempByte = cpu->MEM[tempShort];
             cp(cpu->REG[A], tempByte, cpu);
             cpu->wait = 8;
@@ -680,7 +682,9 @@ int execute(struct cpu_state * cpu) {
         case 0xC2:
             break;
         case 0xC3: //JP a16
-            cpu->PC = twoByte(cpu);
+			tempShort = twoByte(cpu);
+            printShort(tempShort);
+            cpu->PC = tempShort;
             cpu->wait = 16;
             break;
         case 0xC4:
@@ -790,7 +794,7 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0xF8: //LD HL,SP+r8
             tempSigned = oneByteSigned(cpu);
-            saveShort(cpu->REG + H, cpu->SP + tempSigned);
+            saveShortBigEndian(cpu->REG + H, cpu->SP + tempSigned);
             //set flags
             cpu->FLAGS[ZF] = 0; //zero flag
             cpu->FLAGS[NF] = 0; //subtract flag
@@ -804,7 +808,7 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = 12;
             break;
         case 0xF9: //LD SP,HL
-            cpu->SP = getShort(cpu->REG + H);
+            cpu->SP = getShortBigEndian(cpu->REG + H);
             cpu->wait = 8;
             break;
         case 0xFA: //LD A,(a16)
