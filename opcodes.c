@@ -2,48 +2,515 @@
 #include "main.h"
 #include "common.c"
 
-uint8 oneByteUnsigned(struct cpu_state * cpu) {
+uint8 oneByteUnsigned(struct cpu_state *cpu) {
     return readNextByte(cpu);
 }
 
-int8 oneByteSigned(struct cpu_state * cpu) {
+int8 oneByteSigned(struct cpu_state *cpu) {
     return (int8)readNextByte(cpu);
 }
 
 //read a short from memory. Value is assumed to be little endian.
-uint16 twoByte(struct cpu_state * cpu) {
+uint16 twoBytes(struct cpu_state *cpu) {
 	uint16 lsb = (uint16)readNextByte(cpu); //read least significant byte first
 	uint16 msb = ((uint16)readNextByte(cpu)) << 8; //then read most significant byte
     return lsb | msb;
 }
 
 //compare instruction
-void cp(uint8 a, uint8 b, struct cpu_state * cpu) {
-    uint8 temp = a - b;
+void cp(uint8 a, uint8 b, uint8 instruction, struct cpu_state *cpu) {
     //set flags
-    cpu->FLAGS[ZF] = (temp == 0); //zero flag
-    cpu->FLAGS[NF] = 0x1; //subtract flag
-    cpu->FLAGS[HF] = ((a & 0xF) < (b & 0xF)); //half-carry flag
-    cpu->FLAGS[CF] = (a < b); //carry flag
+    (a - b == 0) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
+    //cpu->FLAGS[ZF] = (temp == 0); //zero flag
+    setFlag(NF, cpu);
+    //cpu->FLAGS[NF] = 0x1; //subtract flag
+    ((a & 0xF) < (b & 0xF)) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    //cpu->FLAGS[HF] = ((a & 0xF) < (b & 0xF)); //half-carry flag
+    (a < b) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //cpu->FLAGS[CF] = (a < b); //carry flag
+    cpu->wait = opcodes[instruction].cycles;
 }
 
-int execute(struct cpu_state * cpu) {
+//jump to a 16bit address if condition is set
+void jp_c_16(uint16 address, bool set, uint8 opcode, struct cpu_state *cpu) {
+    if (set) {
+        cpu->PC = address;
+        cpu->wait = opcodes[opcode].cyclesMax;
+    } else {
+        //do nothing
+        cpu->wait = opcodes[opcode].cycles;
+    }
+}
+
+//jump relative to PC if condition is met
+void jr_c_8(int8 address, bool set, uint8 opcode, struct cpu_state *cpu) {
+    if (set) {
+        cpu->PC += address;
+        cpu->wait = opcodes[opcode].cyclesMax;
+    } else {
+        //do nothing
+        cpu->wait = opcodes[opcode].cycles;
+    }
+}
+
+//load 8 bit value into some destination address
+void ld_8(uint8 value, uint8 *store, uint8 opcode, cpu_state *cpu) {
+    *store = value;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//load 8 bit value into some destination address and increment the value at the given register pair
+void ld_8_i(uint8 value, uint8 *store, uint16 *pointer, uint8 opcode, cpu_state *cpu) {
+    *store = value;
+    *pointer += 1;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//load 8 bit value into some destination address and decrement the value at the given register pair
+void ld_8_d(uint8 value, uint8 *store, uint16 *pointer, uint8 opcode, cpu_state *cpu) {
+    *store = value;
+    *pointer -= 1;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//load 16 bit value into some destination register
+void ld_16(uint16 value, uint16 *store, uint8 opcode, cpu_state *cpu) {
+    *store = value;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//load 16 bit value into some addres in memory
+void ld_16_m(uint16 value, uint8 *store, uint8 opcode, cpu_state *cpu) {
+    saveShort(store, value);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//increment a byte
+void inc_8(uint8 *store, uint8 opcode, cpu_state *cpu) {
+    *store += 1; //can't use "++" as it takes higher priority over pointer dereference
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//increment a short
+void inc_16(uint16 *store, uint8 opcode, cpu_state *cpu) {
+    *store += 1; //can't use "++" as it takes higher priority over pointer dereference
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//decrement a byte
+void dec_8(uint8 *store, uint8 opcode, cpu_state *cpu) {
+    *store -= 1; //can't use "-- as it takes higher priority over pointer dereference
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//decrement a short
+void dec_16(uint16 *store, uint8 opcode, cpu_state *cpu) {
+    *store -= 1; //can't use "-- as it takes higher priority over pointer dereference
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//add together two unsigned 16 bit values and set flags
+void add_8(uint8 value, uint8 *store, uint8 opcode, cpu_state *cpu) {
+    //zero flag isn't touched
+    (!*store & !value) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
+    //negative flag
+    clearFlag(NF, cpu);
+    //half-carry flag (in 16bit ALU the highest bytes set the CF last, so only check for the high byte 3 -> 4 bit carry)
+    ((*store & 0xF) + (value & 0xF) > 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    //carry flag
+    (((uint16)*store & 0xFF) + ((uint16)value & 0xFF) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //set value after flags are calculated
+    *store += value;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//subtract an 8 bit value from a given register or memory location
+void sub_8(uint8 value, uint8 *store, uint8 opcode, cpu_state *cpu) {
+    //zero flag
+    (*store == value) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
+    //negative flag
+    setFlag(NF, cpu);
+    //half-carry flag
+    ((*store & 0xF) < (value & 0xF)) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    //carry flag
+    (*store < value) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //set value after flags are calculated
+    *store -= value;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//add together two unsigned 16 bit values and set flags
+void add_16(uint16 value, uint16 *store, uint8 opcode, cpu_state *cpu) {
+    //zero flag isn't touched
+    //negative flag
+    clearFlag(NF, cpu);
+    //half-carry flag (in 16bit ALU the highest bytes set the CF last, so only check for the high byte 3 -> 4 bit carry)
+    ((*store & 0xFFF) + (value & 0xFFF) > 0xFFF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    //carry flag
+    ((*store & 0xFF) + (value & 0xFF) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //set value after flags are calculated
+    *store += value;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//push a short onto the stack
+void push(uint16 value, uint8 opcode, cpu_state *cpu) {
+    saveShortToStack(value, cpu);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//pop a short from the stack
+void pop(uint16 *value, uint8 opcode, cpu_state *cpu) {
+    *value = readShortFromStack(cpu);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//standard call. Save PC to the stack
+void call(uint16 pointer, uint8 opcode, cpu_state *cpu) {
+    saveShortToStack(cpu->PC, cpu);
+    cpu->PC = pointer;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//return after call. Restore PC from stack
+void ret_c(bool set, uint8 opcode, cpu_state *cpu) {
+    if (set) {
+        cpu->PC = readShortFromStack(cpu);
+        cpu->wait = opcodes[opcode].cyclesMax;
+    } else {
+        //do nothing
+        cpu->wait = opcodes[opcode].cycles;
+    }
+}
+
+//xor A register with given value and set flags
+void xor(uint8 value, uint8 opcode, cpu_state *cpu) {
+    cpu->registers.A ^= value;
+    (!cpu->registers.A) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
+    clearFlag(NF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(CF, cpu);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//perform logical and on the A register with a given value and set values
+void and(uint8 value, uint8 opcode, cpu_state *cpu) {
+    cpu->registers.A &= value;
+    //set zero flag if result is zero
+    (!cpu->registers.A) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
+    clearFlag(NF, cpu);
+    setFlag(HF, cpu);
+    clearFlag(CF, cpu);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//perform logical or on the A register with a given value and set flags
+void or(uint8 value, uint8 opcode, cpu_state *cpu) {
+    cpu->registers.A |= value;
+    //set zero flag if result is zero
+    (!cpu->registers.A) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
+    clearFlag(NF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(CF, cpu);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+/* ==== CB PREFIX INSTRUCTIONS ==== */
+
+//set flags based on the status of a bit in a register
+void bit(uint8 bit, uint8 *store, uint8 opcode, cpu_state *cpu) {
+    (readBit(bit, store)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(NF, cpu);
+    setFlag(HF, cpu);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
+//reset 1 bit
+void res(uint8 bit, uint8 *store, uint8 opcode, cpu_state *cpu) {
+    *store &= ~(0b1 << bit);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
+//execute instruction with a 0xCB pefix
+int prefixCB(cpu_state *cpu) {
     //grab instruction
-    uint8 nextByte = readNextByte(cpu);
-    //temp values as switch has no scope in c
-    uint8 tempByte = 0x0;
-    int8 tempSigned = 0x0;
-    uint8 tempByteTwo = 0x0;
-    uint8 readByte = 0x0;
-    uint16 tempShort = 0x0;
-    
+    uint8 opcode = readNextByte(cpu);
+    switch(opcode) {
+        case 0x4F: //BIT 1, A
+            bit(1, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x77: //BIT 6, A
+            bit(6, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x87: //RES 0, A
+            res(0, &cpu->registers.A, opcode, cpu);
+            break;
+        default: //instruction not implemented
+            printf("Error prefix 0xCB instruction not found: ");
+            printInstruction(cpu->PC - 2, cpu);
+            return 1;
+    }
+    return 0;
+}
+
+//execute next instruction
+int execute(struct cpu_state * cpu) {
+    //printInstruction(cpu->PC, cpu);
+    //grab instruction
+    uint8 opcode = readNextByte(cpu);
     //find and execute next instruction
-    switch (nextByte) {
+    //v2
+    switch (opcode) {
+        case 0x00: //NOP
+            cpu->wait = 4;
+            break;
+        case 0x01: //LD BC, d16
+            ld_16(twoBytes(cpu), &cpu->registers.BC, opcode, cpu);
+            break;
+        case 0x04: //INC B
+            inc_8(&cpu->registers.B, opcode, cpu);
+            break;
+        case 0x05: //DEC B
+            dec_8(&cpu->registers.B, opcode, cpu);
+            break;
+        case 0x06: //LD B, d8
+            ld_8(oneByteUnsigned(cpu), &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x09: //ADD HL, BC
+            add_16(cpu->registers.BC, &cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x0B: //DEC BC
+            dec_16(&cpu->registers.BC, opcode, cpu);
+            break;
+        case 0x0C: //INC C
+            inc_8(&cpu->registers.C, opcode, cpu);
+            break;
+        case 0x0D: //DEC C
+            dec_8(&cpu->registers.C, opcode, cpu);
+            break;
+        case 0x0E: //LD C, d8
+            ld_8(oneByteUnsigned(cpu), &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x11: //LD DE, d16
+            ld_16(twoBytes(cpu), &cpu->registers.DE, opcode, cpu);
+            break;
+        case 0x12: //LD (DE), A
+            ld_8(cpu->registers.A, &cpu->MEM[cpu->registers.DE], opcode, cpu);
+            break;
+        case 0x13: //INC DE
+            inc_16(&cpu->registers.DE, opcode, cpu);
+            break;
+        case 0x15: //DEC D
+            dec_8(&cpu->registers.D, opcode, cpu);
+            break;
+        case 0x18: //JR r8
+            jr_c_8(oneByteSigned(cpu), true, opcode, cpu);
+            break;
+        case 0x19: //ADD HL, DE
+            add_16(cpu->registers.DE, &cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x1A: //LD A, (DE)
+            ld_8(cpu->MEM[cpu->registers.DE], &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x1D: //DEC E
+            dec_8(&cpu->registers.E, opcode, cpu);
+            break;
+        case 0x20: //JR NZ, r8
+            jr_c_8(oneByteSigned(cpu), !readFlag(ZF, cpu), opcode, cpu);
+            break;
+        case 0x21: //LD HL, d16
+            ld_16(twoBytes(cpu), &cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x22: //LDI (HL), A
+            ld_8_i(cpu->registers.A, &cpu->MEM[cpu->registers.HL], &cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x23: //INC HL
+            inc_16(&cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x24: //INC H
+            inc_8(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x28: //JR Z,r8
+            jr_c_8(oneByteSigned(cpu), readFlag(ZF, cpu), opcode, cpu);
+            break;
+        case 0x2A: //LDI A, (HL)
+            ld_8_i(cpu->MEM[cpu->registers.HL], &cpu->registers.A, &cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x26: //LD H, d8
+            ld_8(oneByteUnsigned(cpu), &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x31: //LD SP, d16
+            ld_16(twoBytes(cpu), &cpu->SP, opcode, cpu);
+            break;
+        case 0x36: //LD (HL), d8
+            ld_8(oneByteUnsigned(cpu), &cpu->MEM[cpu->registers.HL], opcode, cpu);
+            break;
+        case 0x3C: //INC A
+            inc_8(&cpu->registers.A, opcode, cpu);
+            break;
+        case 0x3D: //DEC A
+            dec_8(&cpu->registers.A, opcode, cpu);
+            break;
+        case 0x3E: //LD A, d8
+            ld_8(oneByteUnsigned(cpu), &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x44: //LD B, H
+            ld_8(cpu->registers.H, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x47: //LD B, A
+            ld_8(cpu->registers.A, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x4D: //LD C, L
+            ld_8(cpu->registers.L, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x4F: //LD C, A
+            ld_8(cpu->registers.A, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x51: //LD D, C
+            ld_8(cpu->registers.C, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x57: //LD D, A
+            ld_8(cpu->registers.A, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x6B: //LD L, E
+            ld_8(cpu->registers.E, &cpu->registers.L, opcode, cpu);
+            break;
+        case 0x6F: //LD L, A
+            ld_8(cpu->registers.A, &cpu->registers.L, opcode, cpu);
+            break;
+        case 0x77: //LD (HL), A
+            ld_8(cpu->registers.A, &cpu->MEM[cpu->registers.HL], opcode, cpu);
+            break;
+        case 0x78: //LD A, B
+            ld_8(cpu->registers.B, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x7A: //LD A, D
+            ld_8(cpu->registers.D, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x79: //LD A, C
+            ld_8(cpu->registers.C, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x7D: //LD A, L
+            ld_8(cpu->registers.L, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x7E: //LD A, (HL)
+            ld_8(cpu->MEM[cpu->registers.HL], &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xA7: //AND A
+            and(cpu->registers.A, opcode, cpu);
+            break;
+        case 0xAF: //XOR A
+            xor(cpu->registers.A, opcode, cpu);
+            break;
+        case 0xB0: //OR B
+            or(cpu->registers.B, opcode, cpu);
+            break;
+        case 0xB1: //OR C
+            or(cpu->registers.C, opcode, cpu);
+            break;
+        case 0xC0: //RET NZ
+            ret_c(!readFlag(ZF, cpu), opcode, cpu);
+            break;
+        case 0xC1: //POP BC
+            pop(&cpu->registers.BC, opcode, cpu);
+            break;
+        case 0xC3: //JP a16
+            jp_c_16(twoBytes(cpu), true, opcode, cpu); //will always jump so set condition to be true
+            break;
+        case 0xC5: //PUSH BC
+            push(cpu->registers.BC, opcode, cpu);
+            break;
+        case 0xC6: //ADD A, d8
+            add_8(oneByteUnsigned(cpu), &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xC8: //RET Z
+            ret_c(readFlag(ZF, cpu), opcode, cpu);
+            break;
+        case 0xC9: //RET
+            ret_c(true, opcode, cpu); //will always return so set the condition to be true
+            break;
+        case 0xCA: //JP Z, a16
+            jp_c_16(twoBytes(cpu), readFlag(ZF, cpu), opcode, cpu);
+            break;
+        case 0xCB: //PREFIX CB
+            //return result of the cb prefix instruction
+            return prefixCB(cpu);
+            break;
+        case 0xCD: //CALL a16
+            call(twoBytes(cpu), opcode, cpu);
+            break;
+        case 0xD1: //POP DE
+            pop(&cpu->registers.DE, opcode, cpu);
+            break;
+        case 0xD5: //PUSH DE
+            push(cpu->registers.DE, opcode, cpu);
+            break;
+        case 0xD6: //SUB d8
+            sub_8(oneByteUnsigned(cpu), &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xE0: //LDH (a8), A
+            ld_8(cpu->registers.A, &cpu->MEM[0xFF00 + readNextByte(cpu)], opcode, cpu);
+            break;
+        case 0xE1: //POP HL
+            pop(&cpu->registers.HL, opcode, cpu);
+            break;
+        case 0xE2: //LD (C), A
+            ld_8(cpu->registers.A, &cpu->MEM[0xFF00 + cpu->registers.C], opcode, cpu);
+            break;
+        case 0xE5: //PUSH HL
+            push(cpu->registers.HL, opcode, cpu);
+            break;
+        case 0xE6: //AND d8
+            and(readNextByte(cpu), opcode, cpu);
+            break;
+        case 0xEA: //LD (a16), A
+            ld_8(cpu->registers.A, &cpu->MEM[twoBytes(cpu)], opcode, cpu);
+            break;
+        case 0xEE: //XOR d8
+            xor(oneByteUnsigned(cpu), opcode, cpu);
+            break;
+        case 0xF0: //LDH A, (a8)
+            ld_8(cpu->MEM[0xFF00 + readNextByte(cpu)], &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xF1: //POP AF
+            pop(&cpu->registers.AF, opcode, cpu);
+            break;
+        case 0xF3: //DI
+            //cpu->interuptsEnabled = false;
+            //TAKES 2 INSTRUCTIONS TO SET. SET AFTER THE INSTRUCTION THAT HAPPENS AFTER THIS. "COMPLETE(THIS + 1) THEN SET"
+            cpu->wait = opcodes[opcode].cycles;
+            break;
+        case 0xF5: //PUSH AF
+            push(cpu->registers.AF, opcode, cpu);
+            break;
+        case 0xFA: //LD A, (a16)
+            ld_8(cpu->MEM[twoBytes(cpu)], &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xFB: //EI
+            //cpu->interuptsEnabled = true;
+            //TAKES 2 INSTRUCTIONS TO SET. SET AFTER THE INSTRUCTION THAT HAPPENS AFTER THIS. "COMPLETE(THIS + 1) THEN SET"
+            cpu->wait = opcodes[opcode].cycles;
+            break;
+        case 0xFE: //CP d8
+            cp(cpu->registers.A, oneByteUnsigned(cpu), opcode, cpu);
+            break;
+        default: //instruction not implemented
+            printf("Error instruction not found: ");
+            printInstruction(cpu->PC - 1, cpu);
+            //printf("Error instruction not found: %s\n", opcodes[opcode].name);
+            return 1;
+    }
+    return 0;
+}
+
+    //v1
+    /*switch (nextByte) {
         case 0x00: //NOP
             cpu->wait = 1;
             break;
         case 0x01: //LD BC,d16
-            saveShortBigEndian(cpu->REG + B, twoByte(cpu));
+            cpu->registers.BC = twoByte(cpu)
+            //saveShortBigEndian(cpu->REG + B, twoByte(cpu));
             cpu->wait = 12;
             break;
         case 0x02: //LD (BC),A
@@ -826,9 +1293,8 @@ int execute(struct cpu_state * cpu) {
         case 0xFF:
             break;
         default:
+        //TODO: output opcode and dump cpu info
             printf("File read error:");
             exit(3);
             break;
-    }
-    return 0;
-}
+    }*/

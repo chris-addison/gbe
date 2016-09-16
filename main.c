@@ -47,21 +47,42 @@ int main(int argc, char *argv[]) {
     cpu->PC = 0x100;
     cpu->SP = 0xFFFE;
     cpu->wait = 0;
-    cpu->REG[A] = 0x11;
+    cpu->registers.A = 0x11;
+    cpu->MEM[0xFF44] = 0x91;
 	//TODO: set the rest of the registers and memory values to their initial settings
-    printf("value in reg A: 0x%x\n",cpu->REG[A]);
+    printf("value in new A: 0x%x\n",cpu->registers.A);
     fread(cpu->MEM, 1, 0x8000, rom);
 
+    /*uint8 temp = 0x01;
+    uint8 temp2 = 0x0F;
+    add_8(temp2, &temp, 0x01, cpu);
+    debug(cpu);*/
+
     //simple game loop.
-    for (int i = 0; i < 500; i++) {
+    for (int i = 0; i < 100000000; i++) {
+        if (cpu->wait <= 0) {
+            if (DEBUG) {
+                //debug(cpu);
+            }
+            if (execute(cpu)) {
+                debug(cpu);
+                //break;
+            }
+        }
+        cpu->wait--;
+    }
+    /*for (int i = 0; i < 100; i++) {
         if (cpu->wait <= 0) {
             if (DEBUG) {
                 debug(cpu);
             }
-            execute(cpu);
+            if (execute(cpu)) {
+                debug(cpu);
+                //break;
+            }
         }
         cpu->wait--;
-    }
+    }*/
 
     //free cpu, cartridge at end
     free(cpu);
