@@ -3,80 +3,43 @@
 #define COMMON_C
 #include "main.h"
 
+//read a byte from a given memory address
+static uint8 readByte(uint16 address, cpu_state *cpu) {
+    return cpu->MEM[address];
+}
+
 //read next byte from the instruction pointer
-static uint8 readNextByte(struct cpu_state * cpu) {
-    uint8 byte = *(cpu->MEM + cpu->PC);
+static uint8 readNextByte(struct cpu_state *cpu) {
+    uint8 byte = readByte(cpu->PC, cpu);
     cpu->PC++;
     return byte;
 }
 
-//peek at byte at given memory address
-static uint8 peekByte(uint16 pointer, cpu_state * cpu) {
-    return cpu->MEM[pointer];
+//write a byte to the given memory address
+static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
+    cpu->MEM[address] = value;
 }
 
-//peek at byte relative to current PC
-static uint8 peekByteRelative(uint16 offset, cpu_state * cpu) {
-    return peekByte(cpu->PC + offset, cpu);
+//read a short from a given memory address
+static uint16 readShort(uint16 address, cpu_state *cpu) {
+    return (((uint16) readByte(address + 1, cpu)) << 8) + readByte(address, cpu);
 }
 
-//peek ant short at given memory address
-static uint16 peekShort(uint16 pointer, cpu_state * cpu) {
-	uint16 value = (peekByte(pointer + 1, cpu) << 8) + peekByte(pointer, cpu);
-    return value;
-}
-
-//print given instruction instruction
-static void printInstruction(uint16 PC, cpu_state * cpu) {
-    uint8 opcode = peekByte(PC, cpu);
-    //create case for 0xCB prefix instructions here
-    if (opcode == 0xCB) {
-        printf("%s", cbOpcodes[peekByte(PC + 1, cpu)].name);
-    } else if (opcodes[opcode].bytes == 1) {
-        printf("%s", opcodes[opcode].name);
-    } else if (opcodes[opcode].bytes == 2) {
-        printf(opcodes[opcode].name, peekByte(PC + 1, cpu));
-    } else {
-        printf(opcodes[opcode].name, peekShort(PC + 1, cpu));
-    }
-    printf("\n");
-}
-
-//print unsigned byte to standard input
-static void printByteUnsigned(uint8 byte) {
-    printf("0x%02" PRIX8, byte);
-}
-
-//print signed byte to standard input
-static void printByteSigned(int8 byte) {
-    printf("0x%02" PRIi8, byte);
-}
-
-//print 2 bytes to standard input
-static void printShort(uint16 twoBytes) {
-    printf("0x%04X", twoBytes);
-}
-
-//save a short as two bytes in little endian
-static void saveShort(uint8 *arrayPointer, uint16 value) {
-    *(arrayPointer) = value & 0xFF; //Least significant byte
-    *(arrayPointer + 1) = (value >> 8) & 0xFF; //Most significant byte
-}
-
-//get a short from two uint8s in an array where the value is stored in little endian (eg. memory)
-static uint16 getShort(uint8 *pointer) {
-	uint16 value = (*(pointer + 1) << 8) + *(pointer);
-    return value;
+//write a short to the given memory address
+static void writeShort(uint16 address, uint16 value, cpu_state *cpu) {
+    writeByte(address, value & 0xFF, cpu); //Least significant byte
+    writeByte(address + 1, (value >> 8) & 0xFF, cpu); //Most significant byte
 }
 
 //move the stack pointer and save a short to the stack
-static void saveShortToStack(uint16 value, cpu_state *cpu) {
+static void writeShortToStack(uint16 value, cpu_state *cpu) {
     cpu->SP -= 2;
-    saveShort(&(cpu->MEM[cpu->SP]), value);
+    writeShort(cpu->SP, value, cpu);
 }
 
+//read a short from the stack and move the stack pointer
 static uint16 readShortFromStack(cpu_state *cpu) {
-    uint16 value = getShort(&(cpu->MEM[cpu->SP]));
+    uint16 value = readShort(cpu->SP, cpu);
     cpu->SP += 2;
     return value;
 }
@@ -105,6 +68,36 @@ static bool readFlag(uint8 flag, cpu_state *cpu) {
 static bool readBit(uint8 bit, uint8 *store) {
     //get register, shift down to correct flag offset and compare
     return ((*store >> bit) & 0b1) == 0b1;
+}
+
+//print unsigned byte to standard input
+static void printByteUnsigned(uint8 byte) {
+    printf("0x%02" PRIX8, byte);
+}
+
+//print signed byte to standard input
+static void printByteSigned(int8 byte) {
+    printf("0x%02" PRIi8, byte);
+}
+
+//print 2 bytes to standard input
+static void printShort(uint16 twoBytes) {
+    printf("0x%04X", twoBytes);
+}
+
+//print given instruction instruction
+static void printInstruction(uint16 PC, cpu_state *cpu) {
+    uint8 opcode = readByte(PC, cpu);
+    if (opcode == 0xCB) { //print CB prefix instruction
+        printf("%s", cbOpcodes[readByte(PC + 1, cpu)].name);
+    } else if (opcodes[opcode].bytes == 1) { //print single byte instruction
+        printf("%s", opcodes[opcode].name);
+    } else if (opcodes[opcode].bytes == 2) { //print two byte instruction
+        printf(opcodes[opcode].name, readByte(PC + 1, cpu));
+    } else { //print three byte instruction
+        printf(opcodes[opcode].name, readShort(PC + 1, cpu));
+    }
+    printf("\n");
 }
 
 #endif /* MAIN_H */

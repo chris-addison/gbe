@@ -80,8 +80,8 @@ void ld_16(uint16 value, uint16 *store, uint8 opcode, cpu_state *cpu) {
 }
 
 //load 16 bit value into some addres in memory
-void ld_16_m(uint16 value, uint8 *store, uint8 opcode, cpu_state *cpu) {
-    saveShort(store, value);
+void ld_16_m(uint16 value, uint16 address, uint8 opcode, cpu_state *cpu) {
+    writeShort(address, value, cpu);
     cpu->wait = opcodes[opcode].cycles;
 }
 
@@ -155,7 +155,7 @@ void add_16(uint16 value, uint16 *store, uint8 opcode, cpu_state *cpu) {
 
 //push a short onto the stack
 void push(uint16 value, uint8 opcode, cpu_state *cpu) {
-    saveShortToStack(value, cpu);
+    writeShortToStack(value, cpu);
     cpu->wait = opcodes[opcode].cycles;
 }
 
@@ -167,7 +167,7 @@ void pop(uint16 *value, uint8 opcode, cpu_state *cpu) {
 
 //standard call. Save PC to the stack
 void call(uint16 pointer, uint8 opcode, cpu_state *cpu) {
-    saveShortToStack(cpu->PC, cpu);
+    writeShortToStack(cpu->PC, cpu);
     cpu->PC = pointer;
     cpu->wait = opcodes[opcode].cycles;
 }
