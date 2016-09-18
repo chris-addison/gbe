@@ -1,7 +1,7 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
 
-uint8 oneByteUnsigned(struct cpu_state *cpu) {
+uint8 oneByte(struct cpu_state *cpu) {
     return readNextByte(cpu);
 }
 
@@ -28,6 +28,12 @@ void cp(uint8 a, uint8 b, uint8 instruction, struct cpu_state *cpu) {
     (a < b) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //cpu->FLAGS[CF] = (a < b); //carry flag
     cpu->wait = opcodes[instruction].cycles;
+}
+
+//jump to the address stored in HL
+void jp_8(uint8 opcode, struct cpu_state *cpu) {
+    cpu->PC = (uint16)readByte(cpu->registers.HL, cpu);
+    cpu->wait = opcodes[opcode].cycles;
 }
 
 //jump to a 16bit address if condition is set
@@ -241,10 +247,17 @@ void ret_c(bool set, uint8 opcode, cpu_state *cpu) {
     }
 }
 
+//restart at given address. Save previous PC to the stack
+void rst(uint8 pc, uint8 opcode, cpu_state *cpu) {
+    writeShortToStack(cpu->PC, cpu);
+    cpu->PC = (uint16)pc;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
 //xor A register with given value and set flags
 void xor(uint8 value, uint8 opcode, cpu_state *cpu) {
     cpu->registers.A ^= value;
-    (!cpu->registers.A) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
+    (cpu->registers.A) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     clearFlag(NF, cpu);
     clearFlag(HF, cpu);
     clearFlag(CF, cpu);
@@ -345,7 +358,7 @@ int execute(struct cpu_state * cpu) {
             dec_8(&cpu->registers.B, opcode, cpu);
             break;
         case 0x06: //LD B, d8
-            ld_8(oneByteUnsigned(cpu), &cpu->registers.B, opcode, cpu);
+            ld_8(oneByte(cpu), &cpu->registers.B, opcode, cpu);
             break;
         case 0x09: //ADD HL, BC
             add_16(cpu->registers.BC, &cpu->registers.HL, opcode, cpu);
@@ -360,7 +373,7 @@ int execute(struct cpu_state * cpu) {
             dec_8(&cpu->registers.C, opcode, cpu);
             break;
         case 0x0E: //LD C, d8
-            ld_8(oneByteUnsigned(cpu), &cpu->registers.C, opcode, cpu);
+            ld_8(oneByte(cpu), &cpu->registers.C, opcode, cpu);
             break;
         case 0x11: //LD DE, d16
             ld_16(twoBytes(cpu), &cpu->registers.DE, opcode, cpu);
@@ -373,6 +386,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0x15: //DEC D
             dec_8(&cpu->registers.D, opcode, cpu);
+            break;
+        case 0x16: //LD D, d8
+            ld_8(readByte(oneByte(cpu), cpu), &cpu->registers.D, opcode, cpu);
             break;
         case 0x18: //JR r8
             jr_c_8(oneByteSigned(cpu), true, opcode, cpu);
@@ -402,10 +418,13 @@ int execute(struct cpu_state * cpu) {
             inc_8(&cpu->registers.H, opcode, cpu);
             break;
         case 0x26: //LD H, d8
-            ld_8(oneByteUnsigned(cpu), &cpu->registers.H, opcode, cpu);
+            ld_8(oneByte(cpu), &cpu->registers.H, opcode, cpu);
             break;
         case 0x28: //JR Z,r8
             jr_c_8(oneByteSigned(cpu), readFlag(ZF, cpu), opcode, cpu);
+            break;
+        case 0x29: //ADD HL, HL
+            add_16(cpu->registers.HL, &cpu->registers.HL, opcode, cpu);
             break;
         case 0x2A: //LDI A, (HL)
             ldi(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
@@ -420,7 +439,7 @@ int execute(struct cpu_state * cpu) {
             ldd_m(cpu->registers.A, cpu->registers.HL, opcode, cpu);
             break;
         case 0x36: //LD (HL), d8
-            ld_8_m(oneByteUnsigned(cpu), cpu->registers.HL, opcode, cpu);
+            ld_8_m(oneByte(cpu), cpu->registers.HL, opcode, cpu);
             break;
         case 0x3C: //INC A
             inc_8(&cpu->registers.A, opcode, cpu);
@@ -429,7 +448,7 @@ int execute(struct cpu_state * cpu) {
             dec_8(&cpu->registers.A, opcode, cpu);
             break;
         case 0x3E: //LD A, d8
-            ld_8(oneByteUnsigned(cpu), &cpu->registers.A, opcode, cpu);
+            ld_8(oneByte(cpu), &cpu->registers.A, opcode, cpu);
             break;
         case 0x44: //LD B, H
             ld_8(cpu->registers.H, &cpu->registers.B, opcode, cpu);
@@ -446,8 +465,17 @@ int execute(struct cpu_state * cpu) {
         case 0x51: //LD D, C
             ld_8(cpu->registers.C, &cpu->registers.D, opcode, cpu);
             break;
+        case 0x56: //LD D, (HL)
+            ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.D, opcode, cpu);
+            break;
         case 0x57: //LD D, A
             ld_8(cpu->registers.A, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x5E: //LD E, (HL)
+            ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x5F: //LD E, A
+            ld_8(cpu->registers.A, &cpu->registers.E, opcode, cpu);
             break;
         case 0x6B: //LD L, E
             ld_8(cpu->registers.E, &cpu->registers.L, opcode, cpu);
@@ -473,8 +501,17 @@ int execute(struct cpu_state * cpu) {
         case 0x7E: //LD A, (HL)
             ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
             break;
+        case 0x87: //ADD 8
+            add_8(cpu->registers.A, opcode, cpu);
+            break;
+        case 0xA1: //AND C
+            and(cpu->registers.C, opcode, cpu);
+            break;
         case 0xA7: //AND A
             and(cpu->registers.A, opcode, cpu);
+            break;
+        case 0xA9: //XOR C
+            xor(cpu->registers.C, opcode, cpu);
             break;
         case 0xAF: //XOR A
             xor(cpu->registers.A, opcode, cpu);
@@ -498,7 +535,7 @@ int execute(struct cpu_state * cpu) {
             push(cpu->registers.BC, opcode, cpu);
             break;
         case 0xC6: //ADD A, d8
-            add_8(oneByteUnsigned(cpu), opcode, cpu);
+            add_8(oneByte(cpu), opcode, cpu);
             break;
         case 0xC8: //RET Z
             ret_c(readFlag(ZF, cpu), opcode, cpu);
@@ -523,7 +560,7 @@ int execute(struct cpu_state * cpu) {
             push(cpu->registers.DE, opcode, cpu);
             break;
         case 0xD6: //SUB d8
-            sub_8(oneByteUnsigned(cpu), opcode, cpu);
+            sub_8(oneByte(cpu), opcode, cpu);
             break;
         case 0xE0: //LDH (a8), A
             ld_8_m(cpu->registers.A, 0xFF00 + readNextByte(cpu), opcode, cpu);
@@ -540,11 +577,17 @@ int execute(struct cpu_state * cpu) {
         case 0xE6: //AND d8
             and(readNextByte(cpu), opcode, cpu);
             break;
+        case 0xE9: //JP (HL)
+            jp_8(opcode, cpu);
+            break;
         case 0xEA: //LD (a16), A
             ld_8_m(cpu->registers.A, twoBytes(cpu), opcode, cpu);
             break;
         case 0xEE: //XOR d8
-            xor(oneByteUnsigned(cpu), opcode, cpu);
+            xor(oneByte(cpu), opcode, cpu);
+            break;
+        case 0xEF: //RST 0x28
+            rst(0x28, opcode, cpu);
             break;
         case 0xF0: //LDH A, (a8)
             ld_8(readByte(0xFF00 + readNextByte(cpu), cpu), &cpu->registers.A, opcode, cpu);
@@ -569,7 +612,7 @@ int execute(struct cpu_state * cpu) {
             cpu->wait = opcodes[opcode].cycles;
             break;
         case 0xFE: //CP d8
-            cp(cpu->registers.A, oneByteUnsigned(cpu), opcode, cpu);
+            cp(cpu->registers.A, oneByte(cpu), opcode, cpu);
             break;
         default: //instruction not implemented
             printf("Error instruction not found: ");
