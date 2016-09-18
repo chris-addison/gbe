@@ -602,4 +602,9 @@ const struct cbOpcode cbOpcodes[256] = {
     { "0xCBFF ", 8 }
 };
 
+#include "common.c"
+#include "cpu.c"
+#include "debug.c"
+#include "opcodes.c"
+
 #endif /* MAIN_H */

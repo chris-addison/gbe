@@ -91,7 +91,11 @@ static void printShort(uint16 twoBytes) {
 }
 
 //print given instruction instruction
-static void printInstruction(uint16 PC, cpu_state *cpu) {
+static void printInstruction(bool showPC, uint16 PC, cpu_state *cpu) {
+    if (showPC) {
+        printShort(cpu->PC);
+        printf(":  ");
+    }
     uint8 opcode = readByte(PC, cpu);
     if (opcode == 0xCB) { //print CB prefix instruction
         printf("%s", cbOpcodes[readByte(PC + 1, cpu)].name);
@@ -105,4 +109,4 @@ static void printInstruction(uint16 PC, cpu_state *cpu) {
     printf("\n");
 }
 
-#endif /* MAIN_H */
+#endif /* COMMON_C */

@@ -1,10 +1,9 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
-#include "common.c"
 
 //simple gdb-like debug
 static void debug(cpu_state * cpu) {
-    printInstruction(cpu->PC, cpu);
+    printInstruction(false, cpu->PC, cpu);
     char command[11];
     scanf("%10s", command);
     while (strcmp(n, command) * strcmp(next, command)) {
@@ -13,7 +12,7 @@ static void debug(cpu_state * cpu) {
             printf("Not continuing\n");
             exit(0);
         } else if (!strcmp(op, command)) {
-            printInstruction(cpu->PC, cpu);
+            printInstruction(true, cpu->PC, cpu);
         } else if (!strcmp(r, command)) {
             //print registers
             printf("A:\t");
