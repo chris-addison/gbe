@@ -1,6 +1,5 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
-#include "common.c"
 
 uint8 oneByteUnsigned(struct cpu_state *cpu) {
     return readNextByte(cpu);
@@ -204,6 +203,14 @@ void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
+//complement the A register
+void cpl(uint8 opcode, cpu_state *cpu) {
+    setFlag(NF, cpu);
+    setFlag(HF, cpu);
+    cpu->registers.A = ~cpu->registers.A;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
 //push a short onto the stack
 void push(uint16 value, uint8 opcode, cpu_state *cpu) {
     writeShortToStack(value, cpu);
@@ -298,7 +305,7 @@ int prefixCB(cpu_state *cpu) {
             break;
         default: //instruction not implemented
             printf("Error prefix 0xCB instruction not found: ");
-            printInstruction(cpu->PC - 2, cpu);
+            printInstruction(false, cpu->PC - 2, cpu);
             return 1;
     }
     return 0;
@@ -381,17 +388,23 @@ int execute(struct cpu_state * cpu) {
         case 0x24: //INC H
             inc_8(&cpu->registers.H, opcode, cpu);
             break;
+        case 0x26: //LD H, d8
+            ld_8(oneByteUnsigned(cpu), &cpu->registers.H, opcode, cpu);
+            break;
         case 0x28: //JR Z,r8
             jr_c_8(oneByteSigned(cpu), readFlag(ZF, cpu), opcode, cpu);
             break;
         case 0x2A: //LDI A, (HL)
             ldi(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
             break;
-        case 0x26: //LD H, d8
-            ld_8(oneByteUnsigned(cpu), &cpu->registers.H, opcode, cpu);
+        case 0x2F: //CPL
+            cpl(opcode, cpu);
             break;
         case 0x31: //LD SP, d16
             ld_16(twoBytes(cpu), &cpu->SP, opcode, cpu);
+            break;
+        case 0x32: //LDD (HL), A
+            ldd_m(cpu->registers.A, cpu->registers.HL, opcode, cpu);
             break;
         case 0x36: //LD (HL), d8
             ld_8_m(oneByteUnsigned(cpu), cpu->registers.HL, opcode, cpu);
@@ -547,8 +560,7 @@ int execute(struct cpu_state * cpu) {
             break;
         default: //instruction not implemented
             printf("Error instruction not found: ");
-            printInstruction(cpu->PC - 1, cpu);
-            //printf("Error instruction not found: %s\n", opcodes[opcode].name);
+            printInstruction(false, cpu->PC - 1, cpu);
             return 1;
     }
     return 0;
