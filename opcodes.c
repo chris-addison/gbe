@@ -275,9 +275,19 @@ void or(uint8 value, uint8 opcode, cpu_state *cpu) {
 
 /* ==== CB PREFIX INSTRUCTIONS ==== */
 
+//swap the upper and lower nibbles of some register
+void swap(uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    clearFlag(NF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(CF, cpu);
+    *reg = ((*reg & 0xF) << 4) | ((*reg & 0xF0) >> 4);
+    (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
 //set flags based on the status of a bit in a register
-void bit(uint8 bit, uint8 *store, uint8 opcode, cpu_state *cpu) {
-    (readBit(bit, store)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+void bit(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    (readBit(bit, reg)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     clearFlag(NF, cpu);
     setFlag(HF, cpu);
     cpu->wait = cbOpcodes[opcode].cycles;
@@ -294,6 +304,9 @@ int prefixCB(cpu_state *cpu) {
     //grab instruction
     uint8 opcode = readNextByte(cpu);
     switch(opcode) {
+        case 0x37: //SWAP A
+            swap(&cpu->registers.A, opcode, cpu);
+            break;
         case 0x4F: //BIT 1, A
             bit(1, &cpu->registers.A, opcode, cpu);
             break;
