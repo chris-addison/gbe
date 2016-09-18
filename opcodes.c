@@ -87,35 +87,49 @@ void ld_16_m(uint16 value, uint16 address, uint8 opcode, cpu_state *cpu) {
 
 //increment a byte
 void inc_8(uint8 *store, uint8 opcode, cpu_state *cpu) {
+    //zero flag
+    (*store + 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    //negative flag
+    clearFlag(NF, cpu);
+    //half-carry flag
+    ((*store & 0xF) == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     *store += 1; //can't use "++" as it takes higher priority over pointer dereference
     cpu->wait = opcodes[opcode].cycles;
 }
 
 //increment a short
 void inc_16(uint16 *store, uint8 opcode, cpu_state *cpu) {
+    //inc_16 doesn't set or clear any flags
     *store += 1; //can't use "++" as it takes higher priority over pointer dereference
     cpu->wait = opcodes[opcode].cycles;
 }
 
 //decrement a byte
 void dec_8(uint8 *store, uint8 opcode, cpu_state *cpu) {
+    //zero flag
+    (*store - 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    //negative flag
+    setFlag(NF, cpu);
+    //half-carry flag
+    (*store & 0xF) ? clearFlag(HF, cpu) : setFlag(HF, cpu);
     *store -= 1; //can't use "-- as it takes higher priority over pointer dereference
     cpu->wait = opcodes[opcode].cycles;
 }
 
 //decrement a short
 void dec_16(uint16 *store, uint8 opcode, cpu_state *cpu) {
+    //dec_16 doesn't set or clear any flags
     *store -= 1; //can't use "-- as it takes higher priority over pointer dereference
     cpu->wait = opcodes[opcode].cycles;
 }
 
-//add together two unsigned 16 bit values and set flags
+//add together two unsigned 8 bit values and set flags
 void add_8(uint8 value, uint8 *store, uint8 opcode, cpu_state *cpu) {
-    //zero flag isn't touched
-    (!*store & !value) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
+    //zero flag
+    (*store + value) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //negative flag
     clearFlag(NF, cpu);
-    //half-carry flag (in 16bit ALU the highest bytes set the CF last, so only check for the high byte 3 -> 4 bit carry)
+    //half-carry flag
     ((*store & 0xF) + (value & 0xF) > 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     //carry flag
     (((uint16)*store & 0xFF) + ((uint16)value & 0xFF) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
