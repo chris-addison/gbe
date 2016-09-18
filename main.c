@@ -1,7 +1,5 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
-#include "debug.c"
-#include "opcodes.c"
 
 int main(int argc, char *argv[]) {
     //catch lack of file
@@ -18,13 +16,7 @@ int main(int argc, char *argv[]) {
     }
 
     //set up cpu
-    struct cpu_state * cpu = (struct cpu_state *) malloc(sizeof(struct cpu_state));
-    cpu->PC = 0x100;
-    cpu->SP = 0xFFFE;
-    cpu->wait = 0;
-    cpu->registers.A = 0x11;
-    cpu->MEM[0xFF44] = 0x91;
-	//TODO: set the rest of the registers and memory values to their initial settings
+    struct cpu_state * cpu = createCPU();
     fread(cpu->MEM, 1, 0x8000, rom);
 
     //fetch and store the title
@@ -49,10 +41,11 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < 100000000; i++) {
         bool startDebugging = false;
         if (cpu->wait <= 0) {
+            printInstruction(true, cpu->PC, cpu);
             //breakpoints
-            /*if (cpu->PC == 0x0000) {
+            if (cpu->PC == 0x1680) {
                 startDebugging = true;
-            }*/
+            }
             //debug
             if (/*DEBUG ||*/ startDebugging) {
                 debug(cpu);
