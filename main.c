@@ -11,12 +11,12 @@ int main(int argc, char *argv[]) {
     }
     //grab file
     FILE *rom = fopen(argv[1], "r");
-    //if file not exist warn user and exit
+    //if file doesn't exist, warn user and exit
     if (rom == NULL) {
-        printf("file load error\n");
+        fprintf(stderr, "file load error\n");
         exit(2);
     }
-    
+
     //set up cpu
     struct cpu_state * cpu = (struct cpu_state *) malloc(sizeof(struct cpu_state));
     cpu->PC = 0x100;
@@ -47,9 +47,15 @@ int main(int argc, char *argv[]) {
 
     //simple game loop.
     for (int i = 0; i < 100000000; i++) {
+        bool startDebugging = false;
         if (cpu->wait <= 0) {
-            if (DEBUG) {
-                //debug(cpu);
+            //breakpoints
+            /*if (cpu->PC == 0x0000) {
+                startDebugging = true;
+            }*/
+            //debug
+            if (/*DEBUG ||*/ startDebugging) {
+                debug(cpu);
             }
             if (execute(cpu)) {
                 debug(cpu);
@@ -58,6 +64,7 @@ int main(int argc, char *argv[]) {
         }
         cpu->wait--;
     }
+    //debug(cpu);
 
     //free cpu, cartridge at end
     free(cpu);

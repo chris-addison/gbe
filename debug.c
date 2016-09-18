@@ -14,7 +14,6 @@ static void debug(cpu_state * cpu) {
             exit(0);
         } else if (!strcmp(op, command)) {
             printInstruction(cpu->PC, cpu);
-            //printf("%s\n", opcodes[peekByteRelative(0, cpu)].name);
         } else if (!strcmp(r, command)) {
             //print registers
             printf("A:\t");

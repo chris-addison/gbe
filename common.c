@@ -17,6 +17,12 @@ static uint8 readNextByte(struct cpu_state *cpu) {
 
 //write a byte to the given memory address
 static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
+    //handle the echo of internal memory at 0xC000->0xDDFF and 0xE000->0xFDFF
+    if (address >= 0xC000 && address < 0xDE00) {
+        cpu->MEM[address + 0x2000] = value;
+    } else if (address >= 0xE000 && address < 0xFE000) {
+        cpu->MEM[address - 0x2000] = value;
+    }
     cpu->MEM[address] = value;
 }
 
@@ -44,14 +50,13 @@ static uint16 readShortFromStack(cpu_state *cpu) {
     return value;
 }
 
-//set the state of a flag
+//set a flag
 static void setFlag(uint8 flag, cpu_state *cpu) {
-    /* Set Flag */
     //create a mask for the flag, then OR it to set the flag to one
     cpu->registers.F |= (0b1 << flag);
 }
 
-//clear the state of a flag
+//clear a flag
 static void clearFlag(uint8 flag, cpu_state *cpu) {
     /* Reset Flag */
     //create a mask for the flag, inverse it, then AND it to set the flag to zero

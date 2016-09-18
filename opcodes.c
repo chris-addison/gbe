@@ -10,7 +10,7 @@ int8 oneByteSigned(struct cpu_state *cpu) {
     return (int8)readNextByte(cpu);
 }
 
-//read a short from memory. Value is assumed to be little endian.
+//read a short from memory
 uint16 twoBytes(struct cpu_state *cpu) {
 	uint16 lsb = (uint16)readNextByte(cpu); //read least significant byte first
 	uint16 msb = ((uint16)readNextByte(cpu)) << 8; //then read most significant byte
@@ -53,29 +53,42 @@ void jr_c_8(int8 address, bool set, uint8 opcode, struct cpu_state *cpu) {
     }
 }
 
-//load 8 bit value into some destination address
-void ld_8(uint8 value, uint8 *store, uint8 opcode, cpu_state *cpu) {
-    *store = value;
+//load 8 bit value into some register
+void ld_8(uint8 value, uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    *reg = value;
     cpu->wait = opcodes[opcode].cycles;
 }
 
-//load 8 bit value into some destination address and increment the value at the given register pair
-void ld_8_i(uint8 value, uint8 *store, uint16 *pointer, uint8 opcode, cpu_state *cpu) {
-    *store = value;
-    *pointer += 1;
+//load 8 bit value into some address in memory
+void ld_8_m(uint8 value, uint16 address, uint8 opcode, cpu_state *cpu) {
+    writeByte(address, value, cpu);
     cpu->wait = opcodes[opcode].cycles;
 }
 
-//load 8 bit value into some destination address and decrement the value at the given register pair
-void ld_8_d(uint8 value, uint8 *store, uint16 *pointer, uint8 opcode, cpu_state *cpu) {
-    *store = value;
-    *pointer -= 1;
+//load 8 bit value into some address in memory and increment the value in the HL register
+void ldi(uint8 value, uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    *reg = value;
+    cpu->registers.HL++;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//load 8 bit value into some address in memory and increment the value in the HL register
+void ldi_m(uint8 value, uint16 address, uint8 opcode, cpu_state *cpu) {
+    writeByte(address, value, cpu);
+    cpu->registers.HL++;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//load 8 bit value into some address in memory and decrement the value in the HL register
+void ldd_m(uint8 value, uint16 address, uint8 opcode, cpu_state *cpu) {
+    writeByte(address, value, cpu);
+    cpu->registers.HL--;
     cpu->wait = opcodes[opcode].cycles;
 }
 
 //load 16 bit value into some destination register
-void ld_16(uint16 value, uint16 *store, uint8 opcode, cpu_state *cpu) {
-    *store = value;
+void ld_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
+    *reg = value;
     cpu->wait = opcodes[opcode].cycles;
 }
 
@@ -85,85 +98,109 @@ void ld_16_m(uint16 value, uint16 address, uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
-//increment a byte
-void inc_8(uint8 *store, uint8 opcode, cpu_state *cpu) {
+//increment a byte in a register
+void inc_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //zero flag
-    (*store + 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    (*reg + 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag
-    ((*store & 0xF) == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
-    *store += 1; //can't use "++" as it takes higher priority over pointer dereference
+    (*reg & 0xF == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    *reg += 1;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//increment a byte in memory
+void inc_8_m(uint16 address, uint8 opcode, cpu_state *cpu) {
+    //zero flag
+    (readByte(address, cpu) + 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    //negative flag
+    clearFlag(NF, cpu);
+    //half-carry flag
+    (readByte(address, cpu) & 0xF == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    writeByte(address, readByte(address, cpu) + 1, cpu);
     cpu->wait = opcodes[opcode].cycles;
 }
 
 //increment a short
-void inc_16(uint16 *store, uint8 opcode, cpu_state *cpu) {
+void inc_16(uint16 *reg, uint8 opcode, cpu_state *cpu) {
     //inc_16 doesn't set or clear any flags
-    *store += 1; //can't use "++" as it takes higher priority over pointer dereference
+    *reg += 1; //can't use "++" as it takes higher priority over pointer dereference
     cpu->wait = opcodes[opcode].cycles;
 }
 
-//decrement a byte
-void dec_8(uint8 *store, uint8 opcode, cpu_state *cpu) {
+//decrement a byte in memory
+void dec_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //zero flag
-    (*store - 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    (*reg - 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //negative flag
     setFlag(NF, cpu);
     //half-carry flag
-    (*store & 0xF) ? clearFlag(HF, cpu) : setFlag(HF, cpu);
-    *store -= 1; //can't use "-- as it takes higher priority over pointer dereference
+    (*reg & 0xF) ? clearFlag(HF, cpu) : setFlag(HF, cpu);
+    *reg -= 1;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//decrement a byte in a register
+void dec_8_m(uint16 address, uint8 opcode, cpu_state *cpu) {
+    //zero flag
+    (readByte(address, cpu) - 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    //negative flag
+    setFlag(NF, cpu);
+    //half-carry flag
+    (readByte(address, cpu) & 0xF) ? clearFlag(HF, cpu) : setFlag(HF, cpu);
+    writeByte(address, readByte(address, cpu) - 1, cpu);
     cpu->wait = opcodes[opcode].cycles;
 }
 
 //decrement a short
-void dec_16(uint16 *store, uint8 opcode, cpu_state *cpu) {
+void dec_16(uint16 *reg, uint8 opcode, cpu_state *cpu) {
     //dec_16 doesn't set or clear any flags
-    *store -= 1; //can't use "-- as it takes higher priority over pointer dereference
+    *reg -= 1; //can't use "-- as it takes higher priority over pointer dereference
     cpu->wait = opcodes[opcode].cycles;
 }
 
-//add together two unsigned 8 bit values and set flags
-void add_8(uint8 value, uint8 *store, uint8 opcode, cpu_state *cpu) {
+//add together some 8 bit unsigned value and the A register
+void add_8(uint8 value, uint8 opcode, cpu_state *cpu) {
     //zero flag
-    (*store + value) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    (cpu->registers.A + value) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag
-    ((*store & 0xF) + (value & 0xF) > 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    ((cpu->registers.A & 0xF) + (value & 0xF) > 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     //carry flag
-    (((uint16)*store & 0xFF) + ((uint16)value & 0xFF) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    (((uint16)cpu->registers.A) + ((uint16)value) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //set value after flags are calculated
-    *store += value;
+    cpu->registers.A += value;
     cpu->wait = opcodes[opcode].cycles;
 }
 
-//subtract an 8 bit value from a given register or memory location
-void sub_8(uint8 value, uint8 *store, uint8 opcode, cpu_state *cpu) {
+//subtract an unsigned 8 bit value from the A register
+void sub_8(uint8 value, uint8 opcode, cpu_state *cpu) {
     //zero flag
-    (*store == value) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
+    (cpu->registers.A == value) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
     //negative flag
     setFlag(NF, cpu);
     //half-carry flag
-    ((*store & 0xF) < (value & 0xF)) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    ((cpu->registers.A & 0xF) < (value & 0xF)) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     //carry flag
-    (*store < value) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    (cpu->registers.A < value) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //set value after flags are calculated
-    *store -= value;
+    cpu->registers.A -= value;
     cpu->wait = opcodes[opcode].cycles;
 }
 
 //add together two unsigned 16 bit values and set flags
-void add_16(uint16 value, uint16 *store, uint8 opcode, cpu_state *cpu) {
+void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
     //zero flag isn't touched
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag (in 16bit ALU the highest bytes set the CF last, so only check for the high byte 3 -> 4 bit carry)
-    ((*store & 0xFFF) + (value & 0xFFF) > 0xFFF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    ((*reg & 0xFFF) + (value & 0xFFF) > 0xFFF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     //carry flag
-    ((*store & 0xFF) + (value & 0xFF) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    ((*reg & 0xFF) + (value & 0xFF) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //set value after flags are calculated
-    *store += value;
+    *reg += value;
     cpu->wait = opcodes[opcode].cycles;
 }
 
@@ -174,8 +211,8 @@ void push(uint16 value, uint8 opcode, cpu_state *cpu) {
 }
 
 //pop a short from the stack
-void pop(uint16 *value, uint8 opcode, cpu_state *cpu) {
-    *value = readShortFromStack(cpu);
+void pop(uint16 *reg, uint8 opcode, cpu_state *cpu) {
+    *reg = readShortFromStack(cpu);
     cpu->wait = opcodes[opcode].cycles;
 }
 
@@ -309,7 +346,7 @@ int execute(struct cpu_state * cpu) {
             ld_16(twoBytes(cpu), &cpu->registers.DE, opcode, cpu);
             break;
         case 0x12: //LD (DE), A
-            ld_8(cpu->registers.A, &cpu->MEM[cpu->registers.DE], opcode, cpu);
+            ld_8_m(cpu->registers.A, cpu->registers.DE, opcode, cpu);
             break;
         case 0x13: //INC DE
             inc_16(&cpu->registers.DE, opcode, cpu);
@@ -324,7 +361,7 @@ int execute(struct cpu_state * cpu) {
             add_16(cpu->registers.DE, &cpu->registers.HL, opcode, cpu);
             break;
         case 0x1A: //LD A, (DE)
-            ld_8(cpu->MEM[cpu->registers.DE], &cpu->registers.A, opcode, cpu);
+            ld_8(readByte(cpu->registers.DE, cpu), &cpu->registers.A, opcode, cpu);
             break;
         case 0x1D: //DEC E
             dec_8(&cpu->registers.E, opcode, cpu);
@@ -336,7 +373,7 @@ int execute(struct cpu_state * cpu) {
             ld_16(twoBytes(cpu), &cpu->registers.HL, opcode, cpu);
             break;
         case 0x22: //LDI (HL), A
-            ld_8_i(cpu->registers.A, &cpu->MEM[cpu->registers.HL], &cpu->registers.HL, opcode, cpu);
+            ldi_m(cpu->registers.A, cpu->registers.HL, opcode, cpu);
             break;
         case 0x23: //INC HL
             inc_16(&cpu->registers.HL, opcode, cpu);
@@ -348,7 +385,7 @@ int execute(struct cpu_state * cpu) {
             jr_c_8(oneByteSigned(cpu), readFlag(ZF, cpu), opcode, cpu);
             break;
         case 0x2A: //LDI A, (HL)
-            ld_8_i(cpu->MEM[cpu->registers.HL], &cpu->registers.A, &cpu->registers.HL, opcode, cpu);
+            ldi(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
             break;
         case 0x26: //LD H, d8
             ld_8(oneByteUnsigned(cpu), &cpu->registers.H, opcode, cpu);
@@ -357,7 +394,7 @@ int execute(struct cpu_state * cpu) {
             ld_16(twoBytes(cpu), &cpu->SP, opcode, cpu);
             break;
         case 0x36: //LD (HL), d8
-            ld_8(oneByteUnsigned(cpu), &cpu->MEM[cpu->registers.HL], opcode, cpu);
+            ld_8_m(oneByteUnsigned(cpu), cpu->registers.HL, opcode, cpu);
             break;
         case 0x3C: //INC A
             inc_8(&cpu->registers.A, opcode, cpu);
@@ -393,7 +430,7 @@ int execute(struct cpu_state * cpu) {
             ld_8(cpu->registers.A, &cpu->registers.L, opcode, cpu);
             break;
         case 0x77: //LD (HL), A
-            ld_8(cpu->registers.A, &cpu->MEM[cpu->registers.HL], opcode, cpu);
+            ld_8_m(cpu->registers.A, cpu->registers.HL, opcode, cpu);
             break;
         case 0x78: //LD A, B
             ld_8(cpu->registers.B, &cpu->registers.A, opcode, cpu);
@@ -408,7 +445,7 @@ int execute(struct cpu_state * cpu) {
             ld_8(cpu->registers.L, &cpu->registers.A, opcode, cpu);
             break;
         case 0x7E: //LD A, (HL)
-            ld_8(cpu->MEM[cpu->registers.HL], &cpu->registers.A, opcode, cpu);
+            ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
             break;
         case 0xA7: //AND A
             and(cpu->registers.A, opcode, cpu);
@@ -435,7 +472,7 @@ int execute(struct cpu_state * cpu) {
             push(cpu->registers.BC, opcode, cpu);
             break;
         case 0xC6: //ADD A, d8
-            add_8(oneByteUnsigned(cpu), &cpu->registers.A, opcode, cpu);
+            add_8(oneByteUnsigned(cpu), opcode, cpu);
             break;
         case 0xC8: //RET Z
             ret_c(readFlag(ZF, cpu), opcode, cpu);
@@ -460,16 +497,16 @@ int execute(struct cpu_state * cpu) {
             push(cpu->registers.DE, opcode, cpu);
             break;
         case 0xD6: //SUB d8
-            sub_8(oneByteUnsigned(cpu), &cpu->registers.A, opcode, cpu);
+            sub_8(oneByteUnsigned(cpu), opcode, cpu);
             break;
         case 0xE0: //LDH (a8), A
-            ld_8(cpu->registers.A, &cpu->MEM[0xFF00 + readNextByte(cpu)], opcode, cpu);
+            ld_8_m(cpu->registers.A, 0xFF00 + readNextByte(cpu), opcode, cpu);
             break;
         case 0xE1: //POP HL
             pop(&cpu->registers.HL, opcode, cpu);
             break;
         case 0xE2: //LD (C), A
-            ld_8(cpu->registers.A, &cpu->MEM[0xFF00 + cpu->registers.C], opcode, cpu);
+            ld_8_m(cpu->registers.A, 0xFF00 + cpu->registers.C, opcode, cpu);
             break;
         case 0xE5: //PUSH HL
             push(cpu->registers.HL, opcode, cpu);
@@ -478,13 +515,13 @@ int execute(struct cpu_state * cpu) {
             and(readNextByte(cpu), opcode, cpu);
             break;
         case 0xEA: //LD (a16), A
-            ld_8(cpu->registers.A, &cpu->MEM[twoBytes(cpu)], opcode, cpu);
+            ld_8_m(cpu->registers.A, twoBytes(cpu), opcode, cpu);
             break;
         case 0xEE: //XOR d8
             xor(oneByteUnsigned(cpu), opcode, cpu);
             break;
         case 0xF0: //LDH A, (a8)
-            ld_8(cpu->MEM[0xFF00 + readNextByte(cpu)], &cpu->registers.A, opcode, cpu);
+            ld_8(readByte(0xFF00 + readNextByte(cpu), cpu), &cpu->registers.A, opcode, cpu);
             break;
         case 0xF1: //POP AF
             pop(&cpu->registers.AF, opcode, cpu);
@@ -498,7 +535,7 @@ int execute(struct cpu_state * cpu) {
             push(cpu->registers.AF, opcode, cpu);
             break;
         case 0xFA: //LD A, (a16)
-            ld_8(cpu->MEM[twoBytes(cpu)], &cpu->registers.A, opcode, cpu);
+            ld_8(readByte(twoBytes(cpu), cpu), &cpu->registers.A, opcode, cpu);
             break;
         case 0xFB: //EI
             //cpu->interuptsEnabled = true;
