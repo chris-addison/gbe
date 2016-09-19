@@ -55,6 +55,8 @@ static void debug(cpu_state * cpu) {
             printShort(cpu->MEM[0xFF40]);
             printf("\nLY:\t");
             printByteUnsigned(cpu->MEM[0xFF44]);
+            printf("\nSTAT:\t");
+            printByteUnsigned(cpu->MEM[0xFF41]);
             printf("\n");
         }
         scanf("%10s", command);
