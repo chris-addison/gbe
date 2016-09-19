@@ -37,17 +37,21 @@ int main(int argc, char *argv[]) {
     unsigned int RAM_size = 2 << ((2 * RAM_value) - 1);
     printf("ROM size: %dKB\nInternal RAM size: %dKB\n", ROM_size, RAM_size);
 
+    bool startDebugging = false;
     //simple game loop.
-    for (int i = 0; i < 100000000; i++) {
-        bool startDebugging = false;
+    for (int i = 0; i < 10000000; i++) {
+        cpu->MEM[0xff00] |= 0xCF; //SET NO BUTTONS PRESSED 0b11001111
+        if (i % 1232) {
+            cpu->MEM[0xFF44] += 1;
+        }
         if (cpu->wait <= 0) {
-            printInstruction(true, cpu->PC, cpu);
+            //printInstruction(true, cpu->PC, cpu);
             //breakpoints
-            if (cpu->PC == 0x1680) {
+            if (cpu->PC == 0x29FA && DEBUG) {
                 startDebugging = true;
             }
             //debug
-            if (/*DEBUG ||*/ startDebugging) {
+            if (startDebugging) {
                 debug(cpu);
             }
             if (execute(cpu)) {

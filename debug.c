@@ -3,7 +3,7 @@
 
 //simple gdb-like debug
 static void debug(cpu_state * cpu) {
-    printInstruction(false, cpu->PC, cpu);
+    printInstruction(true, cpu->PC, cpu);
     char command[11];
     scanf("%10s", command);
     while (strcmp(n, command) * strcmp(next, command)) {
@@ -51,6 +51,10 @@ static void debug(cpu_state * cpu) {
             printShort(cpu->SP);
             printf("\nPC:\t");
             printShort(cpu->PC);
+            printf("\nLCDC:\t");
+            printShort(cpu->MEM[0xFF40]);
+            printf("\nLY:\t");
+            printByteUnsigned(cpu->MEM[0xFF44]);
             printf("\n");
         }
         scanf("%10s", command);
