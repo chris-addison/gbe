@@ -41,13 +41,18 @@ int main(int argc, char *argv[]) {
     //simple game loop.
     for (int i = 0; i < 10000000; i++) {
         cpu->MEM[0xff00] |= 0xCF; //SET NO BUTTONS PRESSED 0b11001111
-        if (i % 1232) {
+        //spoof scanline
+        //ref: http://www.romhacking.net/forum/index.php?topic=17770.0
+        if (i % 456) {
             cpu->MEM[0xFF44] += 1;
+            if (cpu->MEM[0xFF44] > 153) {
+                cpu->MEM[0xFF44] = 0x00;
+            }
         }
         if (cpu->wait <= 0) {
             //printInstruction(true, cpu->PC, cpu);
             //breakpoints
-            if (cpu->PC == 0x29FA && DEBUG) {
+            if (cpu->PC == 0x0339 && DEBUG) {
                 startDebugging = true;
             }
             //debug

@@ -34,8 +34,5 @@ static struct cpu_state* createCPU() {
     cpu->MEM[0xFF48] = 0xFF;
     cpu->MEM[0xFF49] = 0xFF;
 
-    //sceen y scan coord
-    cpu->MEM[0xFF44] = 0x94;
-
     return cpu;
 }
