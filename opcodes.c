@@ -30,14 +30,8 @@ void cp(uint8 a, uint8 b, uint8 instruction, struct cpu_state *cpu) {
     cpu->wait = opcodes[instruction].cycles;
 }
 
-//jump to the address stored in HL
-void jp_8(uint8 opcode, struct cpu_state *cpu) {
-    cpu->PC = (uint16)readByte(cpu->registers.HL, cpu);
-    cpu->wait = opcodes[opcode].cycles;
-}
-
 //jump to a 16bit address if condition is set
-void jp_c_16(uint16 address, bool set, uint8 opcode, struct cpu_state *cpu) {
+void jp_c(uint16 address, bool set, uint8 opcode, struct cpu_state *cpu) {
     if (set) {
         cpu->PC = address;
         cpu->wait = opcodes[opcode].cyclesMax;
@@ -536,7 +530,7 @@ int execute(struct cpu_state * cpu) {
             pop(&cpu->registers.BC, opcode, cpu);
             break;
         case 0xC3: //JP a16
-            jp_c_16(twoBytes(cpu), true, opcode, cpu); //will always jump so set condition to be true
+            jp_c(twoBytes(cpu), true, opcode, cpu); //will always jump so set condition to be true
             break;
         case 0xC4: //CALL NZ, a16
             call_c(!readFlag(ZF, cpu), twoBytes(cpu), opcode, cpu);
@@ -554,7 +548,7 @@ int execute(struct cpu_state * cpu) {
             ret_c(true, opcode, cpu); //will always return so set the condition to be true
             break;
         case 0xCA: //JP Z, a16
-            jp_c_16(twoBytes(cpu), readFlag(ZF, cpu), opcode, cpu);
+            jp_c(twoBytes(cpu), readFlag(ZF, cpu), opcode, cpu);
             break;
         case 0xCB: //PREFIX CB
             //return result of the cb prefix instruction
@@ -587,8 +581,8 @@ int execute(struct cpu_state * cpu) {
         case 0xE6: //AND d8
             and(readNextByte(cpu), opcode, cpu);
             break;
-        case 0xE9: //JP (HL)
-            jp_8(opcode, cpu);
+        case 0xE9: //JP (HL) -> read as JP HL
+            jp_c(cpu->registers.HL, true, opcode, cpu);
             break;
         case 0xEA: //LD (a16), A
             ld_8_m(cpu->registers.A, twoBytes(cpu), opcode, cpu);
