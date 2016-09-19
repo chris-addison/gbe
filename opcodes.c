@@ -230,10 +230,14 @@ void pop(uint16 *reg, uint8 opcode, cpu_state *cpu) {
 }
 
 //standard call. Save PC to the stack
-void call(uint16 pointer, uint8 opcode, cpu_state *cpu) {
-    writeShortToStack(cpu->PC, cpu);
-    cpu->PC = pointer;
-    cpu->wait = opcodes[opcode].cycles;
+void call_c(bool set, uint16 pointer, uint8 opcode, cpu_state *cpu) {
+    if (set) {
+        writeShortToStack(cpu->PC, cpu);
+        cpu->PC = pointer;
+        cpu->wait = opcodes[opcode].cyclesMax;
+    } else {
+        cpu->wait = opcodes[opcode].cycles;
+    }
 }
 
 //return after call. Restore PC from stack
@@ -388,7 +392,7 @@ int execute(struct cpu_state * cpu) {
             dec_8(&cpu->registers.D, opcode, cpu);
             break;
         case 0x16: //LD D, d8
-            ld_8(readByte(oneByte(cpu), cpu), &cpu->registers.D, opcode, cpu);
+            ld_8(oneByte(cpu), &cpu->registers.D, opcode, cpu);
             break;
         case 0x18: //JR r8
             jr_c_8(oneByteSigned(cpu), true, opcode, cpu);
@@ -440,6 +444,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0x36: //LD (HL), d8
             ld_8_m(oneByte(cpu), cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x39: //ADD HL, SP
+            add_16(cpu->SP, &cpu->registers.HL, opcode, cpu);
             break;
         case 0x3C: //INC A
             inc_8(&cpu->registers.A, opcode, cpu);
@@ -531,6 +538,9 @@ int execute(struct cpu_state * cpu) {
         case 0xC3: //JP a16
             jp_c_16(twoBytes(cpu), true, opcode, cpu); //will always jump so set condition to be true
             break;
+        case 0xC4: //CALL NZ, a16
+            call_c(!readFlag(ZF, cpu), twoBytes(cpu), opcode, cpu);
+            break;
         case 0xC5: //PUSH BC
             push(cpu->registers.BC, opcode, cpu);
             break;
@@ -551,7 +561,7 @@ int execute(struct cpu_state * cpu) {
             return prefixCB(cpu);
             break;
         case 0xCD: //CALL a16
-            call(twoBytes(cpu), opcode, cpu);
+            call_c(true, twoBytes(cpu), opcode, cpu);
             break;
         case 0xD1: //POP DE
             pop(&cpu->registers.DE, opcode, cpu);
@@ -613,6 +623,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0xFE: //CP d8
             cp(cpu->registers.A, oneByte(cpu), opcode, cpu);
+            break;
+        case 0xFF: //RST 0x38
+            rst(0x38, opcode, cpu);
             break;
         default: //instruction not implemented
             printf("Error instruction not found: ");
