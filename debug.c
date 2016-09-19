@@ -52,11 +52,17 @@ static void debug(cpu_state * cpu) {
             printf("\nPC:\t");
             printShort(cpu->PC);
             printf("\nLCDC:\t");
-            printShort(cpu->MEM[0xFF40]);
-            printf("\nLY:\t");
+            printByteUnsigned(cpu->MEM[0xFF40]);
+            printf("\tLY:\t");
             printByteUnsigned(cpu->MEM[0xFF44]);
-            printf("\nSTAT:\t");
+            printf("\tSTAT:\t");
             printByteUnsigned(cpu->MEM[0xFF41]);
+            printf("\nIME:\t");
+            printf("%d", cpu->ime);
+            printf("\tIE:\t");
+            printByteUnsigned(cpu->MEM[0xFFFF]);
+            printf("\tIF:\t");
+            printByteUnsigned(cpu->MEM[0xFF00]);
             printf("\n");
         }
         scanf("%10s", command);

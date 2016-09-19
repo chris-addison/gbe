@@ -51,9 +51,18 @@ int main(int argc, char *argv[]) {
             if (startDebugging) {
                 debug(cpu);
             }
-            if (execute(cpu)) {
+            if (execute(cpu) && DEBUG) {
                 debug(cpu);
                 //break;
+            }
+            //ime must be set or reset after the instruction after EI or DI.
+            //by setting imeCounter to 2 with EI and DI this will set the flag
+            //at the correct timing
+            if (cpu->imeCounter > 0) {
+                cpu->imeCounter--;
+                if (cpu->imeCounter == 0) {
+                    cpu->ime = !cpu->ime;
+                }
             }
         }
         updateScreen(cpu);

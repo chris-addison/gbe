@@ -61,6 +61,8 @@ typedef struct cpu_state {
     uint16 PC;
     uint16 SP;
     uint8 wait;
+    uint8 imeCounter;
+    bool ime;
 } cpu_state;
 
 //constant positions of flags in flags array
@@ -612,6 +614,7 @@ static const uint8 VRAM = 0x3;
 #include "cpu.c"
 #include "debug.c"
 #include "opcodes.c"
+#include "interrupts.c"
 #include "screen.c"
 
 #endif /* MAIN_H */
