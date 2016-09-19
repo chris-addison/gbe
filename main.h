@@ -602,9 +602,16 @@ const struct cbOpcode cbOpcodes[256] = {
     { "0xCBFF ", 8 }
 };
 
+//screen constants
+static const uint8 H_BLANK = 0x0;
+static const uint8 V_BLANK = 0x1;
+static const uint8 OAM = 0x2;
+static const uint8 VRAM = 0x3;
+
 #include "common.c"
 #include "cpu.c"
 #include "debug.c"
 #include "opcodes.c"
+#include "screen.c"
 
 #endif /* MAIN_H */
