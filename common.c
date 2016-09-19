@@ -20,7 +20,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
     //handle the echo of internal memory at 0xC000->0xDDFF and 0xE000->0xFDFF
     if (address >= 0xC000 && address < 0xDE00) {
         cpu->MEM[address + 0x2000] = value;
-    } else if (address >= 0xE000 && address < 0xFE000) {
+    } else if (address >= 0xE000 && address < 0xFE00) {
         cpu->MEM[address - 0x2000] = value;
     }
     cpu->MEM[address] = value;
