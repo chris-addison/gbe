@@ -63,7 +63,7 @@ void updateScreen(cpu_state *cpu) {
                 incrementScanline(cpu);
                 //reset the scanline and switch the mode back to OAM
                 if (readScanline(cpu) > 153) {
-                    //res
+                    //reset the scanline back to 0
                     setScanline(0, cpu);
                     //write new status to the the STAT register
                     setMode(OAM, cpu);

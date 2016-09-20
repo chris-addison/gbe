@@ -15,28 +15,32 @@ static void updateIME(cpu_state *cpu) {
     }
 }
 
+//save the PC, jump to interrupt handler, and reset the ime
+static void interruptVBlank(cpu_state *cpu) {
+    writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) & ~0b1, cpu);
+    cpu->ime = false;
+    writeShortToStack(cpu->PC, cpu);
+    cpu->PC = 0x40;
+    cpu->wait = 12;
+}
+
 //check interrupts and act on them
 static void checkInterrupts(cpu_state *cpu) {
     if (cpu->ime && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
         uint8 interrupt = readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);
-        if (interrupt & INTR_V_BLANK) { //v blank
-            //TODO: clean this up
-            writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) & ~0b1, cpu);
-            cpu->ime = false;
-            writeShortToStack(cpu->PC, cpu);
-            cpu->PC = 0x40;
-            cpu->wait = 12;
+        if (interrupt & INTR_V_BLANK) {
+            interruptVBlank(cpu);
         }
-        if (interrupt & INTR_STAT) { //lcd stat
+        if (interrupt & INTR_STAT) {
 
         }
-        if (interrupt & INTR_TIMER) { //timer
+        if (interrupt & INTR_TIMER) {
 
         }
-        if (interrupt & INTR_SERIAL) { //serial
+        if (interrupt & INTR_SERIAL) {
 
         }
-        if (interrupt & INTR_JOYPAD) { //joypad
+        if (interrupt & INTR_JOYPAD) {
 
         }
     }
