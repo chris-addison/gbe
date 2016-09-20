@@ -62,7 +62,7 @@ static void debug(cpu_state * cpu) {
             printf("\tIE:\t");
             printByteUnsigned(cpu->MEM[0xFFFF]);
             printf("\tIF:\t");
-            printByteUnsigned(cpu->MEM[0xFF00]);
+            printByteUnsigned(cpu->MEM[0xFF0F]);
             printf("\n");
         }
         scanf("%10s", command);

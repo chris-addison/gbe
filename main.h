@@ -60,6 +60,7 @@ typedef struct cpu_state {
     } registers;
     uint16 PC;
     uint16 SP;
+    uint16 cycles;
     uint8 wait;
     uint8 imeCounter;
     bool ime;

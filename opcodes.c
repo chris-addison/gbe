@@ -109,15 +109,15 @@ void inc_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
-//increment a byte in memory
-void inc_8_m(uint16 address, uint8 opcode, cpu_state *cpu) {
+//increment a byte at the memory location stored in HL
+void inc_8_m(uint8 opcode, cpu_state *cpu) {
     //zero flag
-    (readByte(address, cpu) + 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    (readByte(cpu->registers.HL, cpu) + 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag
-    (readByte(address, cpu) & 0xF == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
-    writeByte(address, readByte(address, cpu) + 1, cpu);
+    (readByte(cpu->registers.HL, cpu) & 0xF == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    writeByte(cpu->registers.HL, readByte(cpu->registers.HL, cpu) + 1, cpu);
     cpu->wait = opcodes[opcode].cycles;
 }
 
@@ -243,6 +243,31 @@ void ret_c(bool set, uint8 opcode, cpu_state *cpu) {
         //do nothing
         cpu->wait = opcodes[opcode].cycles;
     }
+}
+
+//return after call and enable interrupts
+void reti(uint8 opcode, cpu_state *cpu) {
+    cpu->PC = readShortFromStack(cpu);
+    cpu->wait = opcodes[opcode].cycles;
+    cpu->ime = true;
+}
+
+//enable interrupts after this instruction and the next one are finished
+void ei(uint8 opcode, cpu_state *cpu) {
+    //make sure interrupts aren't enabled and aren't changing
+    if (!cpu->ime && !cpu->imeCounter) {
+        cpu->imeCounter = 2;
+    }
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//disable interrupts after this instruction and the next one are finished
+void di(uint8 opcode, cpu_state *cpu) {
+    //make sure interrupts are enabled and not changing
+    if (cpu->ime && !cpu->imeCounter) {
+        cpu->imeCounter = 2;
+    }
+    cpu->wait = opcodes[opcode].cycles;
 }
 
 //restart at given address. Save previous PC to the stack
@@ -442,6 +467,9 @@ int execute(struct cpu_state * cpu) {
         case 0x32: //LDD (HL), A
             ldd_m(cpu->registers.A, cpu->registers.HL, opcode, cpu);
             break;
+        case 0x34: //INC (HL)
+            inc_8_m(opcode, cpu);
+            break;
         case 0x35: //DEC (HL)
             dec_8_m(opcode, cpu);
             break;
@@ -578,6 +606,9 @@ int execute(struct cpu_state * cpu) {
         case 0xD6: //SUB d8
             sub_8(oneByte(cpu), opcode, cpu);
             break;
+        case 0xD9: //RETI
+            reti(opcode, cpu);
+            break;
         case 0xE0: //LDH (a8), A
             ld_8_m(cpu->registers.A, 0xFF00 + oneByte(cpu), opcode, cpu);
             break;
@@ -612,9 +643,7 @@ int execute(struct cpu_state * cpu) {
             pop(&cpu->registers.AF, opcode, cpu);
             break;
         case 0xF3: //DI
-            //cpu->interuptsEnabled = false;
-            //TAKES 2 INSTRUCTIONS TO SET. SET AFTER THE INSTRUCTION THAT HAPPENS AFTER THIS. "COMPLETE(THIS + 1) THEN SET"
-            cpu->wait = opcodes[opcode].cycles;
+            di(opcode, cpu);
             break;
         case 0xF5: //PUSH AF
             push(cpu->registers.AF, opcode, cpu);
@@ -623,9 +652,7 @@ int execute(struct cpu_state * cpu) {
             ld_8(readByte(twoBytes(cpu), cpu), &cpu->registers.A, opcode, cpu);
             break;
         case 0xFB: //EI
-            //cpu->interuptsEnabled = true;
-            //TAKES 2 INSTRUCTIONS TO SET. SET AFTER THE INSTRUCTION THAT HAPPENS AFTER THIS. "COMPLETE(THIS + 1) THEN SET"
-            cpu->wait = opcodes[opcode].cycles;
+            ei(opcode, cpu);
             break;
         case 0xFE: //CP d8
             cp(cpu->registers.A, oneByte(cpu), opcode, cpu);

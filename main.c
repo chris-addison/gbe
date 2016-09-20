@@ -37,36 +37,32 @@ int main(int argc, char *argv[]) {
     unsigned int RAM_size = 2 << ((2 * RAM_value) - 1);
     printf("ROM size: %dKB\nInternal RAM size: %dKB\n", ROM_size, RAM_size);
 
-    bool startDebugging = true;
+    bool startDebugging = false;
     //simple game loop.
     while(true) {
         cpu->MEM[0xff00] |= 0xCF; //SET NO BUTTONS PRESSED 0b11001111
         if (cpu->wait <= 0) {
             //printInstruction(true, cpu->PC, cpu);
             //breakpoints
-            if (cpu->PC == 0x0100 && DEBUG) {
-                startDebugging = true;
+            //0x284, 0x282A, 0x03EC, 0x03F5
+            if (cpu->PC == 0x0403 && DEBUG) {
+                //startDebugging = true;
             }
             //debug
             if (startDebugging) {
+                printByteUnsigned(readByte(0xFF85, cpu));
+                printf("\n");
                 debug(cpu);
             }
             if (execute(cpu) && DEBUG) {
                 debug(cpu);
                 //break;
             }
-            //ime must be set or reset after the instruction after EI or DI.
-            //by setting imeCounter to 2 with EI and DI this will set the flag
-            //at the correct timing
-            if (cpu->imeCounter > 0) {
-                cpu->imeCounter--;
-                if (cpu->imeCounter == 0) {
-                    cpu->ime = !cpu->ime;
-                }
-            }
+            //update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
+            updateIME(cpu);
         }
         updateScreen(cpu);
-        //TODO: interrupts here
+        checkInterrupts(cpu);
         cpu->wait--;
     }
     //debug(cpu);
