@@ -17,6 +17,13 @@ static const char quit[] = "quit";
 static const char r[] = "r";
 static const char op[] = "op";
 
+//memory locations
+#define SCANLINE 0xFF44
+#define STAT 0xFF41
+#define LCDC 0xFF40
+#define INTERRUPTS_ENABLED 0xFFFF
+#define INTERRUPT_FLAGS 0xFF0F
+
 //one byte
 typedef uint8_t uint8; //unsigned
 typedef int8_t int8;   //signed
@@ -606,10 +613,17 @@ const struct cbOpcode cbOpcodes[256] = {
 };
 
 //screen constants
-static const uint8 H_BLANK = 0x0;
-static const uint8 V_BLANK = 0x1;
-static const uint8 OAM = 0x2;
-static const uint8 VRAM = 0x3;
+#define H_BLANK 0x0
+#define V_BLANK 0x1
+#define OAM 0x2
+#define VRAM 0x3
+
+//interrupt bit offsets
+#define INTR_V_BLANK 0b1
+#define INTR_STAT 0b10
+#define INTR_TIMER 0b100
+#define INTR_SERIAL 0b1000
+#define INTR_JOYPAD 0b10000
 
 #include "common.c"
 #include "cpu.c"

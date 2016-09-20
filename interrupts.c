@@ -17,26 +17,26 @@ static void updateIME(cpu_state *cpu) {
 
 //check interrupts and act on them
 static void checkInterrupts(cpu_state *cpu) {
-    if (cpu->ime && (readByte(0xFF0F, cpu) & readByte(0xFFFF, cpu))) {
-        uint8 interrupt = readByte(0xFF0F, cpu) & readByte(0xFFFF, cpu);
-        if (interrupt & 0b1) { //v blank
+    if (cpu->ime && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
+        uint8 interrupt = readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);
+        if (interrupt & INTR_V_BLANK) { //v blank
             //TODO: clean this up
-            writeByte(0xFF0F, readByte(0xFF0F, cpu) & ~0b1, cpu);
+            writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) & ~0b1, cpu);
             cpu->ime = false;
             writeShortToStack(cpu->PC, cpu);
             cpu->PC = 0x40;
             cpu->wait = 12;
         }
-        if (interrupt & 0b10) { //lcd stat
+        if (interrupt & INTR_STAT) { //lcd stat
 
         }
-        if (interrupt & 0b100) { //timer
+        if (interrupt & INTR_TIMER) { //timer
 
         }
-        if (interrupt & 0b1000) { //serial
+        if (interrupt & INTR_SERIAL) { //serial
 
         }
-        if (interrupt & 0b10000) { //joypad
+        if (interrupt & INTR_JOYPAD) { //joypad
 
         }
     }
