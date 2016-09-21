@@ -78,6 +78,13 @@ void ldi_m(uint8 value, uint16 address, uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
+//load 8 bit value into some register and decrement the value in the HL register
+void ldd(uint8 value, uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    *reg = value;
+    cpu->registers.HL--;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
 //load 8 bit value into some address in memory and decrement the value in the HL register
 void ldd_m(uint8 value, uint16 address, uint8 opcode, cpu_state *cpu) {
     writeByte(address, value, cpu);
@@ -104,7 +111,7 @@ void inc_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag
-    (*reg & 0xF == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    ((*reg & 0xF) == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     *reg += 1;
     cpu->wait = opcodes[opcode].cycles;
 }
@@ -116,7 +123,7 @@ void inc_8_m(uint8 opcode, cpu_state *cpu) {
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag
-    (readByte(cpu->registers.HL, cpu) & 0xF == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    ((readByte(cpu->registers.HL, cpu) & 0xF) == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     writeByte(cpu->registers.HL, readByte(cpu->registers.HL, cpu) + 1, cpu);
     cpu->wait = opcodes[opcode].cycles;
 }
@@ -340,9 +347,23 @@ void bit(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = cbOpcodes[opcode].cycles;
 }
 
+//set flags based on the status of a bit in memory
+void bit_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
+    (readBitMem(bit)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(NF, cpu);
+    setFlag(HF, cpu);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
 //reset 1 bit
-void res(uint8 bit, uint8 *store, uint8 opcode, cpu_state *cpu) {
-    *store &= ~(0b1 << bit);
+void res(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    *reg &= ~(0b1 << bit);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
+//reset 1 bit in memory location stored in HL
+void res_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
+    writeByte(cpu->registers.HL, readByte(cpu->registers.HL, cpu) & ~(0b1 << bit), cpu);
     cpu->wait = cbOpcodes[opcode].cycles;
 }
 
@@ -357,11 +378,44 @@ int prefixCB(cpu_state *cpu) {
         case 0x37: //SWAP A
             swap(&cpu->registers.A, opcode, cpu);
             break;
+        case 0x40: //BIT 0, B
+            bit(0, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x48: //BIT 1, B
+            bit(1, &cpu->registers.B, opcode, cpu);
+            break;
         case 0x4F: //BIT 1, A
             bit(1, &cpu->registers.A, opcode, cpu);
             break;
+        case 0x50: //BIT 2, B
+            bit(2, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x58: //BIT 3, B
+            bit(3, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x60: //BIT 4, B
+            bit(4, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x68: //BIT 5, B
+            bit(5, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x70: //BIT 6, B
+            bit(6, &cpu->registers.B, opcode, cpu);
+            break;
         case 0x77: //BIT 6, A
             bit(6, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x78: //BIT 7, B
+            bit(7, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x7E: //BIT 7, (HL)
+            bit_m(7, opcode, cpu);
+            break;
+        case 0x7F: //BIT 7, A
+            bit(6, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x86: //RES 0, (HL)
+            res_m(0, opcode, cpu);
             break;
         case 0x87: //RES 0, A
             res(0, &cpu->registers.A, opcode, cpu);
@@ -388,6 +442,9 @@ int execute(struct cpu_state * cpu) {
         case 0x01: //LD BC, d16
             ld_16(twoBytes(cpu), &cpu->registers.BC, opcode, cpu);
             break;
+        case 0x03: //INC BC
+            inc_16(&cpu->registers.BC, opcode, cpu);
+            break;
         case 0x04: //INC B
             inc_8(&cpu->registers.B, opcode, cpu);
             break;
@@ -399,6 +456,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0x09: //ADD HL, BC
             add_16(cpu->registers.BC, &cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x0A: //LD A, (BC)
+            ld_8(readByte(cpu->registers.BC, cpu), &cpu->registers.A, opcode, cpu);
             break;
         case 0x0B: //DEC BC
             dec_16(&cpu->registers.BC, opcode, cpu);
@@ -472,6 +532,9 @@ int execute(struct cpu_state * cpu) {
         case 0x2C: //INC L
             inc_8(&cpu->registers.L, opcode, cpu);
             break;
+        case 0x2D: //DEC L
+            dec_8(&cpu->registers.L, opcode, cpu);
+            break;
         case 0x2F: //CPL
             cpl(opcode, cpu);
             break;
@@ -493,6 +556,9 @@ int execute(struct cpu_state * cpu) {
         case 0x39: //ADD HL, SP
             add_16(cpu->SP, &cpu->registers.HL, opcode, cpu);
             break;
+        case 0x3A: //LDD A, (HL)
+            ldd(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
+            break;
         case 0x3C: //INC A
             inc_8(&cpu->registers.A, opcode, cpu);
             break;
@@ -502,8 +568,26 @@ int execute(struct cpu_state * cpu) {
         case 0x3E: //LD A, d8
             ld_8(oneByte(cpu), &cpu->registers.A, opcode, cpu);
             break;
+        case 0x40: //LD B, B
+            ld_8(cpu->registers.B, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x41: //LD B, C
+            ld_8(cpu->registers.C, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x42: //LD B, D
+            ld_8(cpu->registers.D, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x43: //LD B, E
+            ld_8(cpu->registers.E, &cpu->registers.B, opcode, cpu);
+            break;
         case 0x44: //LD B, H
             ld_8(cpu->registers.H, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x45: //LD B, L
+            ld_8(cpu->registers.L, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x46: //LD B, (HL)
+            ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.B, opcode, cpu);
             break;
         case 0x47: //LD B, A
             ld_8(cpu->registers.A, &cpu->registers.B, opcode, cpu);
@@ -511,11 +595,29 @@ int execute(struct cpu_state * cpu) {
         case 0x4D: //LD C, L
             ld_8(cpu->registers.L, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x4E: //LD C, (HL)
+            ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.C, opcode, cpu);
+            break;
         case 0x4F: //LD C, A
             ld_8(cpu->registers.A, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x50: //LD D, B
+            ld_8(cpu->registers.B, &cpu->registers.D, opcode, cpu);
+            break;
         case 0x51: //LD D, C
             ld_8(cpu->registers.C, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x52: //LD D, D
+            ld_8(cpu->registers.D, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x53: //LD D, E
+            ld_8(cpu->registers.E, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x54: //LD D, H
+            ld_8(cpu->registers.H, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x55: //LD D, L
+            ld_8(cpu->registers.L, &cpu->registers.D, opcode, cpu);
             break;
         case 0x56: //LD D, (HL)
             ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.D, opcode, cpu);
@@ -523,17 +625,74 @@ int execute(struct cpu_state * cpu) {
         case 0x57: //LD D, A
             ld_8(cpu->registers.A, &cpu->registers.D, opcode, cpu);
             break;
+        case 0x58: //LD E, B
+            ld_8(cpu->registers.B, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x59: //LD E, C
+            ld_8(cpu->registers.C, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x5A: //LD E, D
+            ld_8(cpu->registers.D, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x5B: //LD E, E
+            ld_8(cpu->registers.E, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x5C: //lD E, H
+            ld_8(cpu->registers.H, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x5D: //LD E, L
+            ld_8(cpu->registers.L, &cpu->registers.E, opcode, cpu);
+            break;
         case 0x5E: //LD E, (HL)
             ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.E, opcode, cpu);
             break;
         case 0x5F: //LD E, A
             ld_8(cpu->registers.A, &cpu->registers.E, opcode, cpu);
             break;
+        case 0x60: //LD H, B
+            ld_8(cpu->registers.B, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x61: //LD H, C
+            ld_8(cpu->registers.C, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x62: //LD H, D
+            ld_8(cpu->registers.D, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x63: //LD H, E
+            ld_8(cpu->registers.E, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x64: //LD H, H
+            ld_8(cpu->registers.H, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x65: //LD H, L
+            ld_8(cpu->registers.L, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x66: //LD H, (HL)
+            ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x67: //LD H, A
+            ld_8(cpu->registers.A, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x69: //LD L, C
+            ld_8(cpu->registers.C, &cpu->registers.L, opcode, cpu);
+            break;
         case 0x6B: //LD L, E
             ld_8(cpu->registers.E, &cpu->registers.L, opcode, cpu);
             break;
         case 0x6F: //LD L, A
             ld_8(cpu->registers.A, &cpu->registers.L, opcode, cpu);
+            break;
+        case 0x70: //LD (HL), B
+            ld_8_m(cpu->registers.B, cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x71: //LD (HL), C
+            ld_8_m(cpu->registers.C, cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x72: //LD (HL), D
+            ld_8_m(cpu->registers.D, cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x73: //LD (HL), E
+            ld_8_m(cpu->registers.E, cpu->registers.HL, opcode, cpu);
             break;
         case 0x77: //LD (HL), A
             ld_8_m(cpu->registers.A, cpu->registers.HL, opcode, cpu);
@@ -547,6 +706,9 @@ int execute(struct cpu_state * cpu) {
         case 0x7A: //LD A, D
             ld_8(cpu->registers.D, &cpu->registers.A, opcode, cpu);
             break;
+        case 0x7B: //LD A, E
+            ld_8(cpu->registers.E, &cpu->registers.A, opcode, cpu);
+            break;
         case 0x7C: //LD A, H
             ld_8(cpu->registers.H, &cpu->registers.A, opcode, cpu);
             break;
@@ -556,7 +718,10 @@ int execute(struct cpu_state * cpu) {
         case 0x7E: //LD A, (HL)
             ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
             break;
-        case 0x87: //ADD 8
+        case 0x85: //ADD L
+            add_8(cpu->registers.L, opcode, cpu);
+            break;
+        case 0x87: //ADD A
             add_8(cpu->registers.A, opcode, cpu);
             break;
         case 0xA1: //AND C
@@ -582,6 +747,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0xC1: //POP BC
             pop(&cpu->registers.BC, opcode, cpu);
+            break;
+        case 0xC2: //JP NZ, a16
+            jp_c(twoBytes(cpu), !readFlag(ZF, cpu), opcode, cpu);
             break;
         case 0xC3: //JP a16
             jp_c(twoBytes(cpu), true, opcode, cpu); //will always jump so set condition to be true
@@ -613,6 +781,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0xD1: //POP DE
             pop(&cpu->registers.DE, opcode, cpu);
+            break;
+        case 0xD2: //JP NC, a16
+            jp_c(twoBytes(cpu), !readFlag(CF, cpu), opcode, cpu);
             break;
         case 0xD5: //PUSH DE
             push(cpu->registers.DE, opcode, cpu);
@@ -661,6 +832,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0xF5: //PUSH AF
             push(cpu->registers.AF, opcode, cpu);
+            break;
+        case 0xF6: //OR d8
+            or(oneByte(cpu), opcode, cpu);
             break;
         case 0xFA: //LD A, (a16)
             ld_8(readByte(twoBytes(cpu), cpu), &cpu->registers.A, opcode, cpu);
