@@ -393,7 +393,7 @@ const struct cbOpcode cbOpcodes[256] = {
     { "0xCB24 ", 8 },
     { "0xCB25 ", 8 },
     { "0xCB26 ", 16 },
-    { "0xCB27 ", 8 },
+    { "0xCB27 SLA A", 8 },
     { "0xCB28 ", 8 },
     { "0xCB29 ", 8 },
     { "0xCB2A ", 8 },

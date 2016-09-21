@@ -311,6 +311,17 @@ void or(uint8 value, uint8 opcode, cpu_state *cpu) {
 
 /* ==== CB PREFIX INSTRUCTIONS ==== */
 
+//left shift a given register. Set new bit 0 to 0 and put the old 8th bit into the carry flag.
+void sla(uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    //set carry flag based on 8th bit
+    (*reg >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //shift left
+    *reg = *reg << 1;
+    //zero flag
+    (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
 //swap the upper and lower nibbles of some register
 void swap(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     clearFlag(NF, cpu);
@@ -340,6 +351,9 @@ int prefixCB(cpu_state *cpu) {
     //grab instruction
     uint8 opcode = readNextByte(cpu);
     switch(opcode) {
+        case 0x27: //SLA A
+            sla(&cpu->registers.A, opcode, cpu);
+            break;
         case 0x37: //SWAP A
             swap(&cpu->registers.A, opcode, cpu);
             break;
