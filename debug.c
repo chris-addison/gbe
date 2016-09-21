@@ -16,21 +16,21 @@ static void debug(cpu_state * cpu) {
         } else if (!strcmp(r, command)) {
             //print registers
             printf("A:\t");
-            printByteUnsigned(cpu->registers.A);
+            printByte(cpu->registers.A);
             printf("\tF:\t");
-            printByteUnsigned(cpu->registers.F);
+            printByte(cpu->registers.F);
             printf("\nB:\t");
-            printByteUnsigned(cpu->registers.B);
+            printByte(cpu->registers.B);
             printf("\tC:\t");
-            printByteUnsigned(cpu->registers.C);
+            printByte(cpu->registers.C);
             printf("\nD:\t");
-            printByteUnsigned(cpu->registers.D);
+            printByte(cpu->registers.D);
             printf("\tE:\t");
-            printByteUnsigned(cpu->registers.E);
+            printByte(cpu->registers.E);
             printf("\nH:\t");
-            printByteUnsigned(cpu->registers.H);
+            printByte(cpu->registers.H);
             printf("\tL:\t");
-            printByteUnsigned(cpu->registers.L);
+            printByte(cpu->registers.L);
             printf("\nCF:\t");
             (readFlag(CF, cpu)) ? printf("1") : printf("0");
             printf("\tHF:\t");
@@ -52,17 +52,17 @@ static void debug(cpu_state * cpu) {
             printf("\nPC:\t");
             printShort(cpu->PC);
             printf("\nLCDC:\t");
-            printByteUnsigned(cpu->MEM[LCDC]);
+            printByte(cpu->MEM[LCDC]);
             printf("\tLY:\t");
-            printByteUnsigned(cpu->MEM[SCANLINE]);
+            printByte(cpu->MEM[SCANLINE]);
             printf("\tSTAT:\t");
-            printByteUnsigned(cpu->MEM[STAT]);
+            printByte(cpu->MEM[STAT]);
             printf("\nIME:\t");
             printf("%d", cpu->ime);
             printf("\tIE:\t");
-            printByteUnsigned(cpu->MEM[INTERRUPTS_ENABLED]);
+            printByte(cpu->MEM[INTERRUPTS_ENABLED]);
             printf("\tIF:\t");
-            printByteUnsigned(cpu->MEM[INTERRUPT_FLAGS]);
+            printByte(cpu->MEM[INTERRUPT_FLAGS]);
             printf("\n");
         }
         scanf("%10s", command);

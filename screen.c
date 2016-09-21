@@ -21,7 +21,7 @@ static void setScanline(uint8 scanline, cpu_state *cpu) {
 //set the current screen mode in the STAT register in memory
 static void setMode(uint8 mode, cpu_state *cpu) {
     //fetch current STAT and set the correct lower two bits
-    writeByte(STAT, (readByte(STAT, cpu) && ~0b11) | mode, cpu);
+    writeByte(STAT, (readByte(STAT, cpu) & ~0b11) | mode, cpu);
 }
 
 //logic to control the screen
@@ -52,6 +52,8 @@ void updateScreen(cpu_state *cpu) {
                 if (readScanline(cpu) > 143) {
                     //write new status to the the STAT register
                     setMode(V_BLANK, cpu);
+                    //set an interrupt flag
+                    setInterruptFlag(INTR_V_BLANK, cpu);
                 } else {
                     setMode(OAM, cpu);
                 }

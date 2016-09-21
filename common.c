@@ -76,7 +76,7 @@ static bool readBit(uint8 bit, uint8 *store) {
 }
 
 //print unsigned byte to standard input
-static void printByteUnsigned(uint8 byte) {
+static void printByte(uint8 byte) {
     printf("0x%02" PRIX8, byte);
 }
 

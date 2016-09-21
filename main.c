@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
             }
             //debug
             if (startDebugging) {
-                printByteUnsigned(readByte(0xFF85, cpu));
+                printByte(readByte(0xFF85, cpu));
                 printf("\n");
                 debug(cpu);
             }
