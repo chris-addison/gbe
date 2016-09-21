@@ -15,9 +15,19 @@ static void updateIME(cpu_state *cpu) {
     }
 }
 
+//set interrupt flag
+static void setInterruptFlag(uint8 flag, cpu_state *cpu) {
+    writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) | flag, cpu);
+}
+
+//clear interrupt flag
+static void clearInterruptFlag(uint8 flag, cpu_state *cpu) {
+    writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) & ~flag, cpu);
+}
+
 //save the PC, jump to interrupt handler, and reset the ime
 static void interruptVBlank(cpu_state *cpu) {
-    writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) & ~0b1, cpu);
+    clearInterruptFlag(INTR_V_BLANK, cpu);
     cpu->ime = false;
     writeShortToStack(cpu->PC, cpu);
     cpu->PC = 0x40;
@@ -26,9 +36,11 @@ static void interruptVBlank(cpu_state *cpu) {
 
 //check interrupts and act on them
 static void checkInterrupts(cpu_state *cpu) {
+    //printByte(readByte(INTERRUPT_FLAGS, cpu));
     if (cpu->ime && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
         uint8 interrupt = readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);
         if (interrupt & INTR_V_BLANK) {
+            printf("intr v blnk\n");
             interruptVBlank(cpu);
         }
         if (interrupt & INTR_STAT) {
