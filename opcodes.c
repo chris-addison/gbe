@@ -349,7 +349,7 @@ void bit(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
 
 //set flags based on the status of a bit in memory
 void bit_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
-    (readBitMem(bit)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    (readBitMem(bit, cpu)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     clearFlag(NF, cpu);
     setFlag(HF, cpu);
     cpu->wait = cbOpcodes[opcode].cycles;
