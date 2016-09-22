@@ -99,7 +99,7 @@ static void printShort(uint16 twoBytes) {
 //print given instruction instruction
 static void printInstruction(bool showPC, uint16 PC, cpu_state *cpu) {
     if (showPC) {
-        printShort(cpu->PC);
+        printShort(PC);
         printf(":  ");
     }
     uint8 opcode = readByte(PC, cpu);

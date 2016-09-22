@@ -339,6 +339,52 @@ void or(uint8 value, uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
+//decimal adjust register A. Hex to Binary Coded Decimal. This makes the max
+//value of every byte 9 to allow for easy translation into decimal values.
+void daa(uint8 opcode, cpu_state *cpu) {
+    uint8 correction = 0;
+    //check whether the last operation was subtraction
+    if (!readFlag(NF, cpu)) { //addition
+        //correct lower byte. If value is greater than 9, push the excess to the
+        //next byte. If half-carry flag set, restore the lost value. essentually,
+        //half carry happens when the byte has a vlue greater than 15. 16 is then
+        //carried over to the next byte. in BCD this is only a carry of 10, so
+        //to correct one must restore the excess 6 to the lower byte.
+        if (readFlag(HF, cpu) || ((cpu->registers.A & 0xF) > 0x09)) {
+            correction += 0x06;
+        }
+        //correct upper byte. Similar to above regarding the situation with the
+        //half-carry flag except in the larger byte this is the carry flag instead
+        if (readFlag(CF, cpu) || (cpu->registers.A > 0x9F)) {
+            correction += 0x60;
+        }
+        //carry flag - can only be set, not cleared
+        if (((uint16)cpu->registers.A) + ((uint16)correction) > 0xFF) setFlag(CF, cpu);
+        //assign value
+        cpu->registers.A += correction;
+    } else { //subtraction
+        //correct lower byte. Same idea as explained above, but in reverse
+        if (readFlag(HF, cpu)) {
+            correction += 0x06;
+        }
+        //correct upper byte. Same idea as explained above, but in reverse
+        if (readFlag(CF, cpu)) {
+            correction += 0x60;
+        }
+        //carry flag - can only be set, not cleared
+        if (cpu->registers.A < correction) setFlag(CF, cpu);
+        //assign value
+        cpu->registers.A -= correction;
+    }
+    //half-carry flag
+    clearFlag(HF, cpu);
+    //zero flag
+    (cpu->registers.A) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    cpu->wait = opcodes[opcode].cycles;
+    //printInstruction(true, cpu->PC - 1, cpu);
+    //debug(cpu);
+}
+
 /* ==== CB PREFIX INSTRUCTIONS ==== */
 
 //left shift a given register. Set new bit 0 to 0 and put the old bit 7 into the carry flag
@@ -440,11 +486,17 @@ int prefixCB(cpu_state *cpu) {
         case 0x40: //BIT 0, B
             bit(0, &cpu->registers.B, opcode, cpu);
             break;
+        case 0x41: //BIT 0, C
+            bit(0, &cpu->registers.C, opcode, cpu);
+            break;
         case 0x47: //BIT 0, A
             bit(0, &cpu->registers.A, opcode, cpu);
             break;
         case 0x48: //BIT 1, B
             bit(1, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x49: //BIT 1, C
+            bit(1, &cpu->registers.C, opcode, cpu);
             break;
         case 0x4F: //BIT 1, A
             bit(1, &cpu->registers.A, opcode, cpu);
@@ -452,11 +504,17 @@ int prefixCB(cpu_state *cpu) {
         case 0x50: //BIT 2, B
             bit(2, &cpu->registers.B, opcode, cpu);
             break;
+        case 0x51: //BIT 2, C
+            bit(2, &cpu->registers.C, opcode, cpu);
+            break;
         case 0x57: //BIT 2, A
             bit(2, &cpu->registers.A, opcode, cpu);
             break;
         case 0x58: //BIT 3, B
             bit(3, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x59: //BIT 3, C
+            bit(3, &cpu->registers.C, opcode, cpu);
             break;
         case 0x5F: //BIT 3, A
             bit(3, &cpu->registers.A, opcode, cpu);
@@ -464,11 +522,17 @@ int prefixCB(cpu_state *cpu) {
         case 0x60: //BIT 4, B
             bit(4, &cpu->registers.B, opcode, cpu);
             break;
+        case 0x61: //BIT 4, C
+            bit(4, &cpu->registers.C, opcode, cpu);
+            break;
         case 0x67: //BIT 4, A
             bit(4, &cpu->registers.A, opcode, cpu);
             break;
         case 0x68: //BIT 5, B
             bit(5, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x69: //BIT 5, C
+            bit(5, &cpu->registers.C, opcode, cpu);
             break;
         case 0x6F: //BIT 5, A
             bit(5, &cpu->registers.A, opcode, cpu);
@@ -476,11 +540,17 @@ int prefixCB(cpu_state *cpu) {
         case 0x70: //BIT 6, B
             bit(6, &cpu->registers.B, opcode, cpu);
             break;
+        case 0x71: //BIT 6, C
+            bit(6, &cpu->registers.C, opcode, cpu);
+            break;
         case 0x77: //BIT 6, A
             bit(6, &cpu->registers.A, opcode, cpu);
             break;
         case 0x78: //BIT 7, B
             bit(7, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x79: //BIT 7, C
+            bit(7, &cpu->registers.C, opcode, cpu);
             break;
         case 0x7E: //BIT 7, (HL)
             bit_m(7, opcode, cpu);
@@ -600,6 +670,9 @@ int execute(cpu_state * cpu) {
         case 0x26: //LD H, d8
             ld_8(oneByte(cpu), &cpu->registers.H, opcode, cpu);
             break;
+        case 0x27: //DAA
+            daa(opcode, cpu);
+            break;
         case 0x28: //JR Z,r8
             jr_c_8(oneByteSigned(cpu), readFlag(ZF, cpu), opcode, cpu);
             break;
@@ -618,6 +691,8 @@ int execute(cpu_state * cpu) {
         case 0x2F: //CPL
             cpl(opcode, cpu);
             break;
+        case 0x30: //JR NC
+            jr_c_8(oneByteSigned(cpu), !readFlag(CF, cpu), opcode, cpu);
         case 0x31: //LD SP, d16
             ld_16(twoBytes(cpu), &cpu->SP, opcode, cpu);
             break;
@@ -804,20 +879,56 @@ int execute(cpu_state * cpu) {
         case 0x85: //ADD L
             add_8(cpu->registers.L, opcode, cpu);
             break;
+        case 0x86: //ADD (HL)
+            add_8(readByte(cpu->registers.HL, cpu), opcode, cpu);
+            break;
         case 0x87: //ADD A
             add_8(cpu->registers.A, opcode, cpu);
             break;
         case 0x89: //ADC C
             adc(cpu->registers.C, opcode, cpu);
             break;
+        case 0x8E: //ADC (HL)
+            adc(readByte(cpu->registers.HL, cpu), opcode, cpu);
+            break;
+        case 0xA0: //AND B
+            and(cpu->registers.B, opcode, cpu);
+            break;
         case 0xA1: //AND C
             and(cpu->registers.C, opcode, cpu);
+            break;
+        case 0xA2: //AND D
+            and(cpu->registers.D, opcode, cpu);
+            break;
+        case 0xA3: //AND E
+            and(cpu->registers.E, opcode, cpu);
+            break;
+        case 0xA4: //AND H
+            and(cpu->registers.H, opcode, cpu);
+            break;
+        case 0xA5: //AND L
+            and(cpu->registers.L, opcode, cpu);
             break;
         case 0xA7: //AND A
             and(cpu->registers.A, opcode, cpu);
             break;
+        case 0xA8: //XOR B
+            xor(cpu->registers.B, opcode, cpu);
+            break;
         case 0xA9: //XOR C
             xor(cpu->registers.C, opcode, cpu);
+            break;
+        case 0x9A: //XOR D
+            xor(cpu->registers.D, opcode, cpu);
+            break;
+        case 0x9B: //XOR E
+            xor(cpu->registers.E, opcode, cpu);
+            break;
+        case 0x9C: //XOR H
+            xor(cpu->registers.H, opcode, cpu);
+            break;
+        case 0x9D: //XOR L
+            xor(cpu->registers.L, opcode, cpu);
             break;
         case 0xAF: //XOR A
             xor(cpu->registers.A, opcode, cpu);
@@ -829,7 +940,29 @@ int execute(cpu_state * cpu) {
             or(cpu->registers.C, opcode, cpu);
             break;
         case 0xB8: //CP B
-            cp()
+            cp(cpu->registers.B, opcode, cpu);
+            break;
+        case 0xB9: //CP C
+            cp(cpu->registers.C, opcode, cpu);
+            break;
+        case 0xBA: //CP D
+            cp(cpu->registers.D, opcode, cpu);
+            break;
+        case 0xBB: //CP E
+            cp(cpu->registers.E, opcode, cpu);
+            break;
+        case 0xBC: //CP H
+            cp(cpu->registers.H, opcode, cpu);
+            break;
+        case 0xBD: //CP L
+            cp(cpu->registers.L, opcode, cpu);
+            break;
+        case 0xBE: //CP (HL)
+            cp(readByte(cpu->registers.HL, cpu), opcode, cpu);
+            break;
+        case 0xBF: //CP A
+            cp(cpu->registers.A, opcode, cpu);
+            break;
         case 0xC0: //RET NZ
             ret_c(!readFlag(ZF, cpu), opcode, cpu);
             break;
@@ -866,6 +999,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0xCD: //CALL a16
             call_c(true, twoBytes(cpu), opcode, cpu);
+            break;
+        case 0xD0: //RET NC
+            ret_c(!readFlag(CF, cpu), opcode, cpu);
             break;
         case 0xD1: //POP DE
             pop(&cpu->registers.DE, opcode, cpu);

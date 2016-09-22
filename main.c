@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
             //printInstruction(true, cpu->PC, cpu);
             //breakpoints
             //0x284, 0x282A, 0x03EC, 0x03F5
-            if (cpu->PC == 0x6D4E && DEBUG) {
+            if (cpu->PC == 0x2186 && DEBUG) {
                 //startDebugging = true;
             }
             //debug
