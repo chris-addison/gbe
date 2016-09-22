@@ -9,7 +9,7 @@ static uint8 readByte(uint16 address, cpu_state *cpu) {
 }
 
 //read next byte from the instruction pointer
-static uint8 readNextByte(struct cpu_state *cpu) {
+static uint8 readNextByte(cpu_state *cpu) {
     uint8 byte = readByte(cpu->PC, cpu);
     cpu->PC++;
     return byte;

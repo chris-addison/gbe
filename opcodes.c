@@ -1,23 +1,24 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
 
-uint8 oneByte(struct cpu_state *cpu) {
+uint8 oneByte(cpu_state *cpu) {
     return readNextByte(cpu);
 }
 
-int8 oneByteSigned(struct cpu_state *cpu) {
+int8 oneByteSigned(cpu_state *cpu) {
     return (int8)readNextByte(cpu);
 }
 
 //read a short from memory
-uint16 twoBytes(struct cpu_state *cpu) {
+uint16 twoBytes(cpu_state *cpu) {
 	uint16 lsb = (uint16)readNextByte(cpu); //read least significant byte first
 	uint16 msb = ((uint16)readNextByte(cpu)) << 8; //then read most significant byte
     return lsb | msb;
 }
 
 //compare instruction
-void cp(uint8 a, uint8 b, uint8 instruction, struct cpu_state *cpu) {
+void cp(uint8 b, uint8 opcode, cpu_state *cpu) {
+    uint8 a = cpu->registers.A;
     //set flags
     (a - b == 0) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
     //cpu->FLAGS[ZF] = (temp == 0); //zero flag
@@ -27,11 +28,11 @@ void cp(uint8 a, uint8 b, uint8 instruction, struct cpu_state *cpu) {
     //cpu->FLAGS[HF] = ((a & 0xF) < (b & 0xF)); //half-carry flag
     (a < b) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //cpu->FLAGS[CF] = (a < b); //carry flag
-    cpu->wait = opcodes[instruction].cycles;
+    cpu->wait = opcodes[opcode].cycles;
 }
 
 //jump to a 16bit address if condition is set
-void jp_c(uint16 address, bool set, uint8 opcode, struct cpu_state *cpu) {
+void jp_c(uint16 address, bool set, uint8 opcode, cpu_state *cpu) {
     if (set) {
         cpu->PC = address;
         cpu->wait = opcodes[opcode].cyclesMax;
@@ -42,7 +43,7 @@ void jp_c(uint16 address, bool set, uint8 opcode, struct cpu_state *cpu) {
 }
 
 //jump relative to PC if condition is met
-void jr_c_8(int8 address, bool set, uint8 opcode, struct cpu_state *cpu) {
+void jr_c_8(int8 address, bool set, uint8 opcode, cpu_state *cpu) {
     if (set) {
         cpu->PC += address;
         cpu->wait = opcodes[opcode].cyclesMax;
@@ -211,7 +212,7 @@ void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
 }
 
 //8 bit add between the A register, some value, and the carry flag
-void adc(uint8 value, uint8* reg, uint8 opcode, cpu_state *cpu) {
+void adc(uint8 value, uint8 opcode, cpu_state *cpu) {
     add_8(value + readFlag(CF, cpu), opcode, cpu);
 }
 
@@ -502,7 +503,7 @@ int prefixCB(cpu_state *cpu) {
 }
 
 //execute next instruction
-int execute(struct cpu_state * cpu) {
+int execute(cpu_state * cpu) {
     //printInstruction(cpu->PC, cpu);
     //grab instruction
     uint8 opcode = readNextByte(cpu);
@@ -806,6 +807,9 @@ int execute(struct cpu_state * cpu) {
         case 0x87: //ADD A
             add_8(cpu->registers.A, opcode, cpu);
             break;
+        case 0x89: //ADC C
+            adc(cpu->registers.C, opcode, cpu);
+            break;
         case 0xA1: //AND C
             and(cpu->registers.C, opcode, cpu);
             break;
@@ -824,6 +828,8 @@ int execute(struct cpu_state * cpu) {
         case 0xB1: //OR C
             or(cpu->registers.C, opcode, cpu);
             break;
+        case 0xB8: //CP B
+            cp()
         case 0xC0: //RET NZ
             ret_c(!readFlag(ZF, cpu), opcode, cpu);
             break;
@@ -925,7 +931,7 @@ int execute(struct cpu_state * cpu) {
             ei(opcode, cpu);
             break;
         case 0xFE: //CP d8
-            cp(cpu->registers.A, oneByte(cpu), opcode, cpu);
+            cp(oneByte(cpu), opcode, cpu);
             break;
         case 0xFF: //RST 0x38
             rst(0x38, opcode, cpu);
