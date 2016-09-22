@@ -318,7 +318,7 @@ void or(uint8 value, uint8 opcode, cpu_state *cpu) {
 
 /* ==== CB PREFIX INSTRUCTIONS ==== */
 
-//left shift a given register. Set new bit 0 to 0 and put the old 8th bit into the carry flag.
+//left shift a given register. Set new bit 0 to 0 and put the old bit 7 into the carry flag
 void sla(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //set carry flag based on 8th bit
     (*reg >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
@@ -326,6 +326,21 @@ void sla(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     *reg = *reg << 1;
     //zero flag
     (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
+//logical right shift of given register. Set new bit 7 to 0 and put the old bit 0 into carry flag
+void srl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    //set carry bit based on 1st bit
+    (*reg & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //shift right
+    *reg = *reg >> 1;
+    //zero flag
+    (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
     cpu->wait = cbOpcodes[opcode].cycles;
 }
 
@@ -377,6 +392,9 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x37: //SWAP A
             swap(&cpu->registers.A, opcode, cpu);
+            break;
+        case 0x3F: //SRL A
+            srl(&cpu->registers.A, opcode, cpu);
             break;
         case 0x40: //BIT 0, B
             bit(0, &cpu->registers.B, opcode, cpu);
@@ -501,6 +519,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0x1D: //DEC E
             dec_8(&cpu->registers.E, opcode, cpu);
+            break;
+        case 0x1E: //LD E, d8
+            ld_8(oneByte(cpu), &cpu->registers.E, opcode, cpu);
             break;
         case 0x20: //JR NZ, r8
             jr_c_8(oneByteSigned(cpu), !readFlag(ZF, cpu), opcode, cpu);
