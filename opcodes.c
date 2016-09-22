@@ -918,17 +918,20 @@ int execute(cpu_state * cpu) {
         case 0xA9: //XOR C
             xor(cpu->registers.C, opcode, cpu);
             break;
-        case 0x9A: //XOR D
+        case 0xAA: //XOR D
             xor(cpu->registers.D, opcode, cpu);
             break;
-        case 0x9B: //XOR E
+        case 0xAB: //XOR E
             xor(cpu->registers.E, opcode, cpu);
             break;
-        case 0x9C: //XOR H
+        case 0xAC: //XOR H
             xor(cpu->registers.H, opcode, cpu);
             break;
-        case 0x9D: //XOR L
+        case 0xAD: //XOR L
             xor(cpu->registers.L, opcode, cpu);
+            break;
+        case 0xAE: //XOR (HL)
+            xor(readByte(cpu->registers.HL, cpu), opcode, cpu);
             break;
         case 0xAF: //XOR A
             xor(cpu->registers.A, opcode, cpu);
