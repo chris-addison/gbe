@@ -40,7 +40,6 @@ static void checkInterrupts(cpu_state *cpu) {
     if (cpu->ime && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
         uint8 interrupt = readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);
         if (interrupt & INTR_V_BLANK) {
-            printf("intr v blnk\n");
             interruptVBlank(cpu);
         }
         if (interrupt & INTR_STAT) {

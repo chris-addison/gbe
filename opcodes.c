@@ -210,6 +210,28 @@ void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
+//8 bit add between the A register, some value, and the carry flag
+void adc(uint8 value, uint8* reg, uint8 opcode, cpu_state *cpu) {
+    add_8(value + readFlag(CF, cpu), opcode, cpu);
+}
+
+//rotate register A left, old bit 7 to carry bit and bit 0
+void rlca(uint8 opcode, cpu_state *cpu) {
+    //set carry flag based on bit 7
+    if (cpu->registers.A >> 7) {
+        setFlag(CF, cpu);
+    } else {
+        clearFlag(CF, cpu);
+    }
+    //shift left and use carry flag/bit 7 as new bit 0
+    cpu->registers.A = (cpu->registers.A << 1) | readFlag(CF, cpu);
+    //zero flag
+    (cpu->registers.A) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
 //complement the A register
 void cpl(uint8 opcode, cpu_state *cpu) {
     setFlag(NF, cpu);
@@ -390,6 +412,24 @@ int prefixCB(cpu_state *cpu) {
         case 0x27: //SLA A
             sla(&cpu->registers.A, opcode, cpu);
             break;
+        case 0x30: //SWAP B
+            swap(&cpu->registers.B, opcode, cpu);
+            break;
+        case 0x31: //SWAP C
+            swap(&cpu->registers.C, opcode, cpu);
+            break;
+        case 0x32: //SWAP D
+            swap(&cpu->registers.D, opcode, cpu);
+            break;
+        case 0x33: //SWAP E
+            swap(&cpu->registers.E, opcode, cpu);
+            break;
+        case 0x34: //SWAP H
+            swap(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x35: //SWAP L
+            swap(&cpu->registers.L, opcode, cpu);
+            break;
         case 0x37: //SWAP A
             swap(&cpu->registers.A, opcode, cpu);
             break;
@@ -398,6 +438,9 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x40: //BIT 0, B
             bit(0, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x47: //BIT 0, A
+            bit(0, &cpu->registers.A, opcode, cpu);
             break;
         case 0x48: //BIT 1, B
             bit(1, &cpu->registers.B, opcode, cpu);
@@ -408,14 +451,26 @@ int prefixCB(cpu_state *cpu) {
         case 0x50: //BIT 2, B
             bit(2, &cpu->registers.B, opcode, cpu);
             break;
+        case 0x57: //BIT 2, A
+            bit(2, &cpu->registers.A, opcode, cpu);
+            break;
         case 0x58: //BIT 3, B
             bit(3, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x5F: //BIT 3, A
+            bit(3, &cpu->registers.A, opcode, cpu);
             break;
         case 0x60: //BIT 4, B
             bit(4, &cpu->registers.B, opcode, cpu);
             break;
+        case 0x67: //BIT 4, A
+            bit(4, &cpu->registers.A, opcode, cpu);
+            break;
         case 0x68: //BIT 5, B
             bit(5, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x6F: //BIT 5, A
+            bit(5, &cpu->registers.A, opcode, cpu);
             break;
         case 0x70: //BIT 6, B
             bit(6, &cpu->registers.B, opcode, cpu);
@@ -471,6 +526,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0x06: //LD B, d8
             ld_8(oneByte(cpu), &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x07: //RLCA
+            rlca(opcode, cpu);
             break;
         case 0x09: //ADD HL, BC
             add_16(cpu->registers.BC, &cpu->registers.HL, opcode, cpu);
@@ -738,6 +796,9 @@ int execute(struct cpu_state * cpu) {
             break;
         case 0x7E: //LD A, (HL)
             ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x80: //ADD B
+            add_8(cpu->registers.B, opcode, cpu);
             break;
         case 0x85: //ADD L
             add_8(cpu->registers.L, opcode, cpu);
