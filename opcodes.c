@@ -32,7 +32,7 @@ void cp(uint8 b, uint8 opcode, cpu_state *cpu) {
 }
 
 //jump to a 16bit address if condition is set
-void jp_c(uint16 address, bool set, uint8 opcode, cpu_state *cpu) {
+void jp_c(bool set, uint16 address, uint8 opcode, cpu_state *cpu) {
     if (set) {
         cpu->PC = address;
         cpu->wait = opcodes[opcode].cyclesMax;
@@ -213,6 +213,11 @@ void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
 
 //8 bit add between the A register, some value, and the carry flag
 void adc(uint8 value, uint8 opcode, cpu_state *cpu) {
+    add_8(value + readFlag(CF, cpu), opcode, cpu);
+}
+
+//8 bit subtract between the A register, some value, and the carry flag
+void sbc(uint8 value, uint8 opcode, cpu_state *cpu) {
     add_8(value + readFlag(CF, cpu), opcode, cpu);
 }
 
@@ -586,6 +591,9 @@ int execute(cpu_state * cpu) {
         case 0x01: //LD BC, d16
             ld_16(twoBytes(cpu), &cpu->registers.BC, opcode, cpu);
             break;
+        case 0x02: //LD (BC), A
+            ld_8_m(cpu->registers.A, cpu->registers.BC, opcode, cpu);
+            break;
         case 0x03: //INC BC
             inc_16(&cpu->registers.BC, opcode, cpu);
             break;
@@ -828,11 +836,26 @@ int execute(cpu_state * cpu) {
         case 0x67: //LD H, A
             ld_8(cpu->registers.A, &cpu->registers.H, opcode, cpu);
             break;
+        case 0x68: //LD L, B
+            ld_8(cpu->registers.B, &cpu->registers.L, opcode, cpu);
+            break;
         case 0x69: //LD L, C
             ld_8(cpu->registers.C, &cpu->registers.L, opcode, cpu);
             break;
+        case 0x6A: //LD L, D
+            ld_8(cpu->registers.D, &cpu->registers.L, opcode, cpu);
+            break;
         case 0x6B: //LD L, E
             ld_8(cpu->registers.E, &cpu->registers.L, opcode, cpu);
+            break;
+        case 0x6C: //LD L, H
+            ld_8(cpu->registers.H, &cpu->registers.L, opcode, cpu);
+            break;
+        case 0x6D: //LD L, L
+            ld_8(cpu->registers.L, &cpu->registers.L, opcode, cpu);
+            break;
+        case 0x6E: //LD L, (HL)
+            ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.L, opcode, cpu);
             break;
         case 0x6F: //LD L, A
             ld_8(cpu->registers.A, &cpu->registers.L, opcode, cpu);
@@ -873,8 +896,23 @@ int execute(cpu_state * cpu) {
         case 0x7E: //LD A, (HL)
             ld_8(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
             break;
+        case 0x7F: //LD A, A
+            ld_8(cpu->registers.A, &cpu->registers.A, opcode, cpu);
+            break;
         case 0x80: //ADD B
             add_8(cpu->registers.B, opcode, cpu);
+            break;
+        case 0x81: //ADD C
+            add_8(cpu->registers.C, opcode, cpu);
+            break;
+        case 0x82: //ADD D
+            add_8(cpu->registers.D, opcode, cpu);
+            break;
+        case 0x83: //ADD E
+            add_8(cpu->registers.E, opcode, cpu);
+            break;
+        case 0x84: //ADD H
+            add_8(cpu->registers.H, opcode, cpu);
             break;
         case 0x85: //ADD L
             add_8(cpu->registers.L, opcode, cpu);
@@ -885,11 +923,77 @@ int execute(cpu_state * cpu) {
         case 0x87: //ADD A
             add_8(cpu->registers.A, opcode, cpu);
             break;
+        case 0x88: //ADC B
+            adc(cpu->registers.B, opcode, cpu);
+            break;
         case 0x89: //ADC C
             adc(cpu->registers.C, opcode, cpu);
             break;
+        case 0x8A: //ADC D
+            adc(cpu->registers.D, opcode, cpu);
+            break;
+        case 0x8B: //ADC E
+            adc(cpu->registers.E, opcode, cpu);
+            break;
+        case 0x8C: //ADC H
+            adc(cpu->registers.C, opcode, cpu);
+            break;
+        case 0x8D: //ADC L
+            adc(cpu->registers.L, opcode, cpu);
+            break;
         case 0x8E: //ADC (HL)
             adc(readByte(cpu->registers.HL, cpu), opcode, cpu);
+            break;
+        case 0x8F: //ADC A
+            adc(cpu->registers.A, opcode, cpu);
+            break;
+        case 0x90: //SUB B
+            sub_8(cpu->registers.B, opcode, cpu);
+            break;
+        case 0x91: //SUB C
+            sub_8(cpu->registers.C, opcode, cpu);
+            break;
+        case 0x92: //SUB D
+            sub_8(cpu->registers.D, opcode, cpu);
+            break;
+        case 0x93: //SUB E
+            sub_8(cpu->registers.E, opcode, cpu);
+            break;
+        case 0x94: //SUB H
+            sub_8(cpu->registers.H, opcode, cpu);
+            break;
+        case 0x95: //SUB L
+            sub_8(cpu->registers.L, opcode, cpu);
+            break;
+        case 0x96: //SUB (HL)
+            sub_8(readByte(cpu->registers.HL, cpu), opcode, cpu);
+            break;
+        case 0x97: //SUB A
+            sub_8(cpu->registers.A, opcode, cpu);
+            break;
+        case 0x98: //SBC B
+            sbc(cpu->registers.B, opcode, cpu);
+            break;
+        case 0x99: //SBC C
+            sbc(cpu->registers.C, opcode, cpu);
+            break;
+        case 0x9A: //SBC D
+            sbc(cpu->registers.D, opcode, cpu);
+            break;
+        case 0x9B: //SBC E
+            sbc(cpu->registers.E, opcode, cpu);
+            break;
+        case 0x9C: //SBC H
+            sbc(cpu->registers.H, opcode, cpu);
+            break;
+        case 0x9D: //SBC L
+            sbc(cpu->registers.L, opcode, cpu);
+            break;
+        case 0x9E: //SBC (HL)
+            sbc(readByte(cpu->registers.HL, cpu), opcode, cpu);
+            break;
+        case 0x9F: //SBC A
+            sbc(cpu->registers.A, opcode, cpu);
             break;
         case 0xA0: //AND B
             and(cpu->registers.B, opcode, cpu);
@@ -942,6 +1046,24 @@ int execute(cpu_state * cpu) {
         case 0xB1: //OR C
             or(cpu->registers.C, opcode, cpu);
             break;
+        case 0xB2: //OR D
+            or(cpu->registers.D, opcode, cpu);
+            break;
+        case 0xB3: //OR E
+            or(cpu->registers.E, opcode, cpu);
+            break;
+        case 0xB4: //OR H
+            or(cpu->registers.H, opcode, cpu);
+            break;
+        case 0xB5: //OR L
+            or(cpu->registers.L, opcode, cpu);
+            break;
+        case 0xB6: //OR (HL)
+            or(readByte(cpu->registers.HL, cpu), opcode, cpu);
+            break;
+        case 0xB7: //OR A
+            or(cpu->registers.A, opcode, cpu);
+            break;
         case 0xB8: //CP B
             cp(cpu->registers.B, opcode, cpu);
             break;
@@ -973,10 +1095,10 @@ int execute(cpu_state * cpu) {
             pop(&cpu->registers.BC, opcode, cpu);
             break;
         case 0xC2: //JP NZ, a16
-            jp_c(twoBytes(cpu), !readFlag(ZF, cpu), opcode, cpu);
+            jp_c(!readFlag(ZF, cpu), twoBytes(cpu), opcode, cpu);
             break;
         case 0xC3: //JP a16
-            jp_c(twoBytes(cpu), true, opcode, cpu); //will always jump so set condition to be true
+            jp_c(true, twoBytes(cpu), opcode, cpu); //will always jump so set condition to be true
             break;
         case 0xC4: //CALL NZ, a16
             call_c(!readFlag(ZF, cpu), twoBytes(cpu), opcode, cpu);
@@ -994,7 +1116,7 @@ int execute(cpu_state * cpu) {
             ret_c(true, opcode, cpu); //will always return so set the condition to be true
             break;
         case 0xCA: //JP Z, a16
-            jp_c(twoBytes(cpu), readFlag(ZF, cpu), opcode, cpu);
+            jp_c(readFlag(ZF, cpu), twoBytes(cpu), opcode, cpu);
             break;
         case 0xCB: //PREFIX CB
             //return result of the cb prefix instruction
@@ -1003,6 +1125,9 @@ int execute(cpu_state * cpu) {
         case 0xCD: //CALL a16
             call_c(true, twoBytes(cpu), opcode, cpu);
             break;
+        case 0xCF: //RST 0x08
+            rst(0x08, opcode, cpu);
+            break;
         case 0xD0: //RET NC
             ret_c(!readFlag(CF, cpu), opcode, cpu);
             break;
@@ -1010,7 +1135,7 @@ int execute(cpu_state * cpu) {
             pop(&cpu->registers.DE, opcode, cpu);
             break;
         case 0xD2: //JP NC, a16
-            jp_c(twoBytes(cpu), !readFlag(CF, cpu), opcode, cpu);
+            jp_c(!readFlag(CF, cpu), twoBytes(cpu), opcode, cpu);
             break;
         case 0xD5: //PUSH DE
             push(cpu->registers.DE, opcode, cpu);
@@ -1020,6 +1145,12 @@ int execute(cpu_state * cpu) {
             break;
         case 0xD9: //RETI
             reti(opcode, cpu);
+            break;
+        case 0xDA: //JP C, a16
+            jp_c(readFlag(CF, cpu), twoBytes(cpu), opcode, cpu);
+            break;
+        case 0xDC: //CALL C, a16
+            call_c(readFlag(CF, cpu), twoBytes(cpu), opcode, cpu);
             break;
         case 0xE0: //LDH (a8), A
             ld_8_m(cpu->registers.A, 0xFF00 + oneByte(cpu), opcode, cpu);
@@ -1036,8 +1167,11 @@ int execute(cpu_state * cpu) {
         case 0xE6: //AND d8
             and(readNextByte(cpu), opcode, cpu);
             break;
+        case 0xE7: //RST 0x20
+            rst(0x20, opcode, cpu);
+            break;
         case 0xE9: //JP (HL) -> read as JP HL
-            jp_c(cpu->registers.HL, true, opcode, cpu);
+            jp_c(true, cpu->registers.HL, opcode, cpu);
             break;
         case 0xEA: //LD (a16), A
             ld_8_m(cpu->registers.A, twoBytes(cpu), opcode, cpu);

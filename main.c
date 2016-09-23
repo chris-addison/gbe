@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     while(true) {
         cpu->MEM[0xff00] |= 0xCF; //SET NO BUTTONS PRESSED 0b11001111
         if (cpu->wait <= 0) {
-            //printInstruction(true, cpu->PC, cpu);
+            printInstruction(true, cpu->PC, cpu);
             //breakpoints
             //0x284, 0x282A, 0x03EC, 0x03F5
             if (cpu->PC == 0x2186 && DEBUG) {
