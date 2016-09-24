@@ -9,6 +9,6 @@ all: cli
 cli:
 	gcc $(FLAGS) main.c -o $(NAME)
 
-# gtk
+# experimental gtk
 gtk:
 	gcc $(FLAGS) main.c -o $(NAME) -DDISPLAY $(GTK)

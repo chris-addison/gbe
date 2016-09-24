@@ -96,23 +96,44 @@ static void printShort(uint16 twoBytes) {
     printf("0x%04X", twoBytes);
 }
 
-//print given instruction instruction
+//print given instruction
 static void printInstruction(bool showPC, uint16 PC, cpu_state *cpu) {
     if (showPC) {
-        printShort(PC);
-        printf(":  ");
+        fprintf(stderr, "0x%04X:  ", PC);
     }
     uint8 opcode = readByte(PC, cpu);
     if (opcode == 0xCB) { //print CB prefix instruction
-        printf("%s", cbOpcodes[readByte(PC + 1, cpu)].name);
+        fprintf(stderr, "%s\n", cbOpcodes[readByte(PC + 1, cpu)].name);
     } else if (opcodes[opcode].bytes == 1) { //print single byte instruction
-        printf("%s", opcodes[opcode].name);
+        fprintf(stderr, "%s\n", opcodes[opcode].name);
     } else if (opcodes[opcode].bytes == 2) { //print two byte instruction
-        printf(opcodes[opcode].name, readByte(PC + 1, cpu));
+        fprintf(stderr, opcodes[opcode].name, readByte(PC + 1, cpu));
+        fprintf(stderr, "\n");
     } else { //print three byte instruction
-        printf(opcodes[opcode].name, readShort(PC + 1, cpu));
+        fprintf(stderr, opcodes[opcode].name, readShort(PC + 1, cpu));
+        fprintf(stderr, "\n");
     }
-    printf("\n");
+}
+
+//print given instruction to file
+static void printInstructionToFile(uint16 PC, FILE *file, cpu_state *cpu) {
+    //skip the wait instructions
+	if (PC >= 0x36C && PC <= 0x36F) {
+		return;
+	}
+    fprintf(file, "0x%04X:  ", PC);
+    uint8 opcode = readByte(PC, cpu);
+    if (opcode == 0xCB) { //print CB prefix instruction
+        fprintf(file, "%s\n", cbOpcodes[readByte(PC + 1, cpu)].name);
+    } else if (opcodes[opcode].bytes == 1) { //print single byte instruction
+        fprintf(file, "%s\n", opcodes[opcode].name);
+    } else if (opcodes[opcode].bytes == 2) { //print two byte instruction
+        fprintf(file, opcodes[opcode].name, readByte(PC + 1, cpu));
+        fprintf(file, "\n");
+    } else { //print three byte instruction
+        fprintf(file, opcodes[opcode].name, readShort(PC + 1, cpu));
+        fprintf(file, "\n");
+    }
 }
 
 #endif /* COMMON_C */
