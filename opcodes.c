@@ -701,6 +701,7 @@ int execute(cpu_state * cpu) {
             break;
         case 0x30: //JR NC
             jr_c_8(oneByteSigned(cpu), !readFlag(CF, cpu), opcode, cpu);
+            break;
         case 0x31: //LD SP, d16
             ld_16(twoBytes(cpu), &cpu->SP, opcode, cpu);
             break;
