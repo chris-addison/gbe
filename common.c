@@ -99,19 +99,19 @@ static void printShort(uint16 twoBytes) {
 //print given instruction
 static void printInstruction(bool showPC, uint16 PC, cpu_state *cpu) {
     if (showPC) {
-        fprintf(stderr, "0x%04X:  ", PC);
+        printf("0x%04X:  ", PC);
     }
     uint8 opcode = readByte(PC, cpu);
     if (opcode == 0xCB) { //print CB prefix instruction
-        fprintf(stderr, "%s\n", cbOpcodes[readByte(PC + 1, cpu)].name);
+        printf("%s\n", cbOpcodes[readByte(PC + 1, cpu)].name);
     } else if (opcodes[opcode].bytes == 1) { //print single byte instruction
-        fprintf(stderr, "%s\n", opcodes[opcode].name);
+        printf("%s\n", opcodes[opcode].name);
     } else if (opcodes[opcode].bytes == 2) { //print two byte instruction
-        fprintf(stderr, opcodes[opcode].name, readByte(PC + 1, cpu));
-        fprintf(stderr, "\n");
+        printf(opcodes[opcode].name, readByte(PC + 1, cpu));
+        printf("\n");
     } else { //print three byte instruction
-        fprintf(stderr, opcodes[opcode].name, readShort(PC + 1, cpu));
-        fprintf(stderr, "\n");
+        printf(opcodes[opcode].name, readShort(PC + 1, cpu));
+        printf("\n");
     }
 }
 

@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
     FILE *rom = fopen(argv[1], "r");
 
     //TEMP ERROR FILE
-    FILE *logger = fopen("log.txt", "w");
+    //FILE *logger = fopen("log.txt", "w");
 
     //if file doesn't exist, warn user and exit
     if (rom == NULL) {
@@ -50,8 +50,8 @@ int main(int argc, char *argv[]) {
             //printInstructionToFile(cpu->PC, logger, cpu);
             //breakpoints
             //0x284, 0x282A, 0x03EC, 0x03F5
-            if (cpu->PC == 0xFFBF && DEBUG) {
-                //startDebugging = true;
+            if (cpu->PC == 0x025A && DEBUG) {
+                startDebugging = true;
             }
             //debug
             if (startDebugging) {
