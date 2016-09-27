@@ -54,29 +54,20 @@ int main(int argc, char *argv[]) {
     //set up cpu
     struct cpu_state * cpu = createCPU();
     fread(cpu->MEM, 1, 0x8000, rom);
+    fclose(rom);
 
     //read and print cartridge info
     cartridgeInfo(cpu);
 
-    bool startDebugging = false;
     //simple game loop.
     while(true) {
         cpu->MEM[0xff00] |= 0xCF; //SET NO BUTTONS PRESSED 0b11001111
         if (cpu->wait <= 0) {
             //printInstruction(true, cpu->PC, cpu);
             //printInstructionToFile(cpu->PC, logger, cpu);
-            //breakpoints
-            //0x284, 0x282A, 0x03EC, 0x03F5
-            if (cpu->PC == 0x025A && DEBUG) {
-                startDebugging = true;
-            }
-            //debug
-            if (startDebugging) {
-                debug(cpu);
-            }
+            debug(false, cpu);
             if (execute(cpu) && DEBUG) {
-                debug(cpu);
-                //break;
+                debug(true, cpu);
             }
             //update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
             updateIME(cpu);
@@ -85,7 +76,6 @@ int main(int argc, char *argv[]) {
         checkInterrupts(cpu);
         cpu->wait--;
     }
-    //debug(cpu);
 
     //free cpu, cartridge at end
     free(cpu);

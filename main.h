@@ -16,6 +16,8 @@ static const char q[] = "q";
 static const char quit[] = "quit";
 static const char r[] = "r";
 static const char op[] = "op";
+static const char run[] = "run";
+static const char runTo[] = "runto";
 
 //memory locations
 #define SCANLINE 0xFF44
@@ -31,6 +33,7 @@ typedef int8_t int8;   //signed
 typedef uint16_t uint16;
 //debug flag
 #define DEBUG true
+#define DEBUG_MAX_ARGS 5
 
 //struct to hold the cpu state
 typedef struct cpu_state {
