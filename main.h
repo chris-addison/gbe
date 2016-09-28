@@ -68,6 +68,8 @@ typedef struct cpu_state {
             uint16 HL;
         };
     } registers;
+    uint8 *CART_RAM;
+    uint8 *CART_MRB;
     uint16 PC;
     uint16 SP;
     uint16 cycles;

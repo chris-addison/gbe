@@ -1,7 +1,7 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
 
-void cartridgeInfo(cpu_state *cpu) {
+void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     //fetch and store the title
     char title[16];
     for (int i = 0; i < 16; i++) {
@@ -31,6 +31,13 @@ void cartridgeInfo(cpu_state *cpu) {
             exit(22);
     }
     printf("ROM size: %dKB\nInternal RAM size: %dKB\n", ROM_size, RAM_size);
+
+    if (cart_type == 0) {
+        fread(cpu->MEM + 0x4000, 1, 0x4000, rom);
+    } else {
+        printf("Cartridge type not supported\n");
+        exit(13);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -53,11 +60,11 @@ int main(int argc, char *argv[]) {
 
     //set up cpu
     struct cpu_state * cpu = createCPU();
-    fread(cpu->MEM, 1, 0x8000, rom);
+    //all cartridge types load 0x4000 first
+    fread(cpu->MEM, 1, 0x4000, rom);
+    //read and print cartridge info and setup memory banks
+    cartridgeInfo(cpu, rom);
     fclose(rom);
-
-    //read and print cartridge info
-    cartridgeInfo(cpu);
 
     //simple game loop.
     while(true) {
@@ -65,8 +72,11 @@ int main(int argc, char *argv[]) {
         if (cpu->wait <= 0) {
             //printInstruction(true, cpu->PC, cpu);
             //printInstructionToFile(cpu->PC, logger, cpu);
-            debug(false, cpu);
+            if (DEBUG) {
+                debug(false, cpu);
+            }
             if (execute(cpu) && DEBUG) {
+                //force a run/runto to stop when an error has occurred
                 debug(true, cpu);
             }
             //update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.

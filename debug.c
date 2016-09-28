@@ -41,6 +41,7 @@ void debug(bool force, cpu_state * cpu) {
             //clear any run bools if debug gets called and a user wishes to step through
             runUntilStop = false;
             runToTarget = false;
+            targetAddress = 0x0;
             break;
         } else if (strcmp(q, argv[0]) ^ strcmp(quit, argv[0])) {
             //stop
