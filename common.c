@@ -5,7 +5,7 @@
 
 //read a byte from a given memory address
 static uint8 readByte(uint16 address, cpu_state *cpu) {
-    if (cpu->cart_type == 0x00 || address < 0x4000) {
+    if (cpu->cart_type == 0x00 || address < 0x4000 || address >= 0x8000) {
         return cpu->MEM[address];
     } else if (address < 0x8000) { //handle mbc here
         //get address in rom bank
@@ -32,6 +32,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
     if (cpu->cart_type == 0x00 || address >= 0x8000) {
         cpu->MEM[address] = value;
     } else if (address < 0x4000) { //handle the mbcs here
+        printf("handle mbc\n");
         if (address < 0x2000) {
             //enable/diable cartridge RAM
             cpu->ext_ram_enable = (value == 0x0A);
@@ -40,6 +41,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
                 value = 0x01;
             } //need to handle 0x20->0x21, 0x40->0x41, 0x60->0x61 for mbc1 here
             cpu->ROM_bank = value;
+            printf("%x CHANGE ROM BANK: %d\n", cpu->PC, value);
         }
     } else if (address < 0x8000) {
         printf("NOT IMPLEMENTED\n");

@@ -39,7 +39,11 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
         //malloc the rest of the cartridge
         cpu->CART_MEM = (uint8 *) malloc(ROM_size * 1024 * sizeof(uint8));
         //read into newly malloced array
-        fread(cpu->CART_MEM + 0x4000, 1, ROM_size * 1024, rom);
+        if (!fread(cpu->CART_MEM + 0x4000, 1, (ROM_size * 1024) - 0x4000, rom)) {
+            //if the header returns an incorrect cartridge size
+            printf("Cartridge not supported\n");
+            exit(13);
+        }
     } else {
         printf("Cartridge type not supported\n");
         exit(13);
