@@ -10,8 +10,8 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     printf("Now playing: %s\n", title);
 
     //get cartridge type
-    uint8 cart_type = cpu->MEM[0x147];
-    printf("Cartridge type: %d\n", cart_type);
+    cpu->cart_type = cpu->MEM[0x147];
+    printf("Cartridge type: %d\n", cpu->cart_type);
 
     //get cartridge internal rom and ram
     uint8 ROM_value = cpu->MEM[0x148];
@@ -31,9 +31,15 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
             exit(22);
     }
     printf("ROM size: %dKB\nInternal RAM size: %dKB\n", ROM_size, RAM_size);
-
-    if (cart_type == 0) {
+    //setep the cpu_state for the type of cartridge the game is.
+    if (cpu->cart_type == 0x00) {
+        //read the rest of the game data into address space 0x4000 to 0x7FFF
         fread(cpu->MEM + 0x4000, 1, 0x4000, rom);
+    } else if (cpu->cart_type == 0x13) { //MBC 3
+        //malloc the rest of the cartridge
+        cpu->CART_MEM = (uint8 *) malloc(ROM_size * 1024 * sizeof(uint8));
+        //read into newly malloced array
+        fread(cpu->CART_MEM + 0x4000, 1, ROM_size * 1024, rom);
     } else {
         printf("Cartridge type not supported\n");
         exit(13);
@@ -88,6 +94,8 @@ int main(int argc, char *argv[]) {
     }
 
     //free cpu, cartridge at end
+    free(cpu->CART_MEM);
+    free(cpu->CART_RAM);
     free(cpu);
     return 0;
 }

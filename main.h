@@ -69,12 +69,16 @@ typedef struct cpu_state {
         };
     } registers;
     uint8 *CART_RAM;
-    uint8 *CART_MRB;
+    uint8 *CART_MEM;
     uint16 PC;
     uint16 SP;
     uint16 cycles;
+    uint16 ROM_bank;
+    uint8 RAM_bank;
+    uint8 cart_type;
     uint8 wait;
     uint8 imeCounter;
+    bool ext_ram_enable;
     bool ime;
 } cpu_state;
 

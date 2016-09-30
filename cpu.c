@@ -7,6 +7,9 @@ static struct cpu_state* createCPU() {
     cpu->PC = 0x100;
     cpu->SP = 0xFFFE;
     cpu->wait = 0;
+    cpu->ROM_bank = 1;
+    cpu->RAM_bank = 0;
+    cpu->ext_ram_enable = false;
     //setup startup values of registers
     cpu->registers.A = 0x11;
     cpu->registers.F = 0xB0;

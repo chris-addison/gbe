@@ -5,7 +5,13 @@
 
 //read a byte from a given memory address
 static uint8 readByte(uint16 address, cpu_state *cpu) {
-    return cpu->MEM[address];
+    if (cpu->cart_type == 0x00 || address < 0x4000) {
+        return cpu->MEM[address];
+    } else if (address < 0x8000) { //handle mbc here
+        //get address in rom bank
+        address -= 0x4000;
+        return cpu->CART_MEM[address + (cpu->ROM_bank * 0x4000)];
+    }
 }
 
 //read next byte from the instruction pointer
@@ -23,7 +29,22 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
     } else if (address >= 0xE000 && address < 0xFE00) {
         cpu->MEM[address - 0x2000] = value;
     }
-    cpu->MEM[address] = value;
+    if (cpu->cart_type == 0x00 || address >= 0x8000) {
+        cpu->MEM[address] = value;
+    } else if (address < 0x4000) { //handle the mbcs here
+        if (address < 0x2000) {
+            //enable/diable cartridge RAM
+            cpu->ext_ram_enable = (value == 0x0A);
+        } else if (address < 0x4000) {
+            if (value == 0x00) { //bank "0" is mapped to bank 1
+                value = 0x01;
+            } //need to handle 0x20->0x21, 0x40->0x41, 0x60->0x61 for mbc1 here
+            cpu->ROM_bank = value;
+        }
+    } else if (address < 0x8000) {
+        printf("NOT IMPLEMENTED\n");
+        exit(123);
+    }
 }
 
 //read a short from a given memory address
