@@ -205,7 +205,7 @@ void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
     //half-carry flag (in 16bit ALU the highest bytes set the CF last, so only check for the high byte 3 -> 4 bit carry)
     ((*reg & 0xFFF) + (value & 0xFFF) > 0xFFF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     //carry flag
-    (((uint32)cpu->registers.A) + ((uint32)value) > 0xFFFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    (((uint32)*reg) + ((uint32)value) > 0xFFFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //set value after flags are calculated
     *reg += value;
     cpu->wait = opcodes[opcode].cycles;
