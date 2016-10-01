@@ -205,7 +205,7 @@ void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
     //half-carry flag (in 16bit ALU the highest bytes set the CF last, so only check for the high byte 3 -> 4 bit carry)
     ((*reg & 0xFFF) + (value & 0xFFF) > 0xFFF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     //carry flag
-    ((*reg & 0xFF) + (value & 0xFF) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    (((uint32)cpu->registers.A) + ((uint32)value) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //set value after flags are calculated
     *reg += value;
     cpu->wait = opcodes[opcode].cycles;
@@ -1128,6 +1128,9 @@ int execute(cpu_state * cpu) {
         case 0xCB: //PREFIX CB
             //return result of the cb prefix instruction
             return prefixCB(cpu);
+            break;
+        case 0xCC: //CALL Z, a16
+            call_c(readFlag(ZF, cpu), twoBytes(cpu), opcode, cpu);
             break;
         case 0xCD: //CALL a16
             call_c(true, twoBytes(cpu), opcode, cpu);
