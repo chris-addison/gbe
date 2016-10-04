@@ -31,6 +31,18 @@ void cp(uint8 b, uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
+//set the acrry flag
+void scf(uint8 opcode, cpu_state *cpu) {
+    //set carry flag
+    setFlag(CF, cpu);
+    //reset negative flag
+    clearFlag(NF, cpu);
+    //reset half-carry flag
+    clearFlag(HF, cpu);
+    //leave zero flag alone
+    cpu->wait = opcodes[opcode].cycles;
+}
+
 //jump to a 16bit address if condition is set
 void jp_c(bool set, uint16 address, uint8 opcode, cpu_state *cpu) {
     if (set) {
@@ -744,6 +756,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0x36: //LD (HL), d8
             ld_8_m(oneByte(cpu), cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x37: //SCF
+            scf(opcode, cpu);
             break;
         case 0x38: //JR C, r8
             jr_c_8(readFlag(CF, cpu), oneByteSigned(cpu), opcode, cpu);
