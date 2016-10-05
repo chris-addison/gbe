@@ -31,21 +31,40 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
     }
     if (cpu->cart_type == 0x00 || address >= 0x8000) {
         cpu->MEM[address] = value;
-    } else if (address < 0x4000) { //handle the mbcs here
+    } else { //handle the mbcs here
         printf("handle mbc\n");
         if (address < 0x2000) {
             //enable/diable cartridge RAM
             cpu->ext_ram_enable = (value == 0x0A);
+            printf("RAM ENABLE/DISABLE\n");
+        } else if (address < 0x3000 && cpu->mbc == 5) {
+            if (value == 0x00) { //bank "0" is mapped to bank 1
+                value = 0x01;
+            }
+            //clear lower byte of rom bank so it can be set
+            cpu->ROM_bank &= 0xFF00;
+            cpu->ROM_bank |= value;
         } else if (address < 0x4000) {
             if (value == 0x00) { //bank "0" is mapped to bank 1
                 value = 0x01;
-            } //need to handle 0x20->0x21, 0x40->0x41, 0x60->0x61 for mbc1 here
-            cpu->ROM_bank = value;
+            } else if (cpu->mbc == 1 && (value == 0x20 || value == 0x40 || value == 0x60)) {
+                value += 1; //mbc 1 doesn't have banks 0x20, 0x40, 0x60, so map to the bank after
+            }
+            if (cpu->mbc == 5) { //in mbc 5 0x3000 -> 0x3FFF sets the 9th bit of the rom bank
+                if (value & 0b1) {
+                    cpu->ROM_bank |= 0b1 << 8; //set bit
+                } else {
+                    cpu->ROM_bank &= ~(0b1 << 8); //reset bit
+                }
+            } else {
+                cpu->ROM_bank = value;
+            }
             printf("%x CHANGE ROM BANK: %d\n", cpu->PC, value);
+        } else if (address < 0x6000) {
+            //select ram bank
+            cpu->RAM_bank = value;
+            printf("%x CHANGE RAM BANK: %d\n", cpu->PC, value);
         }
-    } else if (address < 0x8000) {
-        printf("NOT IMPLEMENTED\n");
-        exit(123);
     }
 }
 
