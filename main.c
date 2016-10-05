@@ -1,6 +1,7 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
 
+//read cartridge info and setup the cpu based on it
 void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     //fetch and store the title
     char title[16];
@@ -31,22 +32,31 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
             exit(22);
     }
     printf("ROM size: %dKB\nInternal RAM size: %dKB\n", ROM_size, RAM_size);
-    //setep the cpu_state for the type of cartridge the game is.
-    if (cpu->cart_type == 0x00) {
+    //setup the cpu_state for the type of cartridge the game is.
+    switch(cpu->cart_type) {
+        case 0x00: cpu->mbc = 0; break;
+        case 0x11:
+        case 0x12:
+        case 0x13: cpu->mbc = 3; break;
+        case 0x19:
+        case 0x1A:
+        case 0x1B: cpu->mbc = 5; break;
+        default:
+            printf("Cartridge type not supported\n");
+            exit(13);
+    }
+    if (cpu->mbc == 0) {
         //read the rest of the game data into address space 0x4000 to 0x7FFF
         fread(cpu->MEM + 0x4000, 1, 0x4000, rom);
-    } else if (cpu->cart_type == 0x13) { //MBC 3
+    } else if (cpu->mbc == 3 || cpu->mbc == 5) {
         //malloc the rest of the cartridge
         cpu->CART_MEM = (uint8 *) malloc(ROM_size * 1024 * sizeof(uint8));
         //read into newly malloced array
         if (!fread(cpu->CART_MEM + 0x4000, 1, (ROM_size * 1024) - 0x4000, rom)) {
             //if the header returns an incorrect cartridge size
-            printf("Cartridge not supported\n");
+            printf("Cartridge not supported1\n");
             exit(13);
         }
-    } else {
-        printf("Cartridge type not supported\n");
-        exit(13);
     }
 }
 
@@ -60,7 +70,7 @@ int main(int argc, char *argv[]) {
     FILE *rom = fopen(argv[1], "r");
 
     //TEMP ERROR FILE
-    //FILE *logger = fopen("log.txt", "w");
+    FILE *logger = fopen("log.txt", "w");
 
     //if file doesn't exist, warn user and exit
     if (rom == NULL) {
@@ -78,10 +88,10 @@ int main(int argc, char *argv[]) {
 
     //simple game loop.
     while(true) {
-        cpu->MEM[0xff00] |= 0xCF; //SET NO BUTTONS PRESSED 0b11001111
+        cpu->MEM[0xff00] = 0x7E; //SET NO BUTTONS PRESSED 0b11001111
         if (cpu->wait <= 0) {
             //printInstruction(true, cpu->PC, cpu);
-            //printInstructionToFile(cpu->PC, logger, cpu);
+            printInstructionToFile(cpu->PC, logger, cpu);
             if (DEBUG) {
                 debug(false, cpu);
             }
