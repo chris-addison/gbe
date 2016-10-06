@@ -35,6 +35,9 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     //setup the cpu_state for the type of cartridge the game is.
     switch(cpu->cart_type) {
         case 0x00: cpu->mbc = 0; break;
+        case 0x01:
+        case 0x02:
+        case 0x03: cpu->mbc = 1; break;
         case 0x11:
         case 0x12:
         case 0x13: cpu->mbc = 3; break;
@@ -45,6 +48,8 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
             printf("Cartridge type not supported\n");
             exit(13);
     }
+    cpu->RAM_exists = (RAM_value != 0);
+    cpu->mbc1_small_ram = (RAM_value == 2);
     if (cpu->mbc == 0) {
         //read the rest of the game data into address space 0x4000 to 0x7FFF
         fread(cpu->MEM + 0x4000, 1, 0x4000, rom);

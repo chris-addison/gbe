@@ -82,6 +82,7 @@ typedef struct cpu_state {
     uint8 wait;
     uint8 imeCounter;
     bool RAM_enable;
+    bool RAM_exists;
     bool mbc1_mode;
     bool mbc1_small_ram;
     bool ime;

@@ -14,10 +14,16 @@ static uint8 readByte(uint16 address, cpu_state *cpu) {
     } else if (address < 0xA000) {
         return cpu->MEM[address];
     } else if (cpu->RAM_enable && address < 0xC000) {
-        //handle cases of mbc 1 with small ram bank and  mbc 2
-        //get address in ram bank
-        address -= 0xA000;
-        return cpu->CART_RAM[address + (cpu->RAM_bank * 0x2000)];
+        //mbc 2 has a single 256 byte RAM bank and mbc 1 has the option of having 1 1/4 sized RAM bank
+        if ((cpu->mbc == 2 && address < 0xA200) || (cpu->mbc == 1 && cpu->mbc1_small_ram && address < 0xA800)) {
+            address -= 0xA000;
+            return cpu->CART_RAM[address];
+        } else if ((cpu->mbc == 1 && !cpu->mbc1_small_ram) || cpu->mbc == 3 || cpu->mbc == 5) {
+            address -= 0xA000;
+             return cpu->CART_RAM[address + (cpu->RAM_bank * 0x2000)];
+        } else {
+            return cpu->MEM[address];
+        }
     } else { // if no cases match default
         return cpu->MEM[address];
     }
@@ -43,8 +49,8 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
     } else { //handle the mbcs here
         printf("handle mbc\n");
         if (address < 0x2000) {
-            //enable/diable cartridge RAM
-            cpu->RAM_enable = (value == 0x0A);
+            //enable/diable cartridge RAM. If no ram, never enable.
+            cpu->RAM_enable = (value == 0x0A && cpu->RAM_exists);
             printf("RAM ENABLE/DISABLE\n");
         } else if (address < 0x3000 && cpu->mbc == 5) {
             if (value == 0x00) { //bank "0" is mapped to bank 1
