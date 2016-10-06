@@ -39,7 +39,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
     } else if (address >= 0xE000 && address < 0xFE00) {
         cpu->MEM[address - 0x2000] = value;
     }
-    if (cpu->cart_type == 0x00 || (address >= 0x8000 && !cpu->ext_ram_enable)) {
+    if (cpu->cart_type == 0x00 || address >= 0xC000) {
         cpu->MEM[address] = value;
     } else { //handle the mbcs here
         printf("handle mbc\n");
@@ -74,6 +74,15 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
             //select ram bank
             cpu->RAM_bank = value;
             printf("%x CHANGE RAM BANK: %d\n", cpu->PC, value);
+        } else if (address < 0x8000) {
+            //do nothing for now
+            printf("Not implemented!\n");
+            exit(246);
+        } else if (address < 0xA000) {
+            cpu->MEM[address] = value;
+        } else if (address < 0xC000) {
+            address -= 0xA000;
+            cpu->CART_RAM[address + (cpu->RAM_bank * 0x2000)] = value;
         }
     }
 }
