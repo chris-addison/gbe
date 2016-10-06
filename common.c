@@ -5,16 +5,22 @@
 
 //read a byte from a given memory address
 static uint8 readByte(uint16 address, cpu_state *cpu) {
-    if (cpu->cart_type == 0x00 || address < 0x4000 || (address >= 0x8000 && address < 0xA000) || address > 0xC000) {
+    if (cpu->cart_type == 0x00 || address < 0x4000 || address > 0xC000) {
         return cpu->MEM[address];
     } else if (address < 0x8000) { //handle mbc here
         //get address in rom bank
         address -= 0x4000;
         return cpu->CART_MEM[address + (cpu->ROM_bank * 0x4000)];
+    } else if (address < 0xA000) {
+        return cpu->MEM[address];
     } else if (cpu->ext_ram_enable && address < 0xC000) {
-        //get address in rom bank
-        address -= 0x4000;
-        return cpu->CART_RAM[address + (cpu->RAM_bank * 0x2000)];
+        if (cpu->ext_ram_enable) {
+            //get address in rom bank
+            address -= 0xA000;
+            return cpu->CART_RAM[address + (cpu->RAM_bank * 0x2000)];
+        } else {
+            return cpu->MEM[address];
+        }
     }
 }
 
@@ -33,7 +39,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
     } else if (address >= 0xE000 && address < 0xFE00) {
         cpu->MEM[address - 0x2000] = value;
     }
-    if (cpu->cart_type == 0x00 || address >= 0x8000) {
+    if (cpu->cart_type == 0x00 || (address >= 0x8000 && !cpu->ext_ram_enable)) {
         cpu->MEM[address] = value;
     } else { //handle the mbcs here
         printf("handle mbc\n");
