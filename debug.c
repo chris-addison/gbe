@@ -108,6 +108,12 @@ void debug(bool force, cpu_state * cpu) {
             printByte(cpu->MEM[INTERRUPTS_ENABLED]);
             printf("\tIF:\t");
             printByte(cpu->MEM[INTERRUPT_FLAGS]);
+            printf("\nROM:\t");
+            printShort(cpu->ROM_bank);
+            printf("\tRAM enabled:\t");
+            (cpu->RAM_enable) ? printf("1") : printf("0");
+            printf("\tRAM:\t");
+            printByte(cpu->RAM_bank);
             printf("\n");
         } else {
             printf("Command: \"%s\" not recognised\n", command);

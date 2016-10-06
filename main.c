@@ -53,7 +53,7 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     if (cpu->mbc == 0) {
         //read the rest of the game data into address space 0x4000 to 0x7FFF
         fread(cpu->MEM + 0x4000, 1, 0x4000, rom);
-    } else if (cpu->mbc == 3 || cpu->mbc == 5) {
+    } else if (cpu->mbc == 1 || cpu->mbc == 2 || cpu->mbc == 3 || cpu->mbc == 5) {
         //malloc the rest of the cartridge
         cpu->CART_ROM = (uint8 *) malloc(ROM_size * 1024 * sizeof(uint8));
         //read into newly malloced array
