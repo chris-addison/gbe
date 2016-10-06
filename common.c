@@ -10,7 +10,7 @@ static uint8 readByte(uint16 address, cpu_state *cpu) {
     } else if (address < 0x8000) { //handle mbc here
         //get address in rom bank
         address -= 0x4000;
-        return cpu->CART_MEM[address + (cpu->ROM_bank * 0x4000)];
+        return cpu->CART_ROM[address + (cpu->ROM_bank * 0x4000)];
     } else if (address < 0xA000) {
         return cpu->MEM[address];
     } else if (cpu->ext_ram_enable && address < 0xC000) {

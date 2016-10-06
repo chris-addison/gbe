@@ -50,9 +50,9 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
         fread(cpu->MEM + 0x4000, 1, 0x4000, rom);
     } else if (cpu->mbc == 3 || cpu->mbc == 5) {
         //malloc the rest of the cartridge
-        cpu->CART_MEM = (uint8 *) malloc(ROM_size * 1024 * sizeof(uint8));
+        cpu->CART_ROM = (uint8 *) malloc(ROM_size * 1024 * sizeof(uint8));
         //read into newly malloced array
-        if (!fread(cpu->CART_MEM + 0x4000, 1, (ROM_size * 1024) - 0x4000, rom)) {
+        if (!fread(cpu->CART_ROM + 0x4000, 1, (ROM_size * 1024) - 0x4000, rom)) {
             //if the header returns an incorrect cartridge size
             printf("Cartridge not supported1\n");
             exit(13);
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     }
 
     //free cpu, cartridge at end
-    free(cpu->CART_MEM);
+    free(cpu->CART_ROM);
     free(cpu->CART_RAM);
     free(cpu);
     return 0;
