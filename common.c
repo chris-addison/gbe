@@ -10,7 +10,7 @@ static uint8 readByte(uint16 address, cpu_state *cpu) {
     } else if (address < 0x8000) { //handle mbc here
         //get address in rom bank
         address -= 0x4000;
-        printf("%X\n", address + (cpu->ROM_bank * 0x4000));
+        //printf("%X\n", address + (cpu->ROM_bank * 0x4000));
         return cpu->CART_ROM[address + (cpu->ROM_bank * 0x4000)];
     } else if (address < 0xA000) {
         return cpu->MEM[address];
@@ -48,7 +48,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
     if (cpu->cart_type == 0x00 || address >= 0xC000) {
         cpu->MEM[address] = value;
     } else { //handle the mbcs here
-        printf("%X:\thandle mbc address = %X, value = %X\n", cpu->PC, address, value);
+        //printf("%X:\thandle mbc address = %X, value = %X\n", cpu->PC, address, value);
         if (address < 0x2000) {
             //enable/diable cartridge RAM. If no ram, never enable.
             cpu->RAM_enable = (value == 0x0A && cpu->RAM_exists);
@@ -82,7 +82,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
             printf("%x CHANGE RAM BANK: %d\n", cpu->PC, value);
         } else if (address < 0x8000) {
             if (cpu->mbc == 1) {
-                printf("CHANGE RAM?ROM MODE ON MBC1\n");
+                printf("CHANGE RAM/ROM MODE ON MBC1\n");
                 cpu->mbc1_mode = value;
             } else {
                 //do nothing for now

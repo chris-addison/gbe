@@ -56,6 +56,10 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     } else if (cpu->mbc == 1 || cpu->mbc == 2 || cpu->mbc == 3 || cpu->mbc == 5) {
         //malloc the rest of the cartridge
         cpu->CART_ROM = (uint8 *) malloc(ROM_size * 1024 * sizeof(uint8));
+		//malloc the external ram
+		if (cpu->RAM_exists) {
+			cpu->CART_RAM = (uint8 *) malloc(RAM_size * 1024 * sizeof(uint8));
+		}
         //read into newly malloced array
         if (!fread(cpu->CART_ROM + 0x4000, 1, (ROM_size * 1024) - 0x4000, rom)) {
             //if the header returns an incorrect cartridge size
