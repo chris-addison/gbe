@@ -623,8 +623,8 @@ const struct cbOpcode cbOpcodes[256] = {
     { "0xCBFB ", 8 },
     { "0xCBFC ", 8 },
     { "0xCBFD ", 8 },
-    { "0xCBFE ", 16 },
-    { "0xCBFF ", 8 }
+    { "0xCBFE SET 7, (HL)", 16 },
+    { "0xCBFF SET 7, A", 8 }
 };
 
 //screen constants

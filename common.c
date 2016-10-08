@@ -154,14 +154,14 @@ static bool readFlag(uint8 flag, cpu_state *cpu) {
 
 //return true if a bit in a register is set. Return false otherwise.
 static bool readBit(uint8 bit, uint8 *reg) {
-    //get register, shift down to correct flag offset and compare
-    return ((*reg >> bit) & 0b1) == 0b1;
+    //get register, shift down to correct flag offset
+    return (*reg >> bit) & 0b1;
 }
 
 //return true if a bit in a byte at the memory address stored in HL is set. Return false otherwise.
 static bool readBitMem(uint8 bit, cpu_state *cpu) {
-    //get register, shift down to correct flag offset and compare
-    return ((readByte(cpu->registers.HL, cpu) >> bit) & 0b1) == 0b1;
+    //get register, shift down to correct flag offset
+    return (readByte(cpu->registers.HL, cpu) >> bit) & 0b1;
 }
 
 //print unsigned byte to standard input

@@ -11,8 +11,8 @@ int8 oneByteSigned(cpu_state *cpu) {
 
 //read a short from memory
 uint16 twoBytes(cpu_state *cpu) {
-	uint16 lsb = (uint16)readNextByte(cpu); //read least significant byte first
-	uint16 msb = ((uint16)readNextByte(cpu)) << 8; //then read most significant byte
+    uint16 lsb = (uint16)readNextByte(cpu); //read least significant byte first
+    uint16 msb = ((uint16)readNextByte(cpu)) << 8; //then read most significant byte
     return lsb | msb;
 }
 
@@ -475,6 +475,18 @@ void bit_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
     cpu->wait = cbOpcodes[opcode].cycles;
 }
 
+//set 1 bit
+void set(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    *reg |= (0b1 << bit);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
+//reset 1 bit in memory location stored in HL
+void set_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
+    writeByte(cpu->registers.HL, readByte(cpu->registers.HL, cpu) | (0b1 << bit), cpu);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
 //reset 1 bit
 void res(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
     *reg &= ~(0b1 << bit);
@@ -598,13 +610,19 @@ int prefixCB(cpu_state *cpu) {
             bit_m(7, opcode, cpu);
             break;
         case 0x7F: //BIT 7, A
-            bit(6, &cpu->registers.A, opcode, cpu);
+            bit(7, &cpu->registers.A, opcode, cpu);
             break;
         case 0x86: //RES 0, (HL)
             res_m(0, opcode, cpu);
             break;
         case 0x87: //RES 0, A
             res(0, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xFE: //SET 7, (HL)
+            set_m(7, opcode, cpu);
+            break;
+        case 0xFF: //SET 7,A
+            set(7, &cpu->registers.A, opcode, cpu);
             break;
         default: //instruction not implemented
             printf("Error prefix 0xCB instruction not found: ");
