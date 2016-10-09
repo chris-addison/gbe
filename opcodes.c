@@ -428,9 +428,9 @@ void rl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //read carry flag state into temp variable
     bool flagState = readFlag(CF, cpu);
     //update the carry flag
-    ((*reg >> 7) & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    (*reg >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //shift right
-    *reg = *reg << 1;
+    *reg <<= 1;
     //insert previous flag state into bit 0
     *reg |= flagState;
     //zero flag
@@ -449,7 +449,7 @@ void rr(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //update the carry flag
     (*reg & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //shift right
-    *reg = *reg >> 1;
+    *reg >>= 1;
     //insert previous flag state into bit 7
     *reg |= flagState << 7;
     //zero flag
@@ -461,12 +461,28 @@ void rr(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = cbOpcodes[opcode].cycles;
 }
 
-//left shift a given register. Set new bit 0 to 0 and put the old bit 7 into the carry flag
+//arithmetic left shift a given register. Set new bit 0 to 0 and put the old bit 7 into the carry flag
 void sla(uint8 *reg, uint8 opcode, cpu_state *cpu) {
-    //set carry flag based on 8th bit
+    //set carry flag based on bit 7
     (*reg >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //shift left
-    *reg = *reg << 1;
+    *reg <<= 1;
+    //zero flag
+    (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
+//arithmetic right shift a given register. Set new bit 7 to the previus bit 7 and put the old bit 0 into the carry flag
+void sra(uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    uint8 bit7 = *reg & 0x80; //0x80 = 0b10000000
+    //set carry flag based on bit 0
+    (*reg & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //shift right
+    *reg >>= 1;
+    //set new bit seven to old bit 7
+    *reg |= bit7;
     //zero flag
     (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     clearFlag(HF, cpu);
@@ -476,10 +492,10 @@ void sla(uint8 *reg, uint8 opcode, cpu_state *cpu) {
 
 //logical right shift of given register. Set new bit 7 to 0 and put the old bit 0 into carry flag
 void srl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
-    //set carry bit based on 1st bit
+    //set carry bit based on bit 0
     (*reg & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //shift right
-    *reg = *reg >> 1;
+    *reg >>= 1;
     //zero flag
     (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     clearFlag(HF, cpu);
@@ -550,6 +566,9 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x27: //SLA A
             sla(&cpu->registers.A, opcode, cpu);
+            break;
+        case 0x2F: //SRA A
+            sra(&cpu->registers.A, opcode, cpu);
             break;
         case 0x30: //SWAP B
             swap(&cpu->registers.B, opcode, cpu);
