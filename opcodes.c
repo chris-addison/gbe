@@ -250,6 +250,25 @@ void rlca(uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
+//right rotate the A register. New 7th bit is set by the carry flag and the carry flag is set by old 1st bit.
+void rra(uint8 opcode, cpu_state *cpu) {
+    //read carry flag state into temp variable
+    bool flagState = readFlag(CF, cpu);
+    //update the carry flag
+    (cpu->registers.A & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //shift right
+    cpu->registers.A = cpu->registers.A >> 1;
+    //insert previous flag state into bit 7
+    cpu->registers.A |= flagState << 7;
+    //zero flag
+    clearFlag(ZF, cpu);
+    //half-carry flag
+    clearFlag(HF, cpu);
+    //negative flag
+    clearFlag(NF, cpu);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
 //complement the A register
 void cpl(uint8 opcode, cpu_state *cpu) {
     setFlag(NF, cpu);
@@ -760,6 +779,9 @@ int execute(cpu_state * cpu) {
         case 0x1E: //LD E, d8
             ld_8(oneByte(cpu), &cpu->registers.E, opcode, cpu);
             break;
+        case 0x1F: //RRA
+            rra(opcode, cpu);
+            break;
         case 0x20: //JR NZ, r8
             jr_c_8(!readFlag(ZF, cpu), oneByteSigned(cpu), opcode, cpu);
             break;
@@ -1043,7 +1065,7 @@ int execute(cpu_state * cpu) {
             adc(cpu->registers.E, opcode, cpu);
             break;
         case 0x8C: //ADC H
-            adc(cpu->registers.C, opcode, cpu);
+            adc(cpu->registers.H, opcode, cpu);
             break;
         case 0x8D: //ADC L
             adc(cpu->registers.L, opcode, cpu);
