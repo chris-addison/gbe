@@ -423,6 +423,25 @@ void daa(uint8 opcode, cpu_state *cpu) {
 
 /* ==== CB PREFIX INSTRUCTIONS ==== */
 
+//rotate a given register left, old bit 7 to carry bit and old carry bit to bit 0
+void rl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    //read carry flag state into temp variable
+    bool flagState = readFlag(CF, cpu);
+    //update the carry flag
+    ((*reg >> 7) & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //shift right
+    *reg = *reg << 1;
+    //insert previous flag state into bit 0
+    *reg |= flagState;
+    //zero flag
+    (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    //half-carry flag
+    clearFlag(HF, cpu);
+    //negative flag
+    clearFlag(NF, cpu);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
 //right rotate a given register. New 7th bit is set by the carry flag and the carry flag is set by old 1st bit.
 void rr(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //read carry flag state into temp variable
@@ -523,6 +542,9 @@ int prefixCB(cpu_state *cpu) {
     //grab instruction
     uint8 opcode = readNextByte(cpu);
     switch(opcode) {
+        case 0x10: //RL B
+            rl(&cpu->registers.B, opcode, cpu);
+            break;
         case 0x1A: //RR D
             rr(&cpu->registers.D, opcode, cpu);
             break;
