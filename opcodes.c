@@ -481,7 +481,7 @@ void set(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = cbOpcodes[opcode].cycles;
 }
 
-//reset 1 bit in memory location stored in HL
+//set 1 bit in memory location stored in HL
 void set_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
     writeByte(cpu->registers.HL, readByte(cpu->registers.HL, cpu) | (0b1 << bit), cpu);
     cpu->wait = cbOpcodes[opcode].cycles;
@@ -543,6 +543,9 @@ int prefixCB(cpu_state *cpu) {
         case 0x42: //BIT 0, D
             bit(0, &cpu->registers.D, opcode, cpu);
             break;
+        case 0x46: //BIT 0, (HL)
+            bit_m(0, opcode, cpu);
+            break;
         case 0x47: //BIT 0, A
             bit(0, &cpu->registers.A, opcode, cpu);
             break;
@@ -551,6 +554,9 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x49: //BIT 1, C
             bit(1, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x4E: //BIT 1, (HL)
+            bit_m(1, opcode, cpu);
             break;
         case 0x4F: //BIT 1, A
             bit(1, &cpu->registers.A, opcode, cpu);
@@ -561,6 +567,9 @@ int prefixCB(cpu_state *cpu) {
         case 0x51: //BIT 2, C
             bit(2, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x56: //BIT 2, (HL)
+            bit_m(2, opcode, cpu);
+            break;
         case 0x57: //BIT 2, A
             bit(2, &cpu->registers.A, opcode, cpu);
             break;
@@ -569,6 +578,9 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x59: //BIT 3, C
             bit(3, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x5E: //BIT 3, (HL)
+            bit_m(3, opcode, cpu);
             break;
         case 0x5F: //BIT 3, A
             bit(3, &cpu->registers.A, opcode, cpu);
@@ -579,6 +591,9 @@ int prefixCB(cpu_state *cpu) {
         case 0x61: //BIT 4, C
             bit(4, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x66: //BIT 4, (HL)
+            bit_m(4, opcode, cpu);
+            break;
         case 0x67: //BIT 4, A
             bit(4, &cpu->registers.A, opcode, cpu);
             break;
@@ -588,6 +603,9 @@ int prefixCB(cpu_state *cpu) {
         case 0x69: //BIT 5, C
             bit(5, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x6E: //BIT 5, (HL)
+            bit_m(5, opcode, cpu);
+            break;
         case 0x6F: //BIT 5, A
             bit(5, &cpu->registers.A, opcode, cpu);
             break;
@@ -596,6 +614,9 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x71: //BIT 6, C
             bit(6, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x76: //BIT 6, (HL)
+            bit_m(6, opcode, cpu);
             break;
         case 0x77: //BIT 6, A
             bit(6, &cpu->registers.A, opcode, cpu);
@@ -617,6 +638,27 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x87: //RES 0, A
             res(0, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x8E: //RES 1, (HL)
+            res_m(1, opcode, cpu);
+            break;
+        case 0x9E: //RES 3, (HL)
+            res_m(3, opcode, cpu);
+            break;
+        case 0xAE: //RES 5, (HL)
+            res_m(5, opcode, cpu);
+            break;
+        case 0xBE: //RES 7, (HL)
+            res_m(7, opcode, cpu);
+            break;
+        case 0xCE: //SET 1, (HL)
+            set_m(1, opcode, cpu);
+            break;
+        case 0xDE: //SET 3, (HL)
+            set_m(3, opcode, cpu);
+            break;
+        case 0xEE: //SET 5, (HL)
+            set_m(5, opcode, cpu);
             break;
         case 0xFE: //SET 7, (HL)
             set_m(7, opcode, cpu);
