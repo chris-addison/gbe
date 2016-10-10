@@ -591,6 +591,9 @@ int prefixCB(cpu_state *cpu) {
         case 0x37: //SWAP A
             swap(&cpu->registers.A, opcode, cpu);
             break;
+        case 0x3B: //SRL E
+            srl(&cpu->registers.E, opcode, cpu);
+            break;
         case 0x3F: //SRL A
             srl(&cpu->registers.A, opcode, cpu);
             break;
@@ -720,6 +723,9 @@ int prefixCB(cpu_state *cpu) {
         case 0xEE: //SET 5, (HL)
             set_m(5, opcode, cpu);
             break;
+        case 0xF6: //SET 6, (HL)
+            set_m(6, opcode, cpu);
+            break;
         case 0xFE: //SET 7, (HL)
             set_m(7, opcode, cpu);
             break;
@@ -793,6 +799,9 @@ int execute(cpu_state * cpu) {
         case 0x13: //INC DE
             inc_16(&cpu->registers.DE, opcode, cpu);
             break;
+        case 0x14: //INC D
+            inc_8(&cpu->registers.D, opcode, cpu);
+            break;
         case 0x15: //DEC D
             dec_8(&cpu->registers.D, opcode, cpu);
             break;
@@ -837,6 +846,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0x24: //INC H
             inc_8(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x25: //DEC H
+            dec_8(&cpu->registers.H, opcode, cpu);
             break;
         case 0x26: //LD H, d8
             ld_8(oneByte(cpu), &cpu->registers.H, opcode, cpu);
@@ -1297,6 +1309,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0xCD: //CALL a16
             call_c(true, twoBytes(cpu), opcode, cpu);
+            break;
+        case 0xCE: //ADC d8
+            adc(oneByte(cpu), opcode, cpu);
             break;
         case 0xCF: //RST 0x08
             rst(0x08, opcode, cpu);
