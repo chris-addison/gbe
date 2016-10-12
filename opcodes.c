@@ -120,7 +120,8 @@ void ld_16_m(uint16 value, uint16 address, uint8 opcode, cpu_state *cpu) {
 //increment a byte in a register
 void inc_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //zero flag
-    (*reg + 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    ((uint8)(*reg + 1)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    printf("%d\n", *reg + 1);
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag
@@ -132,7 +133,7 @@ void inc_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
 //increment a byte at the memory location stored in HL
 void inc_8_m(uint8 opcode, cpu_state *cpu) {
     //zero flag
-    (readByte(cpu->registers.HL, cpu) + 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    ((uint8)(readByte(cpu->registers.HL, cpu) + 1)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag
@@ -182,7 +183,7 @@ void dec_16(uint16 *reg, uint8 opcode, cpu_state *cpu) {
 //add together some 8 bit unsigned value and the A register
 void add_8(uint8 value, uint8 opcode, cpu_state *cpu) {
     //zero flag
-    (cpu->registers.A + value) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    ((uint8)(cpu->registers.A + value)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag
