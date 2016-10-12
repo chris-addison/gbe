@@ -236,15 +236,43 @@ void sbc(uint8 value, uint8 opcode, cpu_state *cpu) {
 //rotate register A left, old bit 7 to carry bit and bit 0
 void rlca(uint8 opcode, cpu_state *cpu) {
     //set carry flag based on bit 7
-    if (cpu->registers.A >> 7) {
-        setFlag(CF, cpu);
-    } else {
-        clearFlag(CF, cpu);
-    }
+    (cpu->registers.A >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //shift left and use carry flag/bit 7 as new bit 0
     cpu->registers.A = (cpu->registers.A << 1) | readFlag(CF, cpu);
     //zero flag
-    (cpu->registers.A) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//rotate the A register left, old bit 7 to carry bit and old carry bit to bit 0
+void rla(uint8 opcode, cpu_state *cpu) {
+    //read carry flag state into temp variable
+    bool flagState = readFlag(CF, cpu);
+    //update the carry flag
+    (cpu->registers.A >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //shift right
+    cpu->registers.A <<= 1;
+    //insert previous flag state into bit 0
+    cpu->registers.A |= flagState;
+    //zero flag
+    clearFlag(ZF, cpu);
+    //half-carry flag
+    clearFlag(HF, cpu);
+    //negative flag
+    clearFlag(NF, cpu);
+    cpu->wait = opcodes[opcode].cycles;
+}
+
+//rotate register A left, old bit 0 to carry bit and bit 7
+void rrca(uint8 opcode, cpu_state *cpu) {
+    //set carry flag based on bit 7
+    (cpu->registers.A & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //shift left and use carry flag/bit 7 as new bit 0
+    cpu->registers.A = (cpu->registers.A >> 1) | (((uint8) readFlag(CF, cpu)) << 7);
+    //zero flag
+    clearFlag(ZF, cpu);
     clearFlag(HF, cpu);
     clearFlag(NF, cpu);
     cpu->wait = opcodes[opcode].cycles;
@@ -423,6 +451,19 @@ void daa(uint8 opcode, cpu_state *cpu) {
 
 /* ==== CB PREFIX INSTRUCTIONS ==== */
 
+//rotate given register left, old bit 7 to carry bit and bit 0
+void rlc(uint8 *reg, uint8 opcode, cpu_state *cpu) {
+    //set carry flag based on bit 7
+    (*reg >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //shift left and use carry flag/bit 7 as new bit 0
+    *reg = (*reg << 1) | readFlag(CF, cpu);
+    //zero flag
+    (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    cpu->wait = cbOpcodes[opcode].cycles;
+}
+
 //rotate a given register left, old bit 7 to carry bit and old carry bit to bit 0
 void rl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //read carry flag state into temp variable
@@ -558,14 +599,26 @@ int prefixCB(cpu_state *cpu) {
     //grab instruction
     uint8 opcode = readNextByte(cpu);
     switch(opcode) {
+        case 0x02: //RLC D
+            rlc(&cpu->registers.D, opcode, cpu);
+            break;
+        case 0x03: //RLC E
+            rlc(&cpu->registers.E, opcode, cpu);
+            break;
         case 0x10: //RL B
             rl(&cpu->registers.B, opcode, cpu);
             break;
         case 0x1A: //RR D
             rr(&cpu->registers.D, opcode, cpu);
             break;
+        case 0x1B: //RR E
+            rr(&cpu->registers.E, opcode, cpu);
+            break;
         case 0x27: //SLA A
             sla(&cpu->registers.A, opcode, cpu);
+            break;
+        case 0x2A: //SRA D
+            sra(&cpu->registers.D, opcode, cpu);
             break;
         case 0x2F: //SRA A
             sra(&cpu->registers.A, opcode, cpu);
@@ -629,6 +682,9 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x51: //BIT 2, C
             bit(2, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x53: //BIT 2, E
+            bit(2, &cpu->registers.E, opcode, cpu);
             break;
         case 0x56: //BIT 2, (HL)
             bit_m(2, opcode, cpu);
@@ -720,6 +776,9 @@ int prefixCB(cpu_state *cpu) {
         case 0xDE: //SET 3, (HL)
             set_m(3, opcode, cpu);
             break;
+        case 0xE2: //SET 4, D
+            set(4, &cpu->registers.D, opcode, cpu);
+            break;
         case 0xEE: //SET 5, (HL)
             set_m(5, opcode, cpu);
             break;
@@ -790,6 +849,9 @@ int execute(cpu_state * cpu) {
         case 0x0E: //LD C, d8
             ld_8(oneByte(cpu), &cpu->registers.C, opcode, cpu);
             break;
+        case 0x0F: //RRCA
+            rrca(opcode, cpu);
+            break;
         case 0x11: //LD DE, d16
             ld_16(twoBytes(cpu), &cpu->registers.DE, opcode, cpu);
             break;
@@ -807,6 +869,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0x16: //LD D, d8
             ld_8(oneByte(cpu), &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x17: //RLA
+            rla(opcode, cpu);
             break;
         case 0x18: //JR r8
             jr_c_8(true, oneByteSigned(cpu), opcode, cpu);
@@ -864,6 +929,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0x2A: //LDI A, (HL)
             ldi(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x2B: //DEC HL
+            dec_16(&cpu->registers.HL, opcode, cpu);
             break;
         case 0x2C: //INC L
             inc_8(&cpu->registers.L, opcode, cpu);
@@ -1195,6 +1263,9 @@ int execute(cpu_state * cpu) {
         case 0xA5: //AND L
             and(cpu->registers.L, opcode, cpu);
             break;
+        case 0xA6: //AND (HL)
+            and(readByte(cpu->registers.HL, cpu), opcode, cpu);
+            break;
         case 0xA7: //AND A
             and(cpu->registers.A, opcode, cpu);
             break;
@@ -1324,6 +1395,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0xD2: //JP NC, a16
             jp_c(!readFlag(CF, cpu), twoBytes(cpu), opcode, cpu);
+            break;
+        case 0xD4: //CALL NC, a16
+            call_c(!readFlag(CF, cpu), twoBytes(cpu), opcode, cpu);
             break;
         case 0xD5: //PUSH DE
             push(cpu->registers.DE, opcode, cpu);

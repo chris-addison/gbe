@@ -11,8 +11,7 @@ static struct cpu_state* createCPU() {
     cpu->RAM_bank = 0;
     cpu->RAM_enable = false;
     //setup startup values of registers
-    cpu->registers.A = 0x11;
-    cpu->registers.F = 0xB0;
+    cpu->registers.AF = 0x01B0;
     cpu->registers.BC = 0x0013;
     cpu->registers.DE = 0x00D8;
     cpu->registers.HL = 0x014D;

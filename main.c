@@ -10,6 +10,12 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     }
     printf("Now playing: %s\n", title);
 
+    //check if it's only gbc
+    if (cpu->MEM[0x143] == 0xC0) {
+        printf("GBC cartridges not supported!\n");
+        exit(523);
+    }
+
     //get cartridge type
     cpu->cart_type = cpu->MEM[0x147];
     printf("Cartridge type: %d\n", cpu->cart_type);
@@ -97,7 +103,7 @@ int main(int argc, char *argv[]) {
 
     //simple game loop.
     while(true) {
-        cpu->MEM[0xff00] = 0x7E; //SET NO BUTTONS PRESSED 0b11001111
+        cpu->MEM[0xff00] = 0xEF; //SET NO BUTTONS PRESSED 0b11001111
         if (cpu->wait <= 0) {
             //printInstruction(true, cpu->PC, cpu);
             printInstructionToFile(cpu->PC, logger, cpu);

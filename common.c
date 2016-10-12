@@ -51,7 +51,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
         //printf("%X:\thandle mbc address = %X, value = %X\n", cpu->PC, address, value);
         if (address < 0x2000) {
             //enable/diable cartridge RAM. If no ram, never enable.
-            cpu->RAM_enable = (value == 0x0A && cpu->RAM_exists);
+            cpu->RAM_enable = ((value & 0xA) == 0xA && cpu->RAM_exists);
             printf("RAM ENABLE/DISABLE\n");
         } else if (address < 0x3000 && cpu->mbc == 5) {
             if (value == 0x00) { //bank "0" is mapped to bank 1
@@ -90,7 +90,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
                 exit(246);
             }
         } else if (address < 0xA000) {
-            printf("Write normally\n");
+            //printf("Write normally\n");
             cpu->MEM[address] = value;
         } else if (cpu->RAM_enable && address < 0xC000) { // check if ram bank exists
             //mbc 2 has a single 256 byte RAM bank and mbc 1 has the option of having 1 1/4 sized RAM bank
@@ -207,15 +207,15 @@ static void printInstructionToFile(uint16 PC, FILE *file, cpu_state *cpu) {
     fprintf(file, "0x%04X:  ", PC);
     uint8 opcode = readByte(PC, cpu);
     if (opcode == 0xCB) { //print CB prefix instruction
-        fprintf(file, "%s\n", cbOpcodes[readByte(PC + 1, cpu)].name);
+        fprintf(file, "%s\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", cbOpcodes[readByte(PC + 1, cpu)].name, cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
     } else if (opcodes[opcode].bytes == 1) { //print single byte instruction
-        fprintf(file, "%s\n", opcodes[opcode].name);
+        fprintf(file, "%s\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", opcodes[opcode].name, cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
     } else if (opcodes[opcode].bytes == 2) { //print two byte instruction
         fprintf(file, opcodes[opcode].name, readByte(PC + 1, cpu));
-        fprintf(file, "\n");
+        fprintf(file, "\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
     } else { //print three byte instruction
         fprintf(file, opcodes[opcode].name, readShort(PC + 1, cpu));
-        fprintf(file, "\n");
+        fprintf(file, "\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
     }
 }
 
