@@ -121,7 +121,6 @@ void ld_16_m(uint16 value, uint16 address, uint8 opcode, cpu_state *cpu) {
 void inc_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //zero flag
     ((uint8)(*reg + 1)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
-    printf("%d\n", *reg + 1);
     //negative flag
     clearFlag(NF, cpu);
     //half-carry flag
@@ -231,7 +230,7 @@ void adc(uint8 value, uint8 opcode, cpu_state *cpu) {
 
 //8 bit subtract between the A register, some value, and the carry flag
 void sbc(uint8 value, uint8 opcode, cpu_state *cpu) {
-    add_8(value + readFlag(CF, cpu), opcode, cpu);
+    sbc_8(value + readFlag(CF, cpu), opcode, cpu);
 }
 
 //rotate register A left, old bit 7 to carry bit and bit 0
@@ -609,11 +608,17 @@ int prefixCB(cpu_state *cpu) {
         case 0x10: //RL B
             rl(&cpu->registers.B, opcode, cpu);
             break;
+        case 0x12: //RL D
+            rl(&cpu->registers.D, opcode, cpu);
+            break;
         case 0x1A: //RR D
             rr(&cpu->registers.D, opcode, cpu);
             break;
         case 0x1B: //RR E
             rr(&cpu->registers.E, opcode, cpu);
+            break;
+        case 0x23: //SLA E
+            sla(&cpu->registers.E, opcode, cpu);
             break;
         case 0x27: //SLA A
             sla(&cpu->registers.A, opcode, cpu);
@@ -1006,6 +1011,9 @@ int execute(cpu_state * cpu) {
         case 0x47: //LD B, A
             ld_8(cpu->registers.A, &cpu->registers.B, opcode, cpu);
             break;
+        case 0x48: //LD C, B
+            ld_8(cpu->registers.B, &cpu->registers.C, opcode, cpu);
+            break;
         case 0x4D: //LD C, L
             ld_8(cpu->registers.L, &cpu->registers.C, opcode, cpu);
             break;
@@ -1363,6 +1371,9 @@ int execute(cpu_state * cpu) {
         case 0xC6: //ADD A, d8
             add_8(oneByte(cpu), opcode, cpu);
             break;
+        case 0xC7: //RST 0x00
+            rst(0x00, opcode, cpu);
+            break;
         case 0xC8: //RET Z
             ret_c(readFlag(ZF, cpu), opcode, cpu);
             break;
@@ -1417,6 +1428,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0xDC: //CALL C, a16
             call_c(readFlag(CF, cpu), twoBytes(cpu), opcode, cpu);
+            break;
+        case 0xDE: //SBC d8
+            sbc(oneByte(cpu), opcode, cpu);
             break;
         case 0xE0: //LDH (a8), A
             ld_8_m(cpu->registers.A, 0xFF00 + oneByte(cpu), opcode, cpu);
