@@ -230,7 +230,7 @@ void adc(uint8 value, uint8 opcode, cpu_state *cpu) {
 
 //8 bit subtract between the A register, some value, and the carry flag
 void sbc(uint8 value, uint8 opcode, cpu_state *cpu) {
-    sbc_8(value + readFlag(CF, cpu), opcode, cpu);
+    sub_8(value + readFlag(CF, cpu), opcode, cpu);
 }
 
 //rotate register A left, old bit 7 to carry bit and bit 0
