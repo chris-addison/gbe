@@ -2,10 +2,12 @@
 #include "main.h"
 #include "cb_opcodes.c"
 
+//read one unsigned byte from the PC
 uint8 oneByte(cpu_state *cpu) {
     return readNextByte(cpu);
 }
 
+//read one signed byte from the PC
 int8 oneByteSigned(cpu_state *cpu) {
     return (int8)readNextByte(cpu);
 }
