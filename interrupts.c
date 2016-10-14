@@ -28,6 +28,7 @@ static void clearInterruptFlag(uint8 flag, cpu_state *cpu) {
 //save the PC, jump to interrupt handler, and reset the ime
 static void interruptVBlank(cpu_state *cpu) {
     clearInterruptFlag(INTR_V_BLANK, cpu);
+    cpu->halt = false;
     cpu->ime = false;
     writeShortToStack(cpu->PC, cpu);
     cpu->PC = 0x40;

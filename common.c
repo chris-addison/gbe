@@ -60,6 +60,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
             //clear lower byte of rom bank so it can be set
             cpu->ROM_bank &= 0xFF00;
             cpu->ROM_bank |= value;
+            printf("%x CHANGE ROM BANK: %d\n", cpu->PC, value);
         } else if (address < 0x4000) {
             if (value == 0x00) { //bank "0" is mapped to bank 1
                 value = 0x01;
