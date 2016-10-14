@@ -88,7 +88,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
             } else {
                 //do nothing for now
                 printf("Not implemented!\n");
-                exit(246);
+                //exit(246);
             }
         } else if (address < 0xA000) {
             //printf("Write normally\n");
