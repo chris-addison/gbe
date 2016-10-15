@@ -30,7 +30,9 @@ int main(int argc, char *argv[]) {
 
     //simple game loop.
     while(true) {
-        cpu->MEM[0xff00] = 0x00; //SET NO BUTTONS PRESSED 0b11001111
+        if (cpu->MEM[0xFF00] == 0x10 || cpu->MEM[0xFF00] == 0x20) {
+            cpu->MEM[0xff00] = ~cpu->MEM[0xFF00]; //SET NO BUTTONS PRESSED
+        }
         if (cpu->wait <= 0) {
             //printInstruction(true, cpu->PC, cpu);
             //printInstructionToFile(cpu->PC, logger, cpu);
