@@ -41,7 +41,7 @@ void cp(uint8 b, uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
-//set the acrry flag
+//set the carry flag
 void scf(uint8 opcode, cpu_state *cpu) {
     //set carry flag
     setFlag(CF, cpu);
