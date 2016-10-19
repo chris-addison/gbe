@@ -1,6 +1,7 @@
-NAME=test
-FLAGS=--std=c11
-GTK=`pkg-config --cflags --libs gtk+-3.0`
+NAME		=	gbe
+TEST_NAME 	= 	test
+FLAGS		=	--std=c11
+X11			=	-lX11
 
 # run cli by default
 all: cli
@@ -9,6 +10,9 @@ all: cli
 cli:
 	gcc $(FLAGS) main.c -o $(NAME)
 
-# experimental gtk
-gtk:
-	gcc $(FLAGS) main.c -o $(NAME) -DDISPLAY $(GTK)
+# experimental x11
+x11:
+	gcc $(FLAGS) main.c -o $(NAME) -DDISPLAY $(X11)
+
+# testing build
+	gcc $(FLAGS) test.c -o $(TEST_NAME)
