@@ -149,6 +149,8 @@ static bool testLD_16(cpu_state *cpu) {
     return assertUint16((cpu->MEM[0xFFF1] << 8) + cpu->MEM[0xFFF0], expected) && result;
 }
 
+//TODO: test LD HL, (SP+e)
+
 // Test pop, push methods
 static bool testPUSH_POP(cpu_state *cpu) {
     uint16 expected = rand() % 0x10000;
@@ -543,6 +545,71 @@ static bool testDEC_16(cpu_state *cpu) {
     return result;
 }
 
+// Test swap method
+static bool testSWAP(cpu_state *cpu) {
+    cpu->registers.A = 0x12;
+    swap(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x21);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test zero flag
+    cpu->registers.A = 0x00;
+    swap(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
+//TODO: test DAA - Need to divise some representitive test cases
+
+// Test cpl method
+static bool testCPL(cpu_state *cpu) {
+    cpu->registers.A = 0xF0;
+    cpl(0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x0F);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
+// Test ccf method
+static bool testCCF(cpu_state *cpu) {
+    ccf(0, cpu);
+    bool result = assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    ccf(0, cpu);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test scf method
+static bool testSCF(cpu_state *cpu) {
+    scf(0, cpu);
+    bool result = assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+//TODO: Test halt
+
+//TODO: Test stop
+
+//TODO: Test DI, EI - Will need a stronger testing harness for these along with halt and stop
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -579,6 +646,12 @@ int main(int argc, char *argv[]) {
     testing("ADD 16", testADD_16(cpu), state, cpu);
     testing("INC 16", testINC_16(cpu), state, cpu);
     testing("DEC 16", testDEC_16(cpu), state, cpu);
+
+    // Misc
+    testing("SWAP", testSWAP(cpu), state, cpu);
+    testing("CPL", testCPL(cpu), state, cpu);
+    testing("CCF", testCCF(cpu), state, cpu);
+    testing("SCF", testSCF(cpu), state, cpu);
 
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
 }
