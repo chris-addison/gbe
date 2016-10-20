@@ -45,6 +45,7 @@ static bool assertFlag(uint8 flag, bool state, cpu_state *cpu) {
     return result;
 }
 
+// Test ld_8, ld_8_m methods
 static bool testLD_8(cpu_state *cpu) {
     // Test to pointer
     uint8 actual = rand() % 0x100;
@@ -66,6 +67,7 @@ static bool testLD_8(cpu_state *cpu) {
     return assertUint8(cpu->MEM[0xFFFF], expected) && result;
 }
 
+// Test ldi, ldi_m methods
 static bool testLDI(cpu_state *cpu) {
     // Test to pointer
     uint8 actual = rand() % 0x100;
@@ -91,6 +93,7 @@ static bool testLDI(cpu_state *cpu) {
     return assertUint8(cpu->MEM[0xFFFF], expected) && result;
 }
 
+// Test ldd, ldd_m method
 static bool testLDD(cpu_state *cpu) {
     // Test to pointer
     uint8 actual = rand() % 0x100;
@@ -116,6 +119,7 @@ static bool testLDD(cpu_state *cpu) {
     return assertUint8(cpu->MEM[0xFFFF], expected) && result;
 }
 
+// Test ld_16, ld_16_m methods
 static bool testLD_16(cpu_state *cpu) {
     // Test to pointer
     uint16 actual = rand() % 0x10000;
@@ -138,6 +142,7 @@ static bool testLD_16(cpu_state *cpu) {
     return assertUint16((cpu->MEM[0xFFF1] << 8) + cpu->MEM[0xFFF0], expected) && result;
 }
 
+// Test pop, push methods
 static bool testPUSH_POP(cpu_state *cpu) {
     uint16 expected = rand() % 0x10000;
     push(expected, 0, cpu);
@@ -147,6 +152,52 @@ static bool testPUSH_POP(cpu_state *cpu) {
     pop(&returnedValue, 0, cpu);
     // Check result of pop
     result &= assertUint16(returnedValue, expected);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
+// Test add_8 method
+static bool testADD(cpu_state *cpu) {
+    // Simple add
+    // Reset A for simple start value
+    cpu->registers.A = 0x00;
+    uint8 testValue = 0x01;
+    add_8(testValue, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x01);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // General flag test
+    cpu->registers.A = 0xFF;
+    testValue = 0x01;
+    add_8(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, true, cpu);
+    // Carry flag test
+    cpu->registers.A = 0xF0;
+    testValue = 0x20;
+    add_8(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x10);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, true, cpu);
+    // Half-carry flag test
+    cpu->registers.A = 0x0F;
+    testValue = 0x01;
+    add_8(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x10);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, false, cpu);
     return result;
 }
 
@@ -168,7 +219,11 @@ int main(int argc, char *argv[]) {
 
     // 16 bit loads
     testing("LD 16", testLD_16(cpu), state, cpu);
-    testing("POP PUSH", testPUSH_POP(cpu), state, cpu);
+    testing("STK OP", testPUSH_POP(cpu), state, cpu);
+
+    // 8 bit arithemtic
+    testing("ADD 8", testADD(cpu), state, cpu);
+
 
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
 }
