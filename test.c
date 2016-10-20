@@ -5,10 +5,17 @@ static void testing(char* name, bool success, test_state *state, cpu_state *cpu)
     printf("TEST:\t%s\t[%s]\n", name, (success) ? "SUCCESS" : "FAIL");
     state->failled_tests += !success;
     state->passed_tests += success;
-    // Reset cpu state after tests
-    cpu = createCPU();
-    // Reset flags to make tests simpler
-    cpu->registers.F = 0x00;
+    // Reset cpu after test
+    cpu->registers.AF = 0x00;
+    cpu->registers.BC = 0x00;
+    cpu->registers.DE = 0x00;
+    cpu->registers.HL = 0x00;
+    cpu->PC = 0x100;
+    cpu->SP = 0xFFFE;
+    cpu->wait = 0;
+    cpu->ROM_bank = 1;
+    cpu->RAM_bank = 0;
+    cpu->RAM_enable = false;
 }
 
 // Assert that two uint8 as the same
@@ -261,7 +268,7 @@ static bool testSUB(cpu_state *cpu) {
 static bool testSBC(cpu_state *cpu) {
     cpu->registers.A = 0x10;
     setFlag(CF, cpu); // Will need to test this method too!
-    uint8 testValue = 0x11;
+    uint8 testValue = 0x0F;
     sbc(testValue, 0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x00);
     result &= assertFlag(ZF, true, cpu);
@@ -270,7 +277,8 @@ static bool testSBC(cpu_state *cpu) {
     result &= assertFlag(CF, false, cpu);
     return result;
 }
- // Test and
+
+// Test and method
 static bool testAND(cpu_state *cpu) {
     // Test simple
     cpu->registers.A = 0xFF;
@@ -302,6 +310,158 @@ static bool testAND(cpu_state *cpu) {
     return result;
 }
 
+// Test or method
+static bool testOR(cpu_state *cpu) {
+    // Test simple
+    cpu->registers.A = 0xFF;
+    uint8 testValue = 0xFF;
+    or(testValue, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0xFF);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test zero flag
+    cpu->registers.A = 0x00;
+    testValue = 0x00;
+    or(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test general
+    cpu->registers.A = 0x10;
+    testValue = 0x0F;
+    or(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x1F);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
+// Test xor method
+static bool testXOR(cpu_state *cpu) {
+    // Test simple
+    cpu->registers.A = 0x0F;
+    uint8 testValue = 0xF0;
+    xor(testValue, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0xFF);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test zero flag
+    cpu->registers.A = 0xFF;
+    testValue = 0xFF;
+    xor(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test general
+    cpu->registers.A = 0x11;
+    testValue = 0x3F;
+    xor(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x2E);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
+// Test cp method
+static bool testCP(cpu_state *cpu) {
+    // Test no flag
+    cpu->registers.A = 0x02;
+    uint8 testValue = 0x01;
+    cp(testValue, 0, cpu);
+    bool result = true;
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test zero flag
+    cpu->registers.A = 0xF0;
+    testValue = 0xF0;
+    cp(testValue, 0, cpu);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test half-carry && carry flag
+    cpu->registers.A = 0x11;
+    testValue = 0x12;
+    cp(testValue, 0, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, true, cpu);
+    return result;
+}
+
+// Test inc_8 method
+static bool testINC_8(cpu_state *cpu) {
+    // Test simple
+    cpu->registers.A = 0x11;
+    inc_8(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x12);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test zero flag
+    cpu->registers.A = 0xFF;
+    inc_8(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test half-carry flag
+    cpu->registers.A = 0x0F;
+    inc_8(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x10);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
+// Test dec_8 method
+static bool testDEC_8(cpu_state *cpu) {
+    // Test simple
+    cpu->registers.A = 0x11;
+    dec_8(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x10);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test zero flag
+    cpu->registers.A = 0x01;
+    dec_8(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test half-carry flag
+    cpu->registers.A = 0x10;
+    dec_8(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x0F);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -328,6 +488,12 @@ int main(int argc, char *argv[]) {
     testing("SUB 8", testSUB(cpu), state, cpu);
     testing("SBC", testSBC(cpu), state, cpu);
     testing("AND", testAND(cpu), state, cpu);
+    testing("OR", testOR(cpu), state, cpu);
+    testing("XOR", testXOR(cpu), state, cpu);
+    testing("CP", testCP(cpu), state, cpu);
+    testing("INC 8", testINC_8(cpu), state, cpu);
+    testing("DEC 8", testDEC_8(cpu), state, cpu);
+
 
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
 }
