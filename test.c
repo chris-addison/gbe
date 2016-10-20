@@ -201,6 +201,76 @@ static bool testADD(cpu_state *cpu) {
     return result;
 }
 
+// Test adc method
+static bool testADC(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    setFlag(CF, cpu);
+    uint8 testValue = 0xFF;
+    adc(testValue, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
+// Test sub_8 method
+static bool testSUB(cpu_state *cpu) {
+    // Simple add
+    // Reset A for simple start value
+    cpu->registers.A = 0x01;
+    uint8 testValue = 0x01;
+    sub_8(testValue, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // General flag test
+    cpu->registers.A = 0x10;
+    testValue = 0x11;
+    sub_8(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0xFF);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, true, cpu);
+    // Carry flag test
+    cpu->registers.A = 0x10;
+    testValue = 0x20;
+    sub_8(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0xF0);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, true, cpu);
+    // Half-carry flag test
+    cpu->registers.A = 0x10;
+    testValue = 0x01;
+    sub_8(testValue, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x0F);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
+// Test sbc method
+static bool testSBC(cpu_state *cpu) {
+    cpu->registers.A = 0x10;
+    setFlag(CF, cpu);
+    uint8 testValue = 0x11;
+    sbc(testValue, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -223,6 +293,9 @@ int main(int argc, char *argv[]) {
 
     // 8 bit arithemtic
     testing("ADD 8", testADD(cpu), state, cpu);
+    testing("ADC", testADC(cpu), state, cpu);
+    testing("SUB 8", testSUB(cpu), state, cpu);
+    testing("SBC", testSBC(cpu), state, cpu);
 
 
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
