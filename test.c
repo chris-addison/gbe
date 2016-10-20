@@ -91,6 +91,65 @@ static bool testLDI(cpu_state *cpu) {
     return assertUint8(cpu->MEM[0xFFFF], expected) && result;
 }
 
+static bool testLDD(cpu_state *cpu) {
+    // Test to pointer
+    uint8 actual = rand() % 0x100;
+    uint8 expected = rand() % 0x100;
+    uint16 expectedHL = cpu->registers.HL - 1;
+    ldd(expected, &actual, 0, cpu);
+    bool result = assertUint8(actual, expected);
+    result &= assertUint16(cpu->registers.HL, expectedHL);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test to memory address
+    cpu->MEM[0xFFFF] = rand() % 0x100;
+    expected = rand() % 0x100;
+    expectedHL = cpu->registers.HL - 1;
+    ldd_m(expected, 0xFFFF, 0, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertUint16(cpu->registers.HL, expectedHL);
+    return assertUint8(cpu->MEM[0xFFFF], expected) && result;
+}
+
+static bool testLD_16(cpu_state *cpu) {
+    // Test to pointer
+    uint16 actual = rand() % 0x10000;
+    uint16 expected = rand() % 0x10000;
+    ld_16(expected, &actual, 0, cpu);
+    bool result = assertUint16(actual, expected);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test to memory address
+    cpu->MEM[0xFFF0] = rand() % 0x100;
+    cpu->MEM[0xFFF1] = rand() % 0x100;
+    expected = rand() % 0x10000;
+    ld_16_m(expected, 0xFFF0, 0, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    return assertUint16((cpu->MEM[0xFFF1] << 8) + cpu->MEM[0xFFF0], expected) && result;
+}
+
+static bool testPUSH_POP(cpu_state *cpu) {
+    uint16 expected = rand() % 0x10000;
+    push(expected, 0, cpu);
+    // Check memory
+    bool result = assertUint16((cpu->MEM[cpu->SP + 1] << 8) + cpu->MEM[cpu->SP], expected);
+    uint16 returnedValue = 0;
+    pop(&returnedValue, 0, cpu);
+    // Check result of pop
+    result &= assertUint16(returnedValue, expected);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -100,9 +159,16 @@ int main(int argc, char *argv[]) {
     cpu->registers.F = 0x00;
     struct test_state *state = (struct test_state *) malloc(sizeof(struct test_state));
 
-    // Tests
+    /*    Tests    */
+
+    // 8 bit loads
     testing("LD 8", testLD_8(cpu), state, cpu);
     testing("LDI", testLDI(cpu), state, cpu);
+    testing("LDD", testLDD(cpu), state, cpu);
+
+    // 16 bit loads
+    testing("LD 16", testLD_16(cpu), state, cpu);
+    testing("POP PUSH", testPUSH_POP(cpu), state, cpu);
 
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
 }
