@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     //grab file
-    FILE *rom = fopen(argv[1], "r");
+    FILE *rom = fopen(argv[1], "rb");
 
     //TEMP ERROR FILE
     //FILE *logger = fopen("log.txt", "w");
@@ -23,7 +23,10 @@ int main(int argc, char *argv[]) {
     //set up cpu
     struct cpu_state * cpu = createCPU();
     //all cartridge types load 0x4000 first
-    fread(cpu->MEM, 1, 0x4000, rom);
+    if (!fread(cpu->MEM, 1, 0x4000, rom)) {
+        printf("Incorrect sized rom!\n");
+        exit(1248);
+    }
     //read and print cartridge info and setup memory banks
     cartridgeInfo(cpu, rom);
     fclose(rom);
