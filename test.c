@@ -706,6 +706,100 @@ static bool testSCF(cpu_state *cpu) {
 
 //TODO: Test DI, EI - Will need a stronger testing harness for these along with halt and stop
 
+// Test rlca method
+static bool testRLCA(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    setFlag(CF, cpu);
+    rlca(0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x81;
+    rlca(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x03);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test rla method
+static bool testRLA(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    rla(0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x81;
+    rla(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x02);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x21;
+    setFlag(CF, cpu);
+    rla(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x43);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test rrca method
+static bool testRRCA(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    setFlag(CF, cpu);
+    rrca(0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x21;
+    rrca(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x90);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test rra method
+static bool testRRA(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    rra(0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x11;
+    rra(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x08);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x22;
+    setFlag(CF, cpu);
+    rra(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x91);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -752,7 +846,10 @@ int main(int argc, char *argv[]) {
     testing("SCF", testSCF(cpu), state, cpu);
 
     // Shifts and Rotates
-
+    testing("RLCA", testRLCA(cpu), state, cpu);
+    testing("RLA", testRLA(cpu), state, cpu);
+    testing("RRCA", testRRCA(cpu), state, cpu);
+    testing("RRA", testRRA(cpu), state, cpu);
 
     // Print result
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
