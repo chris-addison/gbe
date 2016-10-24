@@ -800,6 +800,100 @@ static bool testRRA(cpu_state *cpu) {
     return result;
 }
 
+// Test rlc method
+static bool testRLC(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    setFlag(CF, cpu);
+    rlc(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x81;
+    rlc(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x03);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test rl method
+static bool testRL(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    rl(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x81;
+    rl(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x02);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x21;
+    setFlag(CF, cpu);
+    rl(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x43);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test rrc method
+static bool testRRC(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    setFlag(CF, cpu);
+    rrc(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x21;
+    rrc(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x90);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test rr method
+static bool testRR(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    rr(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x11;
+    rr(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x08);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0x22;
+    setFlag(CF, cpu);
+    rr(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x91);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -850,6 +944,10 @@ int main(int argc, char *argv[]) {
     testing("RLA", testRLA(cpu), state, cpu);
     testing("RRCA", testRRCA(cpu), state, cpu);
     testing("RRA", testRRA(cpu), state, cpu);
+    testing("RLC", testRLC(cpu), state, cpu);
+    testing("RL", testRL(cpu), state, cpu);
+    testing("RRC", testRRC(cpu), state, cpu);
+    testing("RR", testRRA(cpu), state, cpu);
 
     // Print result
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
