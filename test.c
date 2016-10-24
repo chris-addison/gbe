@@ -1,11 +1,7 @@
 #include "test.h"
 
-// Prints success or failed along with name of test
-static void testing(char* name, bool success, test_state *state, cpu_state *cpu) {
-    printf("TEST:\t%s\t[%s]\n", name, (success) ? "SUCCESS" : "FAIL");
-    state->failled_tests += !success;
-    state->passed_tests += success;
-    // Reset cpu after test
+// Performs basic reset on the cpu
+static void resetCPU(cpu_state *cpu) {
     cpu->registers.AF = 0x00;
     cpu->registers.BC = 0x00;
     cpu->registers.DE = 0x00;
@@ -16,6 +12,15 @@ static void testing(char* name, bool success, test_state *state, cpu_state *cpu)
     cpu->ROM_bank = 1;
     cpu->RAM_bank = 0;
     cpu->RAM_enable = false;
+}
+
+// Prints success or failed along with name of test
+static void testing(char* name, bool success, test_state *state, cpu_state *cpu) {
+    printf("TEST:\t%s\t[%s]\n", name, (success) ? "SUCCESS" : "FAIL");
+    state->failled_tests += !success;
+    state->passed_tests += success;
+    // Reset cpu after test
+    resetCPU(cpu);
 }
 
 // Assert that two uint8 as the same
@@ -615,8 +620,9 @@ int main(int argc, char *argv[]) {
     srand(time(NULL));
     printf("\n[START TESTING]\n");
     struct cpu_state *cpu = createCPU();
-    // Reset flags to make tests simpler
-    cpu->registers.F = 0x00;
+    // Reset cpu before starting tests
+    resetCPU(cpu);
+    // Setup struct to hold test information
     struct test_state *state = (struct test_state *) malloc(sizeof(struct test_state));
 
     /*    Tests    */
@@ -653,5 +659,14 @@ int main(int argc, char *argv[]) {
     testing("CCF", testCCF(cpu), state, cpu);
     testing("SCF", testSCF(cpu), state, cpu);
 
+    // Shifts and Rotates
+
+
+    // Print result
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
+
+    // Free and end program
+    free(cpu);
+    free(state);
+    exit(0);
 }
