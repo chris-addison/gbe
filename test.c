@@ -571,6 +571,11 @@ static bool testSWAP(cpu_state *cpu) {
 }
 
 //TODO: test DAA - Need to divise some representitive test cases
+static bool testDAA(cpu_state * cpu) {
+
+    daa(0, cpu);
+    return false;
+}
 
 // Test cpl method
 static bool testCPL(cpu_state *cpu) {
@@ -603,6 +608,12 @@ static bool testCCF(cpu_state *cpu) {
 static bool testSCF(cpu_state *cpu) {
     scf(0, cpu);
     bool result = assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    // Check to make sure the flag is only set by method
+    scf(0, cpu);
+    result &= assertFlag(CF, true, cpu);
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, false, cpu);
