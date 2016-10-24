@@ -27,7 +27,7 @@ static void testing(char* name, bool success, test_state *state, cpu_state *cpu)
 static bool assertUint8(uint8 actual, uint8 expected) {
     bool result = (actual == expected);
     if (!result) {
-        printf("Actual value: %d does not match expected value: %d\n", actual, expected);
+        printf("Actual value: 0x%X does not match expected value: 0x%X\n", actual, expected);
     }
     return result;
 }
@@ -36,7 +36,7 @@ static bool assertUint8(uint8 actual, uint8 expected) {
 static bool assertUint16(uint16 actual, uint16 expected) {
     bool result = (actual == expected);
     if (!result) {
-        printf("Actual value: %d does not match expected value: %d\n", actual, expected);
+        printf("Actual value: 0x%X does not match expected value: 0x%X\n", actual, expected);
     }
     return result;
 }
@@ -570,11 +570,91 @@ static bool testSWAP(cpu_state *cpu) {
     return result;
 }
 
-//TODO: test DAA - Need to divise some representitive test cases
+// Test daa method. There are a lot of paths to test, so this is a little large.
 static bool testDAA(cpu_state * cpu) {
-
+    // Test simple lower nibble
+    cpu->registers.A = 0x0A;
     daa(0, cpu);
-    return false;
+    bool result = assertUint8(cpu->registers.A, 0x10);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test simple upper nibble
+    cpu->registers.A = 0xA0;
+    daa(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, true, cpu);
+    // Test with carry flag
+    cpu->registers.A = 0x01;
+    clearFlag(ZF, cpu);
+    setFlag(CF, cpu);
+    daa(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x61);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, true, cpu);
+    // Test with carry flag, half-carry flag
+    cpu->registers.A = 0x01;
+    clearFlag(ZF, cpu);
+    setFlag(CF, cpu);
+    setFlag(HF, cpu);
+    daa(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x67);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, true, cpu);
+    // Test with carry flag and a lower nibble that needs to be corrected
+    cpu->registers.A = 0x0F;
+    setFlag(CF, cpu);
+    clearFlag(ZF, cpu);
+    daa(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x75);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, true, cpu);
+    // Test with negative flag and half-carry flag
+    cpu->registers.A = 0x0F;
+    clearFlag(CF, cpu);
+    clearFlag(ZF, cpu);
+    setFlag(NF, cpu);
+    setFlag(HF, cpu);
+    daa(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x09);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, false, cpu);
+    // Test with negative flag, carry flag
+    cpu->registers.A = 0x61;
+    clearFlag(ZF, cpu);
+    setFlag(NF, cpu);
+    setFlag(CF, cpu);
+    daa(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x01);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, true, cpu);
+    // Test with negative flag, carry flag, and half-carry flag
+    cpu->registers.A = 0x66;
+    clearFlag(ZF, cpu);
+    setFlag(NF, cpu);
+    setFlag(HF, cpu);
+    setFlag(CF, cpu);
+    daa(0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, true, cpu);
+    return result;
 }
 
 // Test cpl method
@@ -666,6 +746,7 @@ int main(int argc, char *argv[]) {
 
     // Misc
     testing("SWAP", testSWAP(cpu), state, cpu);
+    testing("DAA", testDAA(cpu), state, cpu);
     testing("CPL", testCPL(cpu), state, cpu);
     testing("CCF", testCCF(cpu), state, cpu);
     testing("SCF", testSCF(cpu), state, cpu);
