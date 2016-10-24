@@ -894,6 +894,63 @@ static bool testRR(cpu_state *cpu) {
     return result;
 }
 
+// Test sla method
+static bool testSLA(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    sla(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0xF0;
+    sla(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0xE0);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test sra method
+static bool testSRA(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    sra(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0xF1;
+    sra(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0xF8);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test srl method
+static bool testSRL(cpu_state *cpu) {
+    cpu->registers.A = 0x00;
+    srl(&cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x00);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->registers.A = 0xF1;
+    srl(&cpu->registers.A, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x78);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -948,6 +1005,9 @@ int main(int argc, char *argv[]) {
     testing("RL", testRL(cpu), state, cpu);
     testing("RRC", testRRC(cpu), state, cpu);
     testing("RR", testRRA(cpu), state, cpu);
+    testing("SLA", testSLA(cpu), state, cpu);
+    testing("SRA", testSRA(cpu), state, cpu);
+    testing("SRL", testSRL(cpu), state, cpu);
 
     // Print result
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
