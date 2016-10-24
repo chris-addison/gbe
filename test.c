@@ -993,6 +993,44 @@ static bool testBIT(cpu_state *cpu) {
     return result;
 }
 
+// Test set, set_m method
+static bool testSET(cpu_state *cpu) {
+    cpu->registers.A = 0x11;
+    set(1, &cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x13);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->MEM[cpu->registers.HL] = 0x11;
+    set_m(1, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x13);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test res, res_m method
+static bool testRES(cpu_state *cpu) {
+    cpu->registers.A = 0x13;
+    res(1, &cpu->registers.A, 0, cpu);
+    bool result = assertUint8(cpu->registers.A, 0x11);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    cpu->MEM[cpu->registers.HL] = 0x13;
+    res_m(1, 0, cpu);
+    result &= assertUint8(cpu->registers.A, 0x11);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -1053,6 +1091,8 @@ int main(int argc, char *argv[]) {
 
     // Bit tests, sets, and resets
     testing("BIT", testBIT(cpu), state, cpu);
+    testing("SET", testSET(cpu), state, cpu);
+    testing("RES", testRES(cpu), state, cpu);
 
     // Print result
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
