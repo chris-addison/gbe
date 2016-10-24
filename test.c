@@ -1031,6 +1031,46 @@ static bool testRES(cpu_state *cpu) {
     return result;
 }
 
+// Test jp_c method
+static bool testJP(cpu_state *cpu) {
+    jp_c(false, 0x1234, 0, cpu);
+    bool result = assertUint16(cpu->PC, 0x0100);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    jp_c(true, 0x5678, 0, cpu);
+    result &= assertUint16(cpu->PC, 0x5678);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
+// Test jr_c method
+static bool testJR(cpu_state *cpu) {
+    jr_c(false, 1, 0, cpu);
+    bool result = assertUint16(cpu->PC, 0x0100);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    jr_c(true, -1, 0, cpu);
+    result &= assertUint16(cpu->PC, 0x00FF);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    jr_c(true, 1, 0, cpu);
+    result &= assertUint16(cpu->PC, 0x0100);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -1093,6 +1133,10 @@ int main(int argc, char *argv[]) {
     testing("BIT", testBIT(cpu), state, cpu);
     testing("SET", testSET(cpu), state, cpu);
     testing("RES", testRES(cpu), state, cpu);
+
+    // Jumps
+    testing("JP", testJP(cpu), state, cpu);
+    testing("JR", testJR(cpu), state, cpu);
 
     // Print result
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
