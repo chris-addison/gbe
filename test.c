@@ -1173,14 +1173,18 @@ static bool testRET(cpu_state *cpu) {
 }
 
 int main(int argc, char *argv[]) {
-    // Create a new seed based off the clock
-    srand(time(NULL));
+    #ifndef WINDOWS
+        // Create a new seed based off the clock
+        srand(time(NULL));
+    #endif
     printf("\n[START TESTING]\n");
     struct cpu_state *cpu = createCPU();
     // Reset cpu before starting tests
     resetCPU(cpu);
     // Setup struct to hold test information
     struct test_state *state = (struct test_state *) malloc(sizeof(struct test_state));
+    state->failled_tests = 0;
+    state->passed_tests = 0;
 
     /*    Tests    */
 
