@@ -57,6 +57,51 @@ static bool assertFlag(uint8 flag, bool state, cpu_state *cpu) {
     return result;
 }
 
+// Test setFlag, clearFlag, readFlag methods
+static bool testFlags(cpu_state *cpu) {
+    setFlag(CF, cpu);
+    bool result = assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, readFlag(CF, cpu), cpu);
+    result &= assertFlag(ZF, readFlag(ZF, cpu), cpu);
+    result &= assertFlag(NF, readFlag(NF, cpu), cpu);
+    result &= assertFlag(HF, readFlag(HF, cpu), cpu);
+    setFlag(ZF, cpu);
+    setFlag(HF, cpu);
+    setFlag(NF, cpu);
+    result &= assertFlag(CF, true, cpu);
+    result &= assertFlag(ZF, true, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, readFlag(CF, cpu), cpu);
+    result &= assertFlag(ZF, readFlag(ZF, cpu), cpu);
+    result &= assertFlag(NF, readFlag(NF, cpu), cpu);
+    result &= assertFlag(HF, readFlag(HF, cpu), cpu);
+    clearFlag(CF, cpu);
+    clearFlag(ZF, cpu);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, true, cpu);
+    result &= assertFlag(HF, true, cpu);
+    result &= assertFlag(CF, readFlag(CF, cpu), cpu);
+    result &= assertFlag(ZF, readFlag(ZF, cpu), cpu);
+    result &= assertFlag(NF, readFlag(NF, cpu), cpu);
+    result &= assertFlag(HF, readFlag(HF, cpu), cpu);
+    clearFlag(NF, cpu);
+    clearFlag(HF, cpu);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    result &= assertFlag(CF, readFlag(CF, cpu), cpu);
+    result &= assertFlag(ZF, readFlag(ZF, cpu), cpu);
+    result &= assertFlag(NF, readFlag(NF, cpu), cpu);
+    result &= assertFlag(HF, readFlag(HF, cpu), cpu);
+    return result;
+}
+
 // Test ld_8, ld_8_m methods
 static bool testLD_8(cpu_state *cpu) {
     // Test to pointer
@@ -1104,6 +1149,8 @@ static bool testRST(cpu_state *cpu) {
     return result;
 }
 
+//TODO: test reti
+
 // Test ret_c method
 static bool testRET(cpu_state *cpu) {
     call_c(true, 0x2020, 0, cpu);
@@ -1136,6 +1183,9 @@ int main(int argc, char *argv[]) {
     struct test_state *state = (struct test_state *) malloc(sizeof(struct test_state));
 
     /*    Tests    */
+
+    // Utility methods
+    testing("FLAGS", testFlags(cpu), state, cpu);
 
     // 8 bit loads
     testing("LD 8", testLD_8(cpu), state, cpu);
