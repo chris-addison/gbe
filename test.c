@@ -1091,6 +1091,19 @@ static bool testCALL(cpu_state *cpu) {
     return result;
 }
 
+// Test rst method
+static bool testRST(cpu_state *cpu) {
+    rst(0x00, 0, cpu);
+    bool result = assertUint16(cpu->PC, 0x0000);
+    result &= assertUint16(cpu->SP, 0xFFFC);
+    result &= assertUint16((cpu->MEM[cpu->SP+1] << 8) + cpu->MEM[cpu->SP], 0x0100);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -1160,6 +1173,9 @@ int main(int argc, char *argv[]) {
 
     // Calls
     testing("CALL", testCALL(cpu), state, cpu);
+
+    // Restarts
+    testing("RST", testRST(cpu), state, cpu);
 
     // Print result
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
