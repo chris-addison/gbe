@@ -1071,6 +1071,26 @@ static bool testJR(cpu_state *cpu) {
     return result;
 }
 
+// Test call_c method
+static bool testCALL(cpu_state *cpu) {
+    call_c(false, 0x1234, 0, cpu);
+    bool result = assertUint16(cpu->PC, 0x0100);
+    result &= assertUint16(cpu->SP, 0xFFFE);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    call_c(true, 0x5678, 0, cpu);
+    result &= assertUint16(cpu->PC, 0x5678);
+    result &= assertUint16(cpu->SP, 0xFFFC);
+    result &= assertUint16((cpu->MEM[cpu->SP+1] << 8) + cpu->MEM[cpu->SP], 0x0100);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -1137,6 +1157,9 @@ int main(int argc, char *argv[]) {
     // Jumps
     testing("JP", testJP(cpu), state, cpu);
     testing("JR", testJR(cpu), state, cpu);
+
+    // Calls
+    testing("CALL", testCALL(cpu), state, cpu);
 
     // Print result
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
