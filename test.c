@@ -1104,6 +1104,27 @@ static bool testRST(cpu_state *cpu) {
     return result;
 }
 
+// Test ret_c method
+static bool testRET(cpu_state *cpu) {
+    call_c(true, 0x2020, 0, cpu);
+    ret_c(false, 0, cpu);
+    bool result = assertUint16(cpu->PC, 0x2020);
+    result &= assertUint16(cpu->SP, 0xFFFC);
+    result &= assertUint16((cpu->MEM[cpu->SP+1] << 8) + cpu->MEM[cpu->SP], 0x0100);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    ret_c(true, 0, cpu);
+    result &= assertUint16(cpu->PC, 0x0100);
+    result &= assertUint16(cpu->SP, 0xFFFE);
+    result &= assertFlag(CF, false, cpu);
+    result &= assertFlag(ZF, false, cpu);
+    result &= assertFlag(NF, false, cpu);
+    result &= assertFlag(HF, false, cpu);
+    return result;
+}
+
 int main(int argc, char *argv[]) {
     // Create a new seed based off the clock
     srand(time(NULL));
@@ -1176,6 +1197,9 @@ int main(int argc, char *argv[]) {
 
     // Restarts
     testing("RST", testRST(cpu), state, cpu);
+
+    // Returns
+    testing("RET", testRET(cpu), state, cpu);
 
     // Print result
     printf("\n[TESTING COMPLETE]\n%d tests passed out of %d total tests!\n\n", state->passed_tests, state->failled_tests + state->passed_tests);
