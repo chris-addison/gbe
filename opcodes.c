@@ -77,7 +77,7 @@ void jp_c(bool set, uint16 address, uint8 opcode, cpu_state *cpu) {
 }
 
 //jump relative to PC if condition is met
-void jr_c_8(bool set, int8 address, uint8 opcode, cpu_state *cpu) {
+void jr_c(bool set, int8 address, uint8 opcode, cpu_state *cpu) {
     if (set) {
         cpu->PC += address;
         cpu->wait = opcodes[opcode].cyclesMax;
@@ -570,7 +570,7 @@ int execute(cpu_state * cpu) {
             rla(opcode, cpu);
             break;
         case 0x18: //JR r8
-            jr_c_8(true, oneByteSigned(cpu), opcode, cpu);
+            jr_c(true, oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x19: //ADD HL, DE
             add_16(cpu->registers.DE, &cpu->registers.HL, opcode, cpu);
@@ -594,7 +594,7 @@ int execute(cpu_state * cpu) {
             rra(opcode, cpu);
             break;
         case 0x20: //JR NZ, r8
-            jr_c_8(!readFlag(ZF, cpu), oneByteSigned(cpu), opcode, cpu);
+            jr_c(!readFlag(ZF, cpu), oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x21: //LD HL, d16
             ld_16(twoBytes(cpu), &cpu->registers.HL, opcode, cpu);
@@ -618,7 +618,7 @@ int execute(cpu_state * cpu) {
             daa(opcode, cpu);
             break;
         case 0x28: //JR Z,r8
-            jr_c_8(readFlag(ZF, cpu), oneByteSigned(cpu), opcode, cpu);
+            jr_c(readFlag(ZF, cpu), oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x29: //ADD HL, HL
             add_16(cpu->registers.HL, &cpu->registers.HL, opcode, cpu);
@@ -639,7 +639,7 @@ int execute(cpu_state * cpu) {
             cpl(opcode, cpu);
             break;
         case 0x30: //JR NC, r8
-            jr_c_8(!readFlag(CF, cpu), oneByteSigned(cpu), opcode, cpu);
+            jr_c(!readFlag(CF, cpu), oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x31: //LD SP, d16
             ld_16(twoBytes(cpu), &cpu->SP, opcode, cpu);
@@ -660,7 +660,7 @@ int execute(cpu_state * cpu) {
             scf(opcode, cpu);
             break;
         case 0x38: //JR C, r8
-            jr_c_8(readFlag(CF, cpu), oneByteSigned(cpu), opcode, cpu);
+            jr_c(readFlag(CF, cpu), oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x39: //ADD HL, SP
             add_16(cpu->SP, &cpu->registers.HL, opcode, cpu);
