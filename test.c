@@ -102,6 +102,21 @@ static bool testFlags(cpu_state *cpu) {
     return result;
 }
 
+// Test exexute method (catch any missed breaks, or incorrect function arguments)
+/*static bool testExecute(cpu_state *cpu) {
+    bool result = true;
+    for (int i = 0; i < 256; i++) {
+        //printf("Current insruction: 0x%X\n", i);
+        cpu->PC = 0x0100;
+        cpu->halt = false;
+        writeByte(cpu->PC, i, cpu);
+        writeShort(cpu->PC + 1, 0x0100, cpu); //stop jumps or calls
+        execute(cpu);
+        result &= assertUint16(cpu->PC, 0x0100 + opcodes[i].bytes);
+    }
+    return result;
+}*/
+
 // Test ld_8, ld_8_m methods
 static bool testLD_8(cpu_state *cpu) {
     // Test to pointer
@@ -123,6 +138,10 @@ static bool testLD_8(cpu_state *cpu) {
     result &= assertFlag(CF, false, cpu);
     return assertUint8(cpu->MEM[0xFFFF], expected) && result;
 }
+
+//TODO: test read, write of bytes
+
+//TODO: test read, write of shorts
 
 // Test ldi, ldi_m methods
 static bool testLDI(cpu_state *cpu) {
@@ -1190,6 +1209,7 @@ int main(int argc, char *argv[]) {
 
     // Utility methods
     testing("FLAGS", testFlags(cpu), state, cpu);
+    //testing("EXECUTE", testExecute(cpu), state, cpu);
 
     // 8 bit loads
     testing("LD 8", testLD_8(cpu), state, cpu);
