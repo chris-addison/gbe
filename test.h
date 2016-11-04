@@ -1,4 +1,6 @@
-#include <time.h>
+#ifndef WINDOWS
+    #include <time.h>
+#endif
 #include "main.h"
 #include "cartridge.c"
 

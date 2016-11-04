@@ -77,7 +77,7 @@ void jp_c(bool set, uint16 address, uint8 opcode, cpu_state *cpu) {
 }
 
 //jump relative to PC if condition is met
-void jr_c_8(bool set, int8 address, uint8 opcode, cpu_state *cpu) {
+void jr_c(bool set, int8 address, uint8 opcode, cpu_state *cpu) {
     if (set) {
         cpu->PC += address;
         cpu->wait = opcodes[opcode].cyclesMax;
@@ -450,7 +450,7 @@ void or(uint8 value, uint8 opcode, cpu_state *cpu) {
 //decimal adjust register A. Hex to Binary Coded Decimal. This makes the max
 //value of every byte 9 to allow for easy translation into decimal values.
 void daa(uint8 opcode, cpu_state *cpu) {
-    uint8 correction = 0;
+    uint16 regA = cpu->registers.A;
     //check whether the last operation was subtraction
     if (!readFlag(NF, cpu)) { //addition
         //correct lower byte. If value is greater than 9, push the excess to the
@@ -459,38 +459,34 @@ void daa(uint8 opcode, cpu_state *cpu) {
         //carried over to the next byte. in BCD this is only a carry of 10, so
         //to correct one must restore the excess 6 to the lower byte.
         if (readFlag(HF, cpu) || ((cpu->registers.A & 0xF) > 0x09)) {
-            correction += 0x06;
+            regA += 0x06;
         }
         //correct upper byte. Similar to above regarding the situation with the
         //half-carry flag except in the larger byte this is the carry flag instead
         if (readFlag(CF, cpu) || (cpu->registers.A > 0x9F)) {
-            correction += 0x60;
+            regA += 0x60;
         }
-        //carry flag - can only be set, not cleared
-        if (((uint16)cpu->registers.A) + ((uint16)correction) > 0xFF) setFlag(CF, cpu);
-        //assign value
-        cpu->registers.A += correction;
     } else { //subtraction
         //correct lower byte. Same idea as explained above, but in reverse
         if (readFlag(HF, cpu)) {
-            correction += 0x06;
+            regA = (regA - 0x06) & 0xFF;
         }
         //correct upper byte. Same idea as explained above, but in reverse
         if (readFlag(CF, cpu)) {
-            correction += 0x60;
+            regA -= 0x60;
         }
-        //carry flag - can only be set, not cleared
-        if (cpu->registers.A < correction) setFlag(CF, cpu);
-        //assign value
-        cpu->registers.A -= correction;
+    }
+    // Assign back to register after masking value
+    cpu->registers.A = regA & 0xFF;
+    //carry flag - can only be set, not reset
+    if (regA & 0x100) {
+        setFlag(CF, cpu);
     }
     //half-carry flag
     clearFlag(HF, cpu);
     //zero flag
     (cpu->registers.A) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     cpu->wait = opcodes[opcode].cycles;
-    //printInstruction(true, cpu->PC - 1, cpu);
-    //debug(cpu);
 }
 
 //execute next instruction
@@ -574,7 +570,7 @@ int execute(cpu_state * cpu) {
             rla(opcode, cpu);
             break;
         case 0x18: //JR r8
-            jr_c_8(true, oneByteSigned(cpu), opcode, cpu);
+            jr_c(true, oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x19: //ADD HL, DE
             add_16(cpu->registers.DE, &cpu->registers.HL, opcode, cpu);
@@ -598,7 +594,7 @@ int execute(cpu_state * cpu) {
             rra(opcode, cpu);
             break;
         case 0x20: //JR NZ, r8
-            jr_c_8(!readFlag(ZF, cpu), oneByteSigned(cpu), opcode, cpu);
+            jr_c(!readFlag(ZF, cpu), oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x21: //LD HL, d16
             ld_16(twoBytes(cpu), &cpu->registers.HL, opcode, cpu);
@@ -622,7 +618,7 @@ int execute(cpu_state * cpu) {
             daa(opcode, cpu);
             break;
         case 0x28: //JR Z,r8
-            jr_c_8(readFlag(ZF, cpu), oneByteSigned(cpu), opcode, cpu);
+            jr_c(readFlag(ZF, cpu), oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x29: //ADD HL, HL
             add_16(cpu->registers.HL, &cpu->registers.HL, opcode, cpu);
@@ -643,7 +639,7 @@ int execute(cpu_state * cpu) {
             cpl(opcode, cpu);
             break;
         case 0x30: //JR NC, r8
-            jr_c_8(!readFlag(CF, cpu), oneByteSigned(cpu), opcode, cpu);
+            jr_c(!readFlag(CF, cpu), oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x31: //LD SP, d16
             ld_16(twoBytes(cpu), &cpu->SP, opcode, cpu);
@@ -664,7 +660,7 @@ int execute(cpu_state * cpu) {
             scf(opcode, cpu);
             break;
         case 0x38: //JR C, r8
-            jr_c_8(readFlag(CF, cpu), oneByteSigned(cpu), opcode, cpu);
+            jr_c(readFlag(CF, cpu), oneByteSigned(cpu), opcode, cpu);
             break;
         case 0x39: //ADD HL, SP
             add_16(cpu->SP, &cpu->registers.HL, opcode, cpu);
