@@ -1,7 +1,16 @@
 #include "main.h"
 
-//read cartridge info and setup the cpu based on it
-void cartridgeInfo(cpu_state *cpu, FILE *rom) {
+// Load the first bank of the rom
+static void cartridgeLoad(cpu_state *cpu, FILE *rom) {
+    // All cartridge types load 0 -> 0x4000. Catch bad roms/files.
+    if (!fread(cpu->MEM, 1, 0x4000, rom)) {
+        printf("Incorrect sized rom!\n");
+        exit(1248);
+    }
+}
+
+// Read cartridge info and setup the cpu based on it
+static void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     //fetch and store the title
     char title[16];
     for (int i = 0; i < 16; i++) {
@@ -9,7 +18,7 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     }
     printf("Now playing: %s\n", title);
 
-    //check if it's only gbc
+    //check if it's gbc only rom
     if (cpu->MEM[0x143] == 0xC0) {
         printf("GBC cartridges not supported!\n");
         exit(523);

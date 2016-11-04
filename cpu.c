@@ -38,3 +38,23 @@ static struct cpu_state* createCPU() {
 
     return cpu;
 }
+
+// Execute a single cpu step
+static void executeCPU(cpu_state *cpu) {
+    #ifdef DEBUG
+        debug(false, cpu);
+    #endif
+    if (execute(cpu)) {
+        #ifdef DEBUG
+            // Force a run/runto to stop when an error has occurred
+            debug(true, cpu);
+        #else
+            // Exit if non-debug. TODO: output some sort of error message (Maybe method that can popup a box on display builds)
+            exit(369);
+        #endif
+    }
+}
+
+static void cycleCPU(cpu_state *cpu) {
+    cpu->wait--;
+}
