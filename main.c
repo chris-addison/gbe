@@ -1,6 +1,12 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "main.h"
 #include "cartridge.c"
+//X11 stuff
+#ifdef DISPLAY
+    #include <X11/X.h>
+    #include <X11/Xlib.h>
+    #include <X11/keysym.h>
+#endif
 
 int main(int argc, char *argv[]) {
     //catch lack of file
@@ -10,6 +16,38 @@ int main(int argc, char *argv[]) {
     }
     //grab file
     FILE *rom = fopen(argv[1], "r");
+
+    //handle creating and opening window for x11 session
+    #ifdef DISPLAY
+        Display *display = XOpenDisplay(NULL);
+        if(display == NULL) {
+            printf("Error connecting to X11\n");
+            exit(11);
+        } else {
+            printf("X11 is good to go!\n");
+        }
+        int screen = DefaultScreen(display);
+        Window window = XCreateSimpleWindow(display,
+            RootWindow(display, screen), 1000, 1000, 160, 144, 1,
+            BlackPixel(display, screen), WhitePixel(display, screen));
+        XSelectInput(display, window, ExposureMask | KeyPressMask);
+        XMapWindow(display, window);
+        XStoreName(display, window, "GBE");
+        XEvent event;
+        char *msg = "Hello, World!";
+        while (1) {
+            XNextEvent(display, &event);
+            if (event.type == Expose) {
+                XFillRectangle(display, window, DefaultGC(display, screen), 20, 20, 10, 10);
+                XDrawString(display, window, DefaultGC(display, screen), 10, 50, msg, strlen(msg));
+            }
+            if (event.type == KeyPress) {
+                XDestroyWindow(display, window);
+                XCloseDisplay(display);
+                break;
+            }
+        }
+    #endif
 
     //TEMP ERROR FILE
     //FILE *logger = fopen("log.txt", "w");
@@ -21,7 +59,7 @@ int main(int argc, char *argv[]) {
     }
 
     //set up cpu
-    struct cpu_state * cpu = createCPU();
+    struct cpu_state *cpu = createCPU();
     //all cartridge types load 0x4000 first
     fread(cpu->MEM, 1, 0x4000, rom);
     //read and print cartridge info and setup memory banks
@@ -50,6 +88,11 @@ int main(int argc, char *argv[]) {
         checkInterrupts(cpu);
         cpu->wait--;
     }
+
+    #ifdef DISPLAY
+        XDestroyWindow(display, window);
+        XCloseDisplay(display);
+    #endif
 
     //free cpu, cartridge at end
     free(cpu->CART_ROM);
