@@ -52,7 +52,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
         if (address < 0x2000) {
             //enable/diable cartridge RAM. If no ram, never enable.
             cpu->RAM_enable = ((value & 0xA) == 0xA && cpu->RAM_exists);
-            printf("RAM ENABLE/DISABLE\n");
+            //printf("RAM ENABLE/DISABLE\n");
         } else if (address < 0x3000 && cpu->mbc == 5) {
             if (value == 0x00) { //bank "0" is mapped to bank 1
                 value = 0x01;
@@ -60,7 +60,7 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
             //clear lower byte of rom bank so it can be set
             cpu->ROM_bank &= 0xFF00;
             cpu->ROM_bank |= value;
-            printf("%x CHANGE ROM BANK: %d\n", cpu->PC, value);
+            //printf("%x CHANGE ROM BANK: %d\n", cpu->PC, value);
         } else if (address < 0x4000) {
             if (value == 0x00) { //bank "0" is mapped to bank 1
                 value = 0x01;
@@ -76,14 +76,14 @@ static void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
             } else {
                 cpu->ROM_bank = value;
             }
-            printf("%x CHANGE ROM BANK: %d\n", cpu->PC, value);
+            //printf("%x CHANGE ROM BANK: %d\n", cpu->PC, value);
         } else if (address < 0x6000) {
             //select ram bank
             cpu->RAM_bank = value;
-            printf("%x CHANGE RAM BANK: %d\n", cpu->PC, value);
+            //printf("%x CHANGE RAM BANK: %d\n", cpu->PC, value);
         } else if (address < 0x8000) {
             if (cpu->mbc == 1) {
-                printf("CHANGE RAM/ROM MODE ON MBC1\n");
+                //printf("CHANGE RAM/ROM MODE ON MBC1\n");
                 cpu->mbc1_mode = value;
             } else {
                 //do nothing for now

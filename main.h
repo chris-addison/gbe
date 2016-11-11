@@ -645,12 +645,13 @@ const struct cbOpcode cbOpcodes[256] = {
 #include "debug.c"
 #include "opcodes.c"
 #include "cpu.c"
-#include "interrupts.c"
-#include "screen.c"
 
 #ifdef DISPLAY
     #include "display.h"
     #include "display.c"
 #endif
+
+#include "interrupts.c"
+#include "screen.c"
 
 #endif /* MAIN_H */

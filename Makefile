@@ -17,7 +17,7 @@ cli_windows:
 
 # experimental x11
 x11:
-	gcc $(FLAGS) main.c -o $(NAME) -DDISPLAY -DX11 -DOPENGL $(X11) $(OPENGL)
+	gcc $(FLAGS) main.c -o $(NAME) -DDISPLAY -DLINUX -DOPENGL $(X11) $(OPENGL)
 
 # testing builds
 test_linux:
