@@ -17,6 +17,10 @@
     GLuint textureID;
 #endif
 
+uint8 frameBuffer[3 * DISPLAY_WIDTH * DISPLAY_HEIGHT];
+uint8 tiles[384][8][8];
+//uint8 tileMap[1024][8][8];
+
 void startDisplay() {
     #ifdef LINUX
         display = XOpenDisplay(NULL);
@@ -37,7 +41,7 @@ void startDisplay() {
         setWindowAttributes.colormap = colormap;
         setWindowAttributes.event_mask = ExposureMask | KeyPressMask;
 
-        window = XCreateWindow(display, root, 0, 0, 160, 144, 0, visualInfo->depth,
+        window = XCreateWindow(display, root, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, visualInfo->depth,
              InputOutput, visualInfo->visual, CWColormap | CWEventMask, &setWindowAttributes);
 
         XMapWindow(display, window);
@@ -53,10 +57,8 @@ void startDisplay() {
     #endif
 }
 
-void drawScanline(cpu_state *cpu) {
+void loadTiles(cpu_state *cpu) {
     uint8 *vram = cpu->MEM + 0x8000;
-    // Print out tiles
-    uint8 tiles[256][8][8];
     for (int tileNum = 0; tileNum < 384; tileNum++) {
         for (int y = 0; y < 8; y++) {
             uint8 byteLow = *(vram + 2*y + tileNum*16);
@@ -68,43 +70,62 @@ void drawScanline(cpu_state *cpu) {
             }
         }
     }
+}
+
+void loadScanline(cpu_state *cpu) {    
+    uint8 scanLine = cpu->MEM[SCANLINE];
+    bool mapNumber = cpu->MEM[LCDC] & (0b1 << 6);
+    int mapLocation = (!mapNumber) ? 0x9C00 : 0x9800;
     // Draw tileset onto the window
-    uint8 data[3 * 160 * 144];
-    int x = 0;
-    int y = 0;
-    int scanLine = 0;
-    int tileNum = 0;
-    for (int i = 0; i < 160*144; i++) {
-        x = i % 8;
-        scanLine = i / 160;
-        y = scanLine % 8;
-        tileNum = ((scanLine / 8) * 20 + ((i / 8) % 20)) % 384;
-        if (tiles[tileNum][x][y]) {
-            data[i*3 + 0] = 0;
-            data[i*3 + 1] = 0;
-            data[i*3 + 2] = 0;
-        } else {
-            data[i*3 + 0] = 0xFF;
-            data[i*3 + 1] = 0xFF;
-            data[i*3 + 2] = 0xFF;
+    mapLocation += ((scanLine + cpu->MEM[SCROLL_Y]) >> 3) << 5;
+    short lineOffset = cpu->MEM[SCROLL_X] >> 3;
+    short x = cpu->MEM[SCROLL_X] & 7;
+    short y = (scanLine + cpu->MEM[SCROLL_Y]) & 7;
+    short tile = cpu->MEM[mapLocation + lineOffset];
+    //printf("tile: %d\n", tile);
+    if (!mapLocation) {
+        printf("HMMM\n");
+        tile = ((int8) tile) + 256;
+    }
+    short drawOffset = DISPLAY_WIDTH * scanLine;
+    for (int i = 0; i < DISPLAY_WIDTH; i++) {
+        frameBuffer[(drawOffset + i)*3 + 0] = COLOURS[tiles[tile][x][y]];
+        frameBuffer[(drawOffset + i)*3 + 1] = COLOURS[tiles[tile][x][y]];
+        frameBuffer[(drawOffset + i)*3 + 2] = COLOURS[tiles[tile][x][y]];
+        x++;
+        if (x == 8) {
+            x = 0;
+            lineOffset = (lineOffset + 1) & 31;
+            tile = cpu->MEM[mapLocation + lineOffset];
+            if (!mapLocation) {
+                printf("HMMM\n");
+                tile = ((int8) tile) + 256;
+            }
         }
     }
-    XGetWindowAttributes(display, window, &windowAttributes);
-    glViewport(0, 0, windowAttributes.width, windowAttributes.height);
+}
+
+void draw(cpu_state *cpu) {
+    loadTiles(cpu);
+    //XGetWindowAttributes(display, window, &windowAttributes);
+    //glViewport(0, 0, windowAttributes.width, windowAttributes.height);
     glClear(GL_COLOR_BUFFER_BIT);
-    glEnable(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 4, 160, 144, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glColor3f(1, 1, 1);
-    glBegin(GL_QUADS);
-    glTexCoord2i(0, 1); glVertex2i(-1, -1);
-    glTexCoord2i(0, 0); glVertex2i(-1, 1);
-    glTexCoord2i(1, 0); glVertex2i(1, 1);
-    glTexCoord2i(1, 1); glVertex2i(1, -1);
-    glEnd();
-    //glDrawPixels(160, 144, GL_RGB, GL_UNSIGNED_BYTE, data);
+    //glEnable(GL_TEXTURE_2D);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+    //TODO: switch to non-deprecated method of drawing
+    //gluBuild2DMipmaps(GL_TEXTURE_2D, 4, 160, 144, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
+    //glColor3f(1, 1, 1);
+    //glBegin(GL_QUADS);
+    //glTexCoord2i(0, 1); glVertex2i(-1, -1);
+    //glTexCoord2i(0, 0); glVertex2i(-1, 1);
+    //glTexCoord2i(1, 0); glVertex2i(1, 1);
+    //glTexCoord2i(1, 1); glVertex2i(1, -1);
+    //glEnd();
+    glRasterPos2f(-1, 1);
+    glPixelZoom(2, -2);
+    glDrawPixels(DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
     glXSwapBuffers(display, window);
 }
 

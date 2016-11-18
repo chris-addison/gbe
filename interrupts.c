@@ -33,7 +33,6 @@ static void interruptVBlank(cpu_state *cpu) {
     writeShortToStack(cpu->PC, cpu);
     cpu->PC = 0x40;
     cpu->wait = 12;
-    drawScanline(cpu);
 }
 
 //check interrupts and act on them
