@@ -72,9 +72,9 @@ void loadTiles(cpu_state *cpu) {
     }
 }
 
-void loadScanline(cpu_state *cpu) {    
+void loadScanline(cpu_state *cpu) {
     uint8 scanLine = cpu->MEM[SCANLINE];
-    bool mapNumber = cpu->MEM[LCDC] & (0b1 << 6);
+    bool mapNumber = ((cpu->MEM[LCDC] >> 6) & 0b1);
     int mapLocation = (!mapNumber) ? 0x9C00 : 0x9800;
     // Draw tileset onto the window
     mapLocation += ((scanLine + cpu->MEM[SCROLL_Y]) >> 3) << 5;
