@@ -8,3 +8,6 @@
     #include <GL/glx.h>
     #include <GL/glu.h>
 #endif
+#ifdef SDL
+    #include <SDL2/SDL.h>
+#endif

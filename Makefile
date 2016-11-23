@@ -4,6 +4,7 @@ WINDOWS_EXE =	.exe
 FLAGS		=	--std=c11
 X11			=	-lX11
 OPENGL		=	-lGL -lGLU -lm
+SDL 		=	`sdl2-config --cflags --libs`
 
 # run cli by default
 all: cli_linux
@@ -18,6 +19,10 @@ cli_windows:
 # experimental x11
 x11:
 	gcc $(FLAGS) main.c -o $(NAME) -DDISPLAY -DLINUX -DOPENGL $(X11) $(OPENGL)
+
+# experimental sdl
+sdl:
+	gcc $(FLAGS) main.c -o $(NAME) -DDISPLAY -DSDL $(SDL)
 
 # testing builds
 test_linux:
