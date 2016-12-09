@@ -46,9 +46,11 @@ void updateScreen(cpu_state *cpu) {
             break;
         case H_BLANK:
             if (cycles >= 204) {
-                if (displayActive) {
-                    loadScanline(cpu);
-                }
+                #ifdef DISPLAY
+                    if (displayActive) {
+                        loadScanline(cpu);
+                    }
+                #endif
                 incrementScanline(cpu);
                 //TODO: draw one line
                 //switch to vblank when the scanline hits 144
@@ -66,12 +68,14 @@ void updateScreen(cpu_state *cpu) {
         case V_BLANK:
             if (cycles >= 204) {
                 // Only display if correct bit is set.
-                if (cpu->MEM[LCDC] >> 7) {
-                    displayActive = true;
-                    draw(cpu);
-                } else {
-                    displayActive = false;
-                }
+                #ifdef DISPLAY
+                    if (cpu->MEM[LCDC] >> 7) {
+                        displayActive = true;
+                        draw(cpu);
+                    } else {
+                        displayActive = false;
+                    }
+                #endif
                 incrementScanline(cpu);
                 //reset the scanline and switch the mode back to OAM
                 if (readScanline(cpu) > 153) {

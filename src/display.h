@@ -8,6 +8,9 @@
     #include <GL/glx.h>
     #include <GL/glu.h>
 #endif
+#ifdef SDL
+    #include <SDL2/SDL.h>
+#endif
 
 #define DISPLAY_HEIGHT 144
 #define DISPLAY_WIDTH 160
