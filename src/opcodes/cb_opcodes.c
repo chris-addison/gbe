@@ -1,4 +1,4 @@
-#include "main.h"
+#include "../main.h"
 
 //rotate given register left, old bit 7 to carry bit and bit 0
 void rlc(uint8 *reg, uint8 opcode, cpu_state *cpu) {

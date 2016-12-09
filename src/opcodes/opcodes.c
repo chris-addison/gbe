@@ -1,5 +1,5 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-#include "main.h"
+#include "../main.h"
 #include "cb_opcodes.c"
 
 //read one unsigned byte from the PC

@@ -2,6 +2,7 @@
 #include "main.h"
 #include "cartridge.c"
 #include "file.c"
+#include "opcodes/opcodes.h"
 
 int main(int argc, char *argv[]) {
     // Catch case when no file provided

@@ -2,6 +2,7 @@
 #ifndef COMMON_C
 #define COMMON_C
 #include "main.h"
+#include "opcodes/opcodes.h"
 
 //read a byte from a given memory address
 static uint8 readByte(uint16 address, cpu_state *cpu) {
