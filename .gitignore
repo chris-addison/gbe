@@ -3,6 +3,8 @@
 *.gch
 *~
 *.o
+build
+roms
 test
 gbe
 .DS_Store

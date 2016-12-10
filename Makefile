@@ -16,15 +16,17 @@ cli_linux: DEFINES += -DLINUX -DDEBUG
 cli_linux: opcodes.o debug.o cpu.o screen.o interrupts.o common.o
 	gcc $(FLAGS) $(DIRECTORY)main.c -c $(DEFINES)
 	gcc $(FLAGS) -o $(NAME) main.o $^
+	rm *.o
 
 cli_windows:
 	/usr/bin/x86_64-w64-mingw32-gcc $(FLAGS) $(DIRECTORY)main.c -o $(NAME)$(WINDOWS_EXE) -DWINDOWS
 
 # experimental x11
 x11: DEFINES += -DDISPLAY -DLINUX -DX11 -DOPENGL
-x11: opcodes.o  debug.o cpu.o screen.o interrupts.o common.o display.o
+x11: opcodes.o debug.o cpu.o screen.o interrupts.o common.o display.o
 	gcc $(FLAGS) $(DIRECTORY)main.c -c $(DEFINES)
 	gcc $(FLAGS) -o $(NAME) main.o $^ $(X11) $(OPENGL)
+	rm *.o
 
 # experimental sdl
 sdl:
@@ -59,4 +61,4 @@ display.o:
 	gcc $(FLAGS) -c $(DIRECTORY)display.c $(DEFINES)
 
 clean:
-	rm *.o
+	rm gbe *.o
