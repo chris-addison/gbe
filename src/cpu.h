@@ -4,10 +4,10 @@
 #include "types.h"
 
 //constant positions of flags in flags array
-static const uint8 CF = 4;
-static const uint8 HF = 5;
-static const uint8 NF = 6;
-static const uint8 ZF = 7;
+#define CF 4
+#define HF 5
+#define NF 6
+#define ZF 7
 
 //struct to hold the cpu state
 typedef struct cpu_state {
@@ -61,4 +61,8 @@ typedef struct cpu_state {
     bool ime;
 } cpu_state;
 
-#endif
+extern struct cpu_state* createCPU();
+extern void executeCPU(cpu_state *cpu);
+extern void cycleCPU(cpu_state *cpu);
+
+#endif /* CPU_H */

@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 //one byte
 typedef uint8_t uint8; //unsigned

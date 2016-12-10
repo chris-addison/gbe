@@ -1,4 +1,11 @@
+#include "types.h"
 #include "common.h"
+#include "screen.h"
+#include "memory.h"
+#include "display.h"
+#include <stdlib.h>
+
+const double COLOURS[] = {0xFF, 0xC0, 0x60, 0x00};
 
 #ifdef X11
     Display *display;

@@ -2,6 +2,12 @@
 #include "types.h"
 #include "common.h"
 #include "cpu.h"
+#include "screen.h"
+#include "memory.h"
+#include "interrupts.h"
+#ifdef DISPLAY
+    #include "display.h"
+#endif
 
 uint16 cycles = 0;
 bool displayActive = false;
@@ -69,7 +75,7 @@ void updateScreen(cpu_state *cpu) {
             break;
         case V_BLANK:
             if (cycles >= 204) {
-                // Only display if correct bit is set.
+                // Only display if correct bit is set. Ths can only be togged during V Blank
                 #ifdef DISPLAY
                     if (cpu->MEM[LCDC] >> 7) {
                         displayActive = true;

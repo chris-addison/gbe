@@ -1,9 +1,14 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+#ifdef DEBUG
+    #include "debug/debug.h"
+#endif
 #include "common.h"
-#include "cpu.h"
 #include "opcodes/opcodes.h"
+#include "cpu.h"
+#include <stdlib.h>
 
-static struct cpu_state* createCPU() {
+// Create the cpu
+struct cpu_state* createCPU() {
     struct cpu_state *cpu = (struct cpu_state *) malloc(sizeof(struct cpu_state));
     //setup the PC and SP
     cpu->PC = 0x100;
@@ -42,7 +47,7 @@ static struct cpu_state* createCPU() {
 }
 
 // Execute a single cpu step
-static void executeCPU(cpu_state *cpu) {
+void executeCPU(cpu_state *cpu) {
     #ifdef DEBUG
         debug(false, cpu);
     #endif
@@ -57,6 +62,7 @@ static void executeCPU(cpu_state *cpu) {
     }
 }
 
-static void cycleCPU(cpu_state *cpu) {
+// Cycle cpu clock.
+void cycleCPU(cpu_state *cpu) {
     cpu->wait--;
 }

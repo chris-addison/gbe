@@ -11,12 +11,12 @@ struct opcode {
 	uint8 cycles;
     uint8 cyclesMax;
     uint8 bytes;
-} extern opcodes[256];
+} extern const opcodes[256];
 
 //structure to store list of CB-prefix opcodes
 struct cbOpcode {
     char* name;
     uint8 cycles;
-} extern cbOpcodes[256];
+} extern const cbOpcodes[256];
 
 #endif /* OPCODE_H */

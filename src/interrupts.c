@@ -2,9 +2,11 @@
 #include "types.h"
 #include "cpu.h"
 #include "common.h"
+#include "memory.h"
+#include "interrupts.h"
 
 //set the ime (interrupt master enable)
-static void updateIME(cpu_state *cpu) {
+void updateIME(cpu_state *cpu) {
     //ime must be set or reset after the instruction after EI or DI.
     //by setting imeCounter to 2 with EI or DI this will set or reset
     //the flag at the correct timing.
@@ -18,12 +20,12 @@ static void updateIME(cpu_state *cpu) {
 }
 
 //set interrupt flag
-static void setInterruptFlag(uint8 flag, cpu_state *cpu) {
+void setInterruptFlag(uint8 flag, cpu_state *cpu) {
     writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) | flag, cpu);
 }
 
 //clear interrupt flag
-static void clearInterruptFlag(uint8 flag, cpu_state *cpu) {
+void clearInterruptFlag(uint8 flag, cpu_state *cpu) {
     writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) & ~flag, cpu);
 }
 
@@ -38,7 +40,7 @@ static void interruptVBlank(cpu_state *cpu) {
 }
 
 //check interrupts and act on them
-static void checkInterrupts(cpu_state *cpu) {
+void checkInterrupts(cpu_state *cpu) {
     //printByte(readByte(INTERRUPT_FLAGS, cpu));
     if (cpu->ime && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
         uint8 interrupt = readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);

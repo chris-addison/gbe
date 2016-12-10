@@ -1,7 +1,24 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-#include "types.h"
-#include "common.h"
+#include "../types.h"
+#include "../cpu.h"
+#include "../memory.h"
+#include "../common.h"
+#include "debug.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+// Debug commands
+const char n[] = "n";
+const char next[] = "next";
+const char q[] = "q";
+const char quit[] = "quit";
+const char r[] = "r";
+const char op[] = "op";
+const char run[] = "run";
+const char runTo[] = "runto";
+
+// Run-to some address variables
 bool runUntilStop = false;
 bool runToTarget = false;
 uint16 targetAddress = 0x0;
@@ -11,25 +28,25 @@ static void clearStdin() {
     while((c = getchar()) != '\n' && c != EOF ) {}
 }
 
-//simple gdb-like debug
+// Simple gdb-like debug
 void debug(bool force, cpu_state * cpu) {
-    //only debug if stepping one instruction at a time.
-    //if reach target address for runto then enter stepping again
+    // Only debug if stepping one instruction at a time.
+    // If reach target address for runto then enter stepping again
     if (!force && (runUntilStop || (runToTarget && (targetAddress != cpu->PC)))) {
         return;
     } else if (runToTarget && (targetAddress == cpu->PC)) {
         runToTarget = false;
-        targetAddress = 0;
+        targetAddress = 0x0;
     }
     printInstruction(true, cpu->PC, cpu);
     char command[21];
-    //keep scanning while valid input is provided.
+    // Keep scanning while valid input is provided.
     while(scanf("%20[^\n]", command)) {
         //clear stdin to avoid any potential loops or bugs
         clearStdin();
-        //split the input into seperate array entries. One for each space-seperated string
-        //credit: http://stackoverflow.com/a/13281447
-        //the array simply points to indexes in the command, so don't modify until done.
+        // Split the input into seperate array entries. One for each space-seperated string
+        // credit: http://stackoverflow.com/a/13281447
+        // The array simply points to indexes in the command, so don't modify until done.
         uint8 argc = 0;
         char *argv[DEBUG_MAX_ARGS];
         char *arg = strtok(command, " ");
@@ -39,28 +56,28 @@ void debug(bool force, cpu_state * cpu) {
         }
         argv[argc] = NULL; //set entry after last as null
         if (strcmp(n, argv[0]) ^ strcmp(next, argv[0])) {
-            //clear any run bools if debug gets called and a user wishes to step through
+            // Clear any run bools if debug gets called and a user wishes to step through
             runUntilStop = false;
             runToTarget = false;
             targetAddress = 0x0;
             break;
         } else if (strcmp(q, argv[0]) ^ strcmp(quit, argv[0])) {
-            //stop
+            // Stop
             printf("Not continuing\n");
             exit(0);
         } else if (!strcmp(op, argv[0])) {
             printInstruction(true, cpu->PC, cpu);
         } else if (!strcmp(run, argv[0])) {
-            //run until debug is called and the user wishes to step through
+            // Run until debug is called and the user wishes to step through
             runUntilStop = true;
             break;
-        } else if (!strcmp(runTo, argv[0])) { //runto 0x0151
-            //run to a specific address
+        } else if (!strcmp(runTo, argv[0])) {
+            // Run to a specific address
             targetAddress = strtol(argv[1], NULL, 0);
             runToTarget = true;
             break;
         } else if (!strcmp(r, argv[0])) {
-            //print registers
+            // Print registers, values at memory locations, and cartridge info.
             printf("A:\t");
             printByte(cpu->registers.A);
             printf("\tF:\t");

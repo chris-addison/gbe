@@ -1,6 +1,7 @@
 #include "types.h"
 #include "common.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 // Load the first bank of the rom
 static void cartridgeLoad(cpu_state *cpu, FILE *rom) {

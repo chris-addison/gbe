@@ -1,3 +1,9 @@
+#ifndef DISPLAY_H
+#define DISPLAY_H
+
+#include "types.h"
+#include "cpu.h"
+
 #ifdef X11
     #include <X11/X.h>
     #include <X11/Xlib.h>
@@ -18,4 +24,10 @@
 #define WINDOW_HEIGHT 288
 #define WINDOW_WIDTH 320
 
-const double COLOURS[] = {0xFF, 0xC0, 0x60, 0x00};
+extern void startDisplay();
+extern void loadTiles(cpu_state *cpu);
+void loadScanline(cpu_state *cpu);
+void draw(cpu_state *cpu);
+void stopDisplay();
+
+#endif /* DISPLAY_H */

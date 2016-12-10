@@ -3,9 +3,12 @@
 #include "main.h"
 #include "common.h"
 #include "cpu.h"
+#include "screen.h"
+#include "interrupts.h"
 #include "cartridge.c"
 #include "file.c"
 #include "opcodes/opcodes.h"
+#include <stdlib.h>
 
 int main(int argc, char *argv[]) {
     // Catch case when no file provided
