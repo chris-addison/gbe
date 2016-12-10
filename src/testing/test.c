@@ -1,3 +1,6 @@
+#include "../common.h"
+#include "../cpu.h"
+#include "../types.h"
 #include "test.h"
 
 // Performs basic reset on the cpu

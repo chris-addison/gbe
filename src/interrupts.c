@@ -1,5 +1,7 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-#include "main.h"
+#include "types.h"
+#include "cpu.h"
+#include "common.h"
 
 //set the ime (interrupt master enable)
 static void updateIME(cpu_state *cpu) {

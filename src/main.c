@@ -1,5 +1,8 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+#include "types.h"
 #include "main.h"
+#include "common.h"
+#include "cpu.h"
 #include "cartridge.c"
 #include "file.c"
 #include "opcodes/opcodes.h"

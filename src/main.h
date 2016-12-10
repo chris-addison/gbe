@@ -2,13 +2,6 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
-
 //debug commands
 static const char n[] = "n";
 static const char next[] = "next";
@@ -28,74 +21,9 @@ static const char runTo[] = "runto";
 #define INTERRUPTS_ENABLED 0xFFFF
 #define INTERRUPT_FLAGS 0xFF0F
 
-//one byte
-typedef uint8_t uint8; //unsigned
-typedef int8_t int8;   //signed
-//two bytes
-typedef uint16_t uint16;
-//four bytes
-typedef uint32_t uint32;
 //debug flag
 #define DEBUG true
 #define DEBUG_MAX_ARGS 5
-
-//struct to hold the cpu state
-typedef struct cpu_state {
-    uint8 MEM[0x10000];
-    struct registers {
-        union {
-            struct {
-                uint8 F;
-                uint8 A;
-            };
-            uint16 AF;
-        };
-        union {
-            struct {
-                uint8 C;
-                uint8 B;
-            };
-            uint16 BC;
-        };
-        union {
-            struct {
-                uint8 E;
-                uint8 D;
-            };
-            uint16 DE;
-        };
-        union {
-            struct {
-                uint8 L;
-                uint8 H;
-            };
-            uint16 HL;
-        };
-    } registers;
-    uint8 *CART_RAM;
-    uint8 *CART_ROM;
-    uint16 PC;
-    uint16 SP;
-    uint16 cycles;
-    uint16 ROM_bank;
-    uint8 RAM_bank;
-    uint8 cart_type;
-    uint8 mbc;
-    uint8 wait;
-    uint8 imeCounter;
-    bool halt;
-    bool RAM_enable;
-    bool RAM_exists;
-    bool mbc1_mode;
-    bool mbc1_small_ram;
-    bool ime;
-} cpu_state;
-
-//constant positions of flags in flags array
-static const uint8 CF = 4;
-static const uint8 HF = 5;
-static const uint8 NF = 6;
-static const uint8 ZF = 7;
 
 //screen constants
 #define H_BLANK 0x0

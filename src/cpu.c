@@ -1,6 +1,7 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-#include "main.h"
-#include "opcodes/opcodes.c"
+#include "common.h"
+#include "cpu.h"
+#include "opcodes/opcodes.h"
 
 static struct cpu_state* createCPU() {
     struct cpu_state *cpu = (struct cpu_state *) malloc(sizeof(struct cpu_state));

@@ -1,5 +1,7 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-#include "main.h"
+#include "types.h"
+#include "common.h"
+#include "cpu.h"
 
 uint16 cycles = 0;
 bool displayActive = false;
