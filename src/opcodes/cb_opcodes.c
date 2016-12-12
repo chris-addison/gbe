@@ -215,26 +215,92 @@ int prefixCB(cpu_state *cpu) {
     //grab instruction
     uint8 opcode = readNextByte(cpu);
     switch(opcode) {
+        case 0x00: //RLC B
+            rlc(&cpu->registers.B, opcode, cpu);
+            break;
+        case 0x01: //RLC C
+            rlc(&cpu->registers.C, opcode, cpu);
+            break;
         case 0x02: //RLC D
             rlc(&cpu->registers.D, opcode, cpu);
             break;
         case 0x03: //RLC E
             rlc(&cpu->registers.E, opcode, cpu);
             break;
-        case 0x10: //RL B
-            rl(&cpu->registers.B, opcode, cpu);
+        case 0x04: //RLC H
+            rlc(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x05: //RLC L
+            rlc(&cpu->registers.L, opcode, cpu);
+            break;
+        case 0x07: //RLC A
+            rlc(&cpu->registers.A, opcode, cpu);
+            break;
+        case 0x08: //RRC B
+            rrc(&cpu->registers.B, opcode, cpu);
+            break;
+        case 0x09: //RRC C
+            rrc(&cpu->registers.C, opcode, cpu);
+            break;
+        case 0x0A: //RRC D
+            rrc(&cpu->registers.D, opcode, cpu);
+            break;
+        case 0x0B: //RRC E
+            rrc(&cpu->registers.E, opcode, cpu);
+            break;
+        case 0x0C: //RRC H
+            rrc(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x0D: //RRC L
+            rrc(&cpu->registers.L, opcode, cpu);
             break;
         case 0x0E: //RRC (HL)
             rrc_m(opcode, cpu);
             break;
+        case 0x0F: //RRC A
+            rrc(&cpu->registers.A, opcode, cpu);
+            break;
+        case 0x10: //RL B
+            rl(&cpu->registers.B, opcode, cpu);
+            break;
+        case 0x11: //RL C
+            rl(&cpu->registers.C, opcode, cpu);
+            break;
         case 0x12: //RL D
             rl(&cpu->registers.D, opcode, cpu);
+            break;
+        case 0x13: //RL E
+            rl(&cpu->registers.E, opcode, cpu);
+            break;
+        case 0x14: //RL H
+            rl(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x15: //RL L
+            rl(&cpu->registers.L, opcode, cpu);
+            break;
+        case 0x17: //RL A
+            rl(&cpu->registers.A, opcode, cpu);
+            break;
+        case 0x18: //RR B
+            rr(&cpu->registers.B, opcode, cpu);
+            break;
+        case 0x19: //RR C
+            rr(&cpu->registers.C, opcode, cpu);
             break;
         case 0x1A: //RR D
             rr(&cpu->registers.D, opcode, cpu);
             break;
         case 0x1B: //RR E
             rr(&cpu->registers.E, opcode, cpu);
+            break;
+        case 0x1C: //RR H
+            rr(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x1D: //RR L
+            rr(&cpu->registers.L, opcode, cpu);
+            break;
+        case 0x1F: //RR A
+            rr(&cpu->registers.A, opcode, cpu);
             break;
         case 0x22: //SLA D
             sla(&cpu->registers.D, opcode, cpu);
@@ -275,6 +341,9 @@ int prefixCB(cpu_state *cpu) {
         case 0x37: //SWAP A
             swap(&cpu->registers.A, opcode, cpu);
             break;
+        case 0x38: //SRL B
+            srl(&cpu->registers.B, opcode, cpu);
+            break;
         case 0x3B: //SRL E
             srl(&cpu->registers.E, opcode, cpu);
             break;
@@ -290,6 +359,15 @@ int prefixCB(cpu_state *cpu) {
         case 0x42: //BIT 0, D
             bit(0, &cpu->registers.D, opcode, cpu);
             break;
+        case 0x43: //BIT 0, E
+            bit(0, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x44: //BIT 0, H
+            bit(0, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x45: //BIT 0, L
+            bit(0, &cpu->registers.L, opcode, cpu);
+            break;
         case 0x46: //BIT 0, (HL)
             bit_m(0, opcode, cpu);
             break;
@@ -301,6 +379,18 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x49: //BIT 1, C
             bit(1, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x4A: //BIT 1, D
+            bit(1, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x4B: //BIT 1, E
+            bit(1, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x4C: //BIT 1, H
+            bit(1, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x4D: //BIT 1, L
+            bit(1, &cpu->registers.L, opcode, cpu);
             break;
         case 0x4E: //BIT 1, (HL)
             bit_m(1, opcode, cpu);
@@ -314,8 +404,17 @@ int prefixCB(cpu_state *cpu) {
         case 0x51: //BIT 2, C
             bit(2, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x52: //BIT 2, D
+            bit(2, &cpu->registers.D, opcode, cpu);
+            break;
         case 0x53: //BIT 2, E
             bit(2, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x54: //BIT 2, H
+            bit(2, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x55: //BIT 2, L
+            bit(2, &cpu->registers.L, opcode, cpu);
             break;
         case 0x56: //BIT 2, (HL)
             bit_m(2, opcode, cpu);
@@ -329,6 +428,18 @@ int prefixCB(cpu_state *cpu) {
         case 0x59: //BIT 3, C
             bit(3, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x5A: //BIT 3, D
+            bit(3, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x5B: //BIT 3, E
+            bit(3, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x5C: //BIT 3, H
+            bit(3, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x5D: //BIT 3, L
+            bit(3, &cpu->registers.L, opcode, cpu);
+            break;
         case 0x5E: //BIT 3, (HL)
             bit_m(3, opcode, cpu);
             break;
@@ -340,6 +451,18 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x61: //BIT 4, C
             bit(4, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x62: //BIT 4, D
+            bit(4, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x63: //BIT 4, E
+            bit(4, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x64: //BIT 4, H
+            bit(4, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x65: //BIT 4, L
+            bit(4, &cpu->registers.L, opcode, cpu);
             break;
         case 0x66: //BIT 4, (HL)
             bit_m(4, opcode, cpu);
@@ -353,6 +476,18 @@ int prefixCB(cpu_state *cpu) {
         case 0x69: //BIT 5, C
             bit(5, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x6A: //BIT 5, D
+            bit(5, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x6B: //BIT 5, E
+            bit(5, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x6C: //BIT 5, H
+            bit(5, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x6D: //BIT 5, L
+            bit(5, &cpu->registers.L, opcode, cpu);
+            break;
         case 0x6E: //BIT 5, (HL)
             bit_m(5, opcode, cpu);
             break;
@@ -365,6 +500,18 @@ int prefixCB(cpu_state *cpu) {
         case 0x71: //BIT 6, C
             bit(6, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x72: //BIT 6, D
+            bit(6, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x73: //BIT 6, E
+            bit(6, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x74: //BIT 6, H
+            bit(6, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x75: //BIT 6, L
+            bit(6, &cpu->registers.L, opcode, cpu);
+            break;
         case 0x76: //BIT 6, (HL)
             bit_m(6, opcode, cpu);
             break;
@@ -376,6 +523,18 @@ int prefixCB(cpu_state *cpu) {
             break;
         case 0x79: //BIT 7, C
             bit(7, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x7A: //BIT 7, D
+            bit(7, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x7B: //BIT 7, E
+            bit(7, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x7C: //BIT 7, H
+            bit(7, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x7D: //BIT 7, L
+            bit(7, &cpu->registers.L, opcode, cpu);
             break;
         case 0x7E: //BIT 7, (HL)
             bit_m(7, opcode, cpu);
@@ -451,7 +610,7 @@ int prefixCB(cpu_state *cpu) {
     return 0;
 }
 
-// Store format to printf each instruction, it's number of cycles, and how many bytes the instruction is in memory.
+// Store format to printf each instruction, its number of cycles, and how many bytes the instruction is in memory.
 const struct cbOpcode cbOpcodes[256] = {
     { "0xCB00 RLC B", 8 },
     { "0xCB01 RLC C", 8 },
