@@ -249,6 +249,21 @@ static void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = opcodes[opcode].cycles;
 }
 
+// Add together a signed byte and an unsigned short, save the result in some short register, and set flags.
+static void add_16_8(int8 s_byte, uint16 u_short, uint16 *reg, uint8 opcode, cpu_state *cpu) {
+    unsigned int result = (unsigned int)(u_short + s_byte);
+    // Set or clear half-carry flag based on result
+    ((u_short & 0xFFF) + s_byte > 0xFFF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    // Set or clear carry flag based on result.
+    (result > 0xFFFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    // Clear flags
+    clearFlag(ZF, cpu);
+    clearFlag(NF, cpu);
+    // Save reult to given register
+    *reg = (uint16)result;
+    cpu->wait = opcodes[opcode].cycles;
+}
+
 //8 bit add between the A register, some value, and the carry flag
 static void adc(uint8 value, uint8 opcode, cpu_state *cpu) {
     add_8(value + readFlag(CF, cpu), opcode, cpu);
@@ -638,6 +653,9 @@ int execute(cpu_state * cpu) {
         case 0x2D: //DEC L
             dec_8(&cpu->registers.L, opcode, cpu);
             break;
+        case 0x2E: //LD L, d8
+            ld_8(oneByte(cpu), &cpu->registers.L, opcode, cpu);
+            break;
         case 0x2F: //CPL
             cpl(opcode, cpu);
             break;
@@ -649,6 +667,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0x32: //LDD (HL), A
             ldd_m(cpu->registers.A, cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x33: //INC SP
+            inc_16(&cpu->SP, opcode, cpu);
             break;
         case 0x34: //INC (HL)
             inc_8_m(opcode, cpu);
@@ -670,6 +691,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0x3A: //LDD A, (HL)
             ldd(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x3B: //DEC SP
+            dec_16(&cpu->SP, opcode, cpu);
             break;
         case 0x3C: //INC A
             inc_8(&cpu->registers.A, opcode, cpu);
@@ -710,8 +734,17 @@ int execute(cpu_state * cpu) {
         case 0x48: //LD C, B
             ld_8(cpu->registers.B, &cpu->registers.C, opcode, cpu);
             break;
+        case 0x49: //LD C, C
+            ld_8(cpu->registers.C, &cpu->registers.C, opcode, cpu);
+            break;
         case 0x4A: //lD C, D
             ld_8(cpu->registers.D, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x4B: //LD C, E
+            ld_8(cpu->registers.E, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x4C: //LD C, H
+            ld_8(cpu->registers.H, &cpu->registers.C, opcode, cpu);
             break;
         case 0x4D: //LD C, L
             ld_8(cpu->registers.L, &cpu->registers.C, opcode, cpu);
@@ -829,6 +862,12 @@ int execute(cpu_state * cpu) {
             break;
         case 0x73: //LD (HL), E
             ld_8_m(cpu->registers.E, cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x74: //LD (HL), H
+            ld_8_m(cpu->registers.H, cpu->registers.HL, opcode, cpu);
+            break;
+        case 0x75: //LD (HL), L
+            ld_8_m(cpu->registers.L, cpu->registers.HL, opcode, cpu);
             break;
         case 0x76: //HALT
             halt(opcode, cpu);
@@ -1119,6 +1158,9 @@ int execute(cpu_state * cpu) {
         case 0xD6: //SUB d8
             sub_8(oneByte(cpu), opcode, cpu);
             break;
+        case 0xD7: //RST 0x10
+            rst(0x10, opcode, cpu);
+            break;
         case 0xD8: //RET C
             ret_c(readFlag(CF, cpu), opcode, cpu);
             break;
@@ -1133,6 +1175,9 @@ int execute(cpu_state * cpu) {
             break;
         case 0xDE: //SBC d8
             sbc(oneByte(cpu), opcode, cpu);
+            break;
+        case 0xDF: //RST 0x18
+            rst(0x18, opcode, cpu);
             break;
         case 0xE0: //LDH (a8), A
             ld_8_m(cpu->registers.A, 0xFF00 + oneByte(cpu), opcode, cpu);
@@ -1152,6 +1197,9 @@ int execute(cpu_state * cpu) {
         case 0xE7: //RST 0x20
             rst(0x20, opcode, cpu);
             break;
+        case 0xE8: //ADD SP, r8
+            add_16_8((int8)readNextByte(cpu), cpu->SP, &cpu->SP, opcode, cpu);
+            break;
         case 0xE9: //JP (HL) -> read as JP HL
             jp_c(true, cpu->registers.HL, opcode, cpu);
             break;
@@ -1170,6 +1218,9 @@ int execute(cpu_state * cpu) {
         case 0xF1: //POP AF
             pop(&cpu->registers.AF, opcode, cpu);
             break;
+        case 0xF2: //LD A, (C)
+            ld_8(readByte(0xFF00 + cpu->registers.C, cpu), &cpu->registers.A, opcode, cpu);
+            break;
         case 0xF3: //DI
             di(opcode, cpu);
             break;
@@ -1178,6 +1229,12 @@ int execute(cpu_state * cpu) {
             break;
         case 0xF6: //OR d8
             or(oneByte(cpu), opcode, cpu);
+            break;
+        case 0xF7: //RST 0x30
+            rst(0x30, opcode, cpu);
+            break;
+        case 0xF8: //LD HL, SP+r8
+            add_16_8((int8)readNextByte(cpu), cpu->SP, &cpu->registers.HL, opcode, cpu);
             break;
         case 0xF9: //LD SP, HL
             ld_16(cpu->registers.HL, &cpu->SP, opcode, cpu);
