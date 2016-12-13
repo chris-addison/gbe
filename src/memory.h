@@ -2,6 +2,9 @@
 #define MEMORY_H
 
 //memory locations
+#define WINDOW_X 0xFF4B
+#define WINDOW_Y 0xFF4A
+#define BG_PALETTE 0xFF47
 #define SCANLINE 0xFF44
 #define SCROLL_X 0xFF43
 #define SCROLL_Y 0xFF42

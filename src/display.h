@@ -25,6 +25,7 @@
 #define WINDOW_WIDTH 320
 
 extern void startDisplay();
+extern void updateBackgroundColour(uint8 value);
 extern void loadTiles(cpu_state *cpu);
 extern void loadScanline(cpu_state *cpu);
 extern void draw(cpu_state *cpu);
