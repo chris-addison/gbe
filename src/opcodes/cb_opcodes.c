@@ -302,6 +302,12 @@ int prefixCB(cpu_state *cpu) {
         case 0x1F: //RR A
             rr(&cpu->registers.A, opcode, cpu);
             break;
+        case 0x20: //SLA B
+            sla(&cpu->registers.B, opcode, cpu);
+            break;
+        case 0x21: //SLA C
+            sla(&cpu->registers.C, opcode, cpu);
+            break;
         case 0x22: //SLA D
             sla(&cpu->registers.D, opcode, cpu);
             break;
@@ -563,8 +569,14 @@ int prefixCB(cpu_state *cpu) {
         case 0x9E: //RES 3, (HL)
             res_m(3, opcode, cpu);
             break;
+        case 0x9F: //RES 3, A
+            res(3, &cpu->registers.A, opcode, cpu);
+            break;
         case 0xA6: //RES 4, (HL)
             res_m(4, opcode, cpu);
+            break;
+        case 0xA7: //RES 4, A
+            res(4, &cpu->registers.A, opcode, cpu);
             break;
         case 0xAE: //RES 5, (HL)
             res_m(5, opcode, cpu);
@@ -572,8 +584,17 @@ int prefixCB(cpu_state *cpu) {
         case 0xAF: //RES 5, A
             res(5, &cpu->registers.A, opcode, cpu);
             break;
+        case 0xB6: //RES 6, (HL)
+            res_m(6, opcode, cpu);
+            break;
+        case 0xB7: //RES 6, A
+            res(6, &cpu->registers.A, opcode, cpu);
+            break;
         case 0xBE: //RES 7, (HL)
             res_m(7, opcode, cpu);
+            break;
+        case 0xBF: //RES 7, A
+            res(7, &cpu->registers.A, opcode, cpu);
             break;
         case 0xCE: //SET 1, (HL)
             set_m(1, opcode, cpu);
