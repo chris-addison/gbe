@@ -12,7 +12,6 @@
 
 uint16 cycles = 0;
 bool displayActive = false;
-uint64_t prevTime = 0;
 
 //read the current scanline(LY) from 0xFF44
 static uint8 readScanline(cpu_state *cpu) {
@@ -58,7 +57,7 @@ void updateScreen(cpu_state *cpu) {
             if (cycles >= 204) {
                 #ifdef DISPLAY
                     if (displayActive) {
-                        //loadScanline(cpu);
+                        loadScanline(cpu);
                     }
                 #endif
                 incrementScanline(cpu);
@@ -94,6 +93,8 @@ void updateScreen(cpu_state *cpu) {
                     setScanline(0, cpu);
                     //write new status to the the STAT register
                     setMode(OAM, cpu);
+                    //load tiles as V Blank is now over
+                    loadTiles(cpu);
                 }
                 cycles = 0;
             }

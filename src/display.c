@@ -5,7 +5,7 @@
 #include "display.h"
 #include <stdlib.h>
 
-const double COLOURS[] = {0xFF, 0xC0, 0x60, 0x00};
+const uint8 COLOURS[] = {0xFF, 0xC0, 0x60, 0x00};
 
 #ifdef X11
     Display *display;
@@ -88,8 +88,8 @@ void loadTiles(cpu_state *cpu) {
     }
 }
 
-void loadScanline(uint8 scanLine, cpu_state *cpu) {
-    //uint8 scanLine = cpu->MEM[SCANLINE];
+void loadScanline(cpu_state *cpu) {
+    uint8 scanLine = cpu->MEM[SCANLINE];
     //printf("SPRITE %d, BG & WIN %d, WIN %d\n", readBit(1,  &cpu->MEM[LCDC]), readBit(0,  &cpu->MEM[LCDC]), readBit(5,  &cpu->MEM[LCDC]));
     bool mapNumber = readBit(3, &cpu->MEM[LCDC]);
     bool tileSet = readBit(4, &cpu->MEM[LCDC]);
@@ -126,10 +126,10 @@ void loadScanline(uint8 scanLine, cpu_state *cpu) {
 }
 
 void draw(cpu_state *cpu) {
-    loadTiles(cpu);
-    for (uint8 i = 0; i < DISPLAY_HEIGHT; i++) {
-        loadScanline(i, cpu);
-    }
+    //loadTiles(cpu);
+    //for (uint8 i = 0; i < DISPLAY_HEIGHT; i++) {
+        //loadScanline(i, cpu);
+    //}
     //XGetWindowAttributes(display, window, &windowAttributes);
     //glViewport(0, 0, windowAttributes.width, windowAttributes.height);
     #ifdef X11
