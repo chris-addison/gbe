@@ -37,11 +37,17 @@ int main(int argc, char *argv[]) {
     // Close the rom now that all data has been read
     romClose(rom);
 
+    int cycles = 0;
     // Simple game loop.
     while(true) {
-        if (cpu->MEM[0xFF00] == 0x10 || cpu->MEM[0xFF00] == 0x20) {
-            cpu->MEM[0xff00] = ~cpu->MEM[0xFF00]; //SET NO BUTTONS PRESSED
-        }
+        cycles++;
+        //if (cpu->MEM[0xFF00] == 0x10 || cpu->MEM[0xFF00] == 0x20) {
+            //cpu->MEM[0xff00] = ~cpu->MEM[0xFF00]; //SET NO BUTTONS PRESSED
+            cpu->MEM[0xFF00] = 0xFE;
+            //if (cycles > 100000) {
+                //cpu->MEM[0xFF00] &= 0xE;
+            //}
+        //}
         if (cpu->wait <= 0) {
             executeCPU(cpu);
             //update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.

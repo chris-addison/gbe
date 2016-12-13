@@ -49,19 +49,19 @@ void updateScreen(cpu_state *cpu) {
             break;
         case VRAM:
             if (cycles >= 172) {
+                // Load scanline during VRAM
+                #ifdef DISPLAY
+                    if (displayActive) {
+                        loadScanline(cpu);
+                    }
+                #endif
                 setMode(H_BLANK, cpu);
                 cycles = 0;
             }
             break;
         case H_BLANK:
             if (cycles >= 204) {
-                #ifdef DISPLAY
-                    if (displayActive) {
-                        loadScanline(cpu);
-                    }
-                #endif
                 incrementScanline(cpu);
-                //TODO: draw one line
                 //switch to vblank when the scanline hits 144
                 if (readScanline(cpu) > 144) {
                     //write new status to the the STAT register
@@ -71,7 +71,7 @@ void updateScreen(cpu_state *cpu) {
                     // Draw the frame at beginning of v blank.
                     // Only display if correct bit is set. Ths can only be togged during V Blank
                     #ifdef DISPLAY
-                        if (cpu->MEM[LCDC] >> 7) {
+                        if (readBit(7, &cpu->MEM[LCDC])) {
                             displayActive = true;
                             draw(cpu);
                         } else {

@@ -5,6 +5,8 @@
 #include "common.h"
 #include "opcodes/opcodes.h"
 #include "cpu.h"
+#include "display.h"
+#include "memory.h"
 #include <stdio.h>
 
 //read a byte from a given memory address
@@ -50,6 +52,10 @@ void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
         cpu->MEM[address - 0x2000] = value;
     }
     if (cpu->cart_type == 0x00 || address >= 0xC000) {
+        // Update palette for the background
+        if (address == BG_PALETTE) {
+            updateBackgroundColour(value);
+        }
         cpu->MEM[address] = value;
     } else { //handle the mbcs here
         //printf("%X:\thandle mbc address = %X, value = %X\n", cpu->PC, address, value);
@@ -91,7 +97,7 @@ void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
                 cpu->mbc1_mode = value;
             } else {
                 //do nothing for now
-                printf("Not implemented!\n");
+                printf("MMU Address not implemented! %d\n", address);
                 //exit(246);
             }
         } else if (address < 0xA000) {
