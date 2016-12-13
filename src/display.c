@@ -88,34 +88,38 @@ void loadTiles(cpu_state *cpu) {
     }
 }
 
-void loadScanline(cpu_state *cpu) {
-    uint8 scanLine = cpu->MEM[SCANLINE];
-    bool mapNumber = ((cpu->MEM[LCDC] >> 6) & 0b1);
-    int mapLocation = (!mapNumber) ? 0x9C00 : 0x9800;
+void loadScanline(uint8 scanLine, cpu_state *cpu) {
+    //uint8 scanLine = cpu->MEM[SCANLINE];
+    //printf("SPRITE %d, BG & WIN %d, WIN %d\n", readBit(1,  &cpu->MEM[LCDC]), readBit(0,  &cpu->MEM[LCDC]), readBit(5,  &cpu->MEM[LCDC]));
+    bool mapNumber = readBit(3, &cpu->MEM[LCDC]);
+    bool tileSet = readBit(4, &cpu->MEM[LCDC]);
+    int mapLocation = (mapNumber) ? 0x9C00 : 0x9800;
     // Draw tileset onto the window
     mapLocation += ((scanLine + cpu->MEM[SCROLL_Y]) >> 3) << 5;
     short lineOffset = cpu->MEM[SCROLL_X] >> 3;
     short x = cpu->MEM[SCROLL_X] & 7;
     short y = (scanLine + cpu->MEM[SCROLL_Y]) & 7;
     short tile = cpu->MEM[mapLocation + lineOffset];
-    //printf("tile: %d\n", tile);
-    if (!mapLocation) {
-        printf("HMMM\n");
+    // Tile set 0 is numbered -128 to 128
+    if (!tileSet) {
         tile = ((int8) tile) + 256;
     }
     short drawOffset = DISPLAY_WIDTH * scanLine;
-    for (int i = 0; i < DISPLAY_WIDTH; i++) {
-        frameBuffer[(drawOffset + i)*3 + 0] = COLOURS[tiles[tile][x][y]];
-        frameBuffer[(drawOffset + i)*3 + 1] = COLOURS[tiles[tile][x][y]];
-        frameBuffer[(drawOffset + i)*3 + 2] = COLOURS[tiles[tile][x][y]];
-        x++;
-        if (x == 8) {
-            x = 0;
-            lineOffset = (lineOffset + 1) & 31;
-            tile = cpu->MEM[mapLocation + lineOffset];
-            if (!mapLocation) {
-                printf("HMMM\n");
-                tile = ((int8) tile) + 256;
+    // Check if background enabled
+    if (readBit(0, &cpu->MEM[LCDC])) {
+        for (int i = 0; i < DISPLAY_WIDTH; i++) {
+            frameBuffer[(drawOffset + i)*3 + 0] = COLOURS[tiles[tile][x][y]];
+            frameBuffer[(drawOffset + i)*3 + 1] = COLOURS[tiles[tile][x][y]];
+            frameBuffer[(drawOffset + i)*3 + 2] = COLOURS[tiles[tile][x][y]];
+            x++;
+            if (x == 8) {
+                x = 0;
+                lineOffset = (lineOffset + 1) & 31;
+                tile = cpu->MEM[mapLocation + lineOffset];
+                // Tile set 0 is numbered -128 to 128
+                if (!tileSet) {
+                    tile = ((int8) tile) + 256;
+                }
             }
         }
     }
@@ -123,23 +127,26 @@ void loadScanline(cpu_state *cpu) {
 
 void draw(cpu_state *cpu) {
     loadTiles(cpu);
+    for (uint8 i = 0; i < DISPLAY_HEIGHT; i++) {
+        loadScanline(i, cpu);
+    }
     //XGetWindowAttributes(display, window, &windowAttributes);
     //glViewport(0, 0, windowAttributes.width, windowAttributes.height);
     #ifdef X11
-        glClear(GL_COLOR_BUFFER_BIT);
-        //glEnable(GL_TEXTURE_2D);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        //glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+        /*glClear(GL_COLOR_BUFFER_BIT);
+        glEnable(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
         //TODO: switch to non-deprecated method of drawing
-        //gluBuild2DMipmaps(GL_TEXTURE_2D, 4, 160, 144, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
-        //glColor3f(1, 1, 1);
-        //glBegin(GL_QUADS);
-        //glTexCoord2i(0, 1); glVertex2i(-1, -1);
-        //glTexCoord2i(0, 0); glVertex2i(-1, 1);
-        //glTexCoord2i(1, 0); glVertex2i(1, 1);
-        //glTexCoord2i(1, 1); glVertex2i(1, -1);
-        //glEnd();
+        gluBuild2DMipmaps(GL_TEXTURE_2D, 4, 160, 144, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
+        glColor3f(1, 1, 1);
+        glBegin(GL_QUADS);
+        glTexCoord2i(0, 1); glVertex2i(-1, -1);
+        glTexCoord2i(0, 0); glVertex2i(-1, 1);
+        glTexCoord2i(1, 0); glVertex2i(1, 1);
+        glTexCoord2i(1, 1); glVertex2i(1, -1);
+        glEnd();*/
         glRasterPos2f(-1, 1);
         glPixelZoom(2, -2);
         glDrawPixels(DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);

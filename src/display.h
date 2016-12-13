@@ -26,8 +26,8 @@
 
 extern void startDisplay();
 extern void loadTiles(cpu_state *cpu);
-void loadScanline(cpu_state *cpu);
-void draw(cpu_state *cpu);
-void stopDisplay();
+extern void loadScanline(uint8 scanLine, cpu_state *cpu);
+extern void draw(cpu_state *cpu);
+extern void stopDisplay();
 
 #endif /* DISPLAY_H */
