@@ -1,10 +1,11 @@
+#include "cartridge.h"
 #include "types.h"
 #include "common.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 // Load the first bank of the rom
-static void cartridgeLoad(cpu_state *cpu, FILE *rom) {
+void cartridgeLoad(cpu_state *cpu, FILE *rom) {
     // All cartridge types load 0 -> 0x4000. Catch bad roms/files.
     if (!fread(cpu->MEM, 1, 0x4000, rom)) {
         printf("Incorrect sized rom!\n");
@@ -13,7 +14,7 @@ static void cartridgeLoad(cpu_state *cpu, FILE *rom) {
 }
 
 // Read cartridge info and setup the cpu based on it
-static void cartridgeInfo(cpu_state *cpu, FILE *rom) {
+void cartridgeInfo(cpu_state *cpu, FILE *rom) {
     //fetch and store the title
     char title[16];
     for (int i = 0; i < 16; i++) {

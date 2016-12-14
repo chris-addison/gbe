@@ -1,7 +1,9 @@
 #include "../types.h"
+#include "../memory.h"
 #include "../common.h"
 #include "../cpu.h"
 #include "opcodes.h"
+#include <stdio.h>
 
 //rotate given register left, old bit 7 to carry bit and bit 0
 static void rlc(uint8 *reg, uint8 opcode, cpu_state *cpu) {
@@ -596,9 +598,18 @@ int prefixCB(cpu_state *cpu) {
         case 0xBF: //RES 7, A
             res(7, &cpu->registers.A, opcode, cpu);
             break;
+        case 0xC0: //SET 0, B
+            set(0, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xC1: //SET 0, C
+            set(0, &cpu->registers.C, opcode, cpu);
+            break;
         case 0xCE: //SET 1, (HL)
             set_m(1, opcode, cpu);
             break;
+        case 0xCF: //SET 1, A
+        	set(1, &cpu->registers.A, opcode, cpu);
+        	break;
         case 0xD6: //SET 2, (HL)
             set_m(2, opcode, cpu);
             break;

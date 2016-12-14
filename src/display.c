@@ -1,78 +1,13 @@
 #include "types.h"
-#include "common.h"
-#include "screen.h"
 #include "memory.h"
 #include "display.h"
-#include <stdlib.h>
+#include "window.h"
 
 const uint8 COLOURS[] = {0xFF, 0xC0, 0x60, 0x00};
 uint8 backgroundColourOffset[] = {0, 1, 2, 3};
 
-#ifdef X11
-    Display *display;
-    Window window;
-    int screen;
-    XEvent event;
-    XWindowAttributes windowAttributes = {0};
-    XSetWindowAttributes setWindowAttributes;
-#endif
-#ifdef OPENGL
-    Window root;
-    GLint attributes[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
-    XVisualInfo *visualInfo;
-    Colormap colormap;
-    GLXContext glContext;
-    GLuint textureID;
-#endif
-#ifdef SDL
-    SDL_Window* window = NULL;
-    SDL_Surface* screenSurface = NULL;
-#endif
-
-char frameBuffer[3 * DISPLAY_WIDTH * DISPLAY_HEIGHT];
+uint8 frameBuffer[3 * DISPLAY_WIDTH * DISPLAY_HEIGHT];
 uint8 tiles[384][8][8];
-
-// Start display
-void startDisplay() {
-    #ifdef X11
-        display = XOpenDisplay(NULL);
-        if (display == NULL) {
-            printf("X11: failue to open display\n");
-            exit(11);
-        }
-
-        visualInfo = glXChooseVisual(display, 0, attributes);
-        if (visualInfo == NULL) {
-            printf("GL: Failure to choose a visual\n");
-            exit(31);
-        }
-
-        root = DefaultRootWindow(display);
-        colormap = XCreateColormap(display, root, visualInfo->visual, AllocNone);
-
-        setWindowAttributes.colormap = colormap;
-        setWindowAttributes.event_mask = ExposureMask | KeyPressMask;
-
-        window = XCreateWindow(display, root, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, visualInfo->depth,
-             InputOutput, visualInfo->visual, CWColormap | CWEventMask, &setWindowAttributes);
-
-        XMapWindow(display, window);
-        XStoreName(display, window, "GBE");
-
-        screen = DefaultScreen(display);
-
-        glContext = glXCreateContext(display, visualInfo, NULL, GL_TRUE);
-        glXMakeCurrent(display, window, glContext);
-        glClearColor( 1, 1, 1, 1);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glXSwapBuffers(display, window);
-    #endif
-    #ifdef SDL
-        SDL_Init(SDL_INIT_VIDEO);
-        window = SDL_CreateWindow("Test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-        screenSurface = SDL_GetWindowSurface(window);
-    #endif
-}
 
 // Update colour palette for the background
 void updateBackgroundColour(uint8 value) {
@@ -198,58 +133,5 @@ void draw(cpu_state *cpu) {
     //for (uint8 i = 0; i < DISPLAY_HEIGHT; i++) {
         //loadScanline(i, cpu);
     //}
-    //XGetWindowAttributes(display, window, &windowAttributes);
-    //glViewport(0, 0, windowAttributes.width, windowAttributes.height);
-    #ifdef X11
-        /*glClear(GL_COLOR_BUFFER_BIT);
-        glEnable(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-        //TODO: switch to non-deprecated method of drawing
-        gluBuild2DMipmaps(GL_TEXTURE_2D, 4, 160, 144, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
-        glColor3f(1, 1, 1);
-        glBegin(GL_QUADS);
-        glTexCoord2i(0, 1); glVertex2i(-1, -1);
-        glTexCoord2i(0, 0); glVertex2i(-1, 1);
-        glTexCoord2i(1, 0); glVertex2i(1, 1);
-        glTexCoord2i(1, 1); glVertex2i(1, -1);
-        glEnd();*/
-        glRasterPos2f(-1, 1);
-        glPixelZoom(2, -2);
-        glDrawPixels(DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
-        glXSwapBuffers(display, window);
-    #endif
-    #ifdef SDL
-        SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)&frameBuffer,
-                DISPLAY_WIDTH,
-                DISPLAY_HEIGHT,
-                3 * 8,          // bits per pixel = 24
-                DISPLAY_WIDTH * 3,  // pitch
-                0x0000FF,              // red mask
-                0x00FF00,              // green mask
-                0xFF0000,              // blue mask
-                0);                    // alpha mask (none)
-         //SDL_BlitSurface(surface, NULL, screenSurface, NULL);
-         //SDL_UpdateWindowSurface(window);
-    #endif
-}
-
-// CLose display.
-void stopDisplay() {
-    #ifdef OPENGL
-        glXMakeCurrent(display, None, NULL);
-        glXDestroyContext(display, glContext);
-    #endif
-    #ifdef X11
-        XDestroyWindow(display, window);
-        XCloseDisplay(display);
-    #endif
-    #ifdef SDL
-        //SDL_FreeSurface(surface);
-        //surface = NULL;
-        SDL_DestroyWindow(window);
-        window = NULL;
-        SDL_Quit();
-    #endif
+    displayOnWindow(frameBuffer);
 }

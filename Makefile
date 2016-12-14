@@ -1,3 +1,4 @@
+CC			=	clang
 NAME		=	gbe
 TEST_NAME 	= 	test
 WINDOWS_EXE =	.exe
@@ -13,9 +14,9 @@ all: cli_linux
 
 # cli only builds
 cli_linux: DEFINES += -DLINUX -DDEBUG
-cli_linux: opcodes.o debug.o cpu.o screen.o interrupts.o common.o
-	gcc $(FLAGS) $(DIRECTORY)main.c -c $(DEFINES)
-	gcc $(FLAGS) -o $(NAME) main.o $^
+cli_linux: gbe.o opcodes.o memory.o cartridge.o debug.o cpu.o screen.o interrupts.o common.o
+	$(CC) $(FLAGS) $(DIRECTORY)frontend/cli/cli.c -c $(DEFINES)
+	$(CC) $(FLAGS) -o $(NAME) cli.o $^
 	rm *.o
 
 cli_windows:
@@ -23,42 +24,51 @@ cli_windows:
 
 # experimental x11
 x11: DEFINES += -DDISPLAY -DLINUX -DX11 -DOPENGL
-x11: opcodes.o debug.o cpu.o screen.o interrupts.o common.o display.o
-	gcc $(FLAGS) $(DIRECTORY)main.c -c $(DEFINES)
-	gcc $(FLAGS) -o $(NAME) main.o $^ $(X11) $(OPENGL)
+x11: gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o display.o
+	$(CC) $(FLAGS) $(DIRECTORY)frontend/x11/x11.c -c $(DEFINES)
+	$(CC) $(FLAGS) -o $(NAME) x11.o $^ $(X11) $(OPENGL)
 	rm *.o
 
 # experimental sdl
 sdl:
-	gcc $(FLAGS) $(DIRECTORY)main.c -o $(NAME) -DDISPLAY -DLINUX -DSDL $(SDL)
+	$(CC) $(FLAGS) $(DIRECTORY)main.c -o $(NAME) -DDISPLAY -DLINUX -DSDL $(SDL)
 
 # testing builds
 test_linux:
-	gcc $(FLAGS) $(DIRECTORY)testing/test.c -o $(TEST_NAME) -DLINUX
+	$(CC) $(FLAGS) $(DIRECTORY)testing/test.c -o $(TEST_NAME) -DLINUX
 
 test_windows:
 	/usr/bin/x86_64-w64-mingw32-gcc $(FLAGS) $(DIRECTORY)testing/test.c -o $(TEST_NAME)$(WINDOWS_EXE) -DWINDOWS
 
+gbe.o:
+	$(CC) $(FLAGS) -c $(DIRECTORY)gbe.c $(DEFINES)
+
+cartridge.o:
+	$(CC) $(FLAGS) -c $(DIRECTORY)cartridge.c $(DEFINES)
+
 opcodes.o:
-	gcc $(FLAGS) -c $(DIRECTORY)opcodes/opcodes.c $(DEFINES)
+	$(CC) $(FLAGS) -c $(DIRECTORY)opcodes/opcodes.c $(DEFINES)
 
 debug.o:
-	gcc $(FLAGS) -c $(DIRECTORY)debug/debug.c $(DEFINES)
+	$(CC) $(FLAGS) -c $(DIRECTORY)debug/debug.c $(DEFINES)
 
 cpu.o:
-	gcc $(FLAGS) -c $(DIRECTORY)cpu.c $(DEFINES)
+	$(CC) $(FLAGS) -c $(DIRECTORY)cpu.c $(DEFINES)
 
 screen.o:
-	gcc $(FLAGS) -c $(DIRECTORY)screen.c $(DEFINES)
+	$(CC) $(FLAGS) -c $(DIRECTORY)screen.c $(DEFINES)
 
 interrupts.o:
-	gcc $(FLAGS) -c $(DIRECTORY)interrupts.c $(DEFINES)
+	$(CC) $(FLAGS) -c $(DIRECTORY)interrupts.c $(DEFINES)
+
+memory.o:
+	$(CC) $(FLAGS) -c $(DIRECTORY)memory.c $(DEFINES)
 
 common.o:
-	gcc $(FLAGS) -c $(DIRECTORY)common.c $(DEFINES)
+	$(CC) $(FLAGS) -c $(DIRECTORY)common.c $(DEFINES)
 
 display.o:
-	gcc $(FLAGS) -c $(DIRECTORY)display.c $(DEFINES)
+	$(CC) $(FLAGS) -c $(DIRECTORY)display.c $(DEFINES)
 
 clean:
 	rm gbe *.o

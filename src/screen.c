@@ -94,7 +94,9 @@ void updateScreen(cpu_state *cpu) {
                     //write new status to the the STAT register
                     setMode(OAM, cpu);
                     //load tiles as V Blank is now over
-                    loadTiles(cpu);
+                    #ifdef DISPLAY
+                        loadTiles(cpu);
+                    #endif
                 }
                 cycles = 0;
             }

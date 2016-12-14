@@ -1,6 +1,6 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "../types.h"
-#include "../common.h"
+#include "../memory.h"
 #include "../cpu.h"
 #include "opcodes.h"
 #include "cb_opcodes.c"
