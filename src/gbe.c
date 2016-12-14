@@ -8,6 +8,7 @@
 #include "file.c"
 #include "opcodes/opcodes.h"
 #include "display.h"
+#include "joypad.h"
 #include <stdlib.h>
 
 int startEmulator(int argc, char *argv[]) {
@@ -36,21 +37,23 @@ int startEmulator(int argc, char *argv[]) {
     // Simple game loop.
     while(true) {
         cycles++;
-        //if (cpu->MEM[0xFF00] == 0x10 || cpu->MEM[0xFF00] == 0x20) {
+        if (cpu->MEM[0xFF00] == 0x10 || cpu->MEM[0xFF00] == 0x20) {
+            //printf("result: 0x%X\n", cpu->MEM[0xFF00]);
             //cpu->MEM[0xff00] = ~cpu->MEM[0xFF00]; //SET NO BUTTONS PRESSED
-            cpu->MEM[0xFF00] = 0xFE;
+            //cpu->MEM[0xFF00] = 0xFE;
             //if (cycles > 100000) {
                 //cpu->MEM[0xFF00] &= 0xE;
             //}
-        //}
-        if (cpu->wait <= 0) {
+        }        
+        if (cpu->wait <= 0) {            
             executeCPU(cpu);
             //update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
-            updateIME(cpu);
+            updateIME(cpu);            
         }
+        //printf("%X\n", cpu->MEM[0xFF00]);
         updateScreen(cpu);
         checkInterrupts(cpu);
-        cycleCPU(cpu);
+        cycleCPU(cpu);        
     }
 
     //free cpu, cartridge at end

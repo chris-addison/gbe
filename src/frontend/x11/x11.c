@@ -11,6 +11,7 @@
 
 #include "../../window.h"
 #include "../../display.h"
+#include "../../input.h"
 
 #define WINDOW_HEIGHT 288
 #define WINDOW_WIDTH 320
@@ -27,6 +28,52 @@ XVisualInfo *visualInfo;
 Colormap colormap;
 GLXContext glContext;
 GLuint textureID;
+input current_input;
+
+// Get current input
+input getInput() {    
+    if (XPending(display)) {
+        XNextEvent(display, &event);
+        if (event.type == KeyPress || event.type == KeyRelease) {
+            printf("Key code is: %d\n", event.xkey.keycode);
+            switch(event.xkey.keycode) {
+                case 52: // z key
+                    current_input.A = (event.type == KeyPress);
+                    printf("A\n");                    
+                    break;
+                case 53: // x key
+                    current_input.B = (event.type == KeyPress);
+                    printf("B\n"); 
+                    break;
+                case 36: // Enter key
+                    current_input.start = (event.type == KeyPress);
+                    printf("Start\n"); 
+                    break; 
+                case 134: // Shift key
+                    current_input.select = (event.type == KeyPress);
+                    printf("Select\n"); 
+                    break;
+                case 111: // Up arrow
+                    current_input.up = (event.type == KeyPress);
+                    printf("Up\n"); 
+                    break;
+                case 116: // Down arrow
+                    current_input.down = (event.type == KeyPress);
+                    printf("Down\n"); 
+                    break;
+                case 113: // Left arrow
+                    current_input.left = (event.type == KeyPress);
+                    printf("Left\n"); 
+                    break;
+                case 114: // Right arrow
+                    current_input.right = (event.type == KeyPress);
+                    printf("Right\n"); 
+                    break; 
+            }
+        }
+    }
+    return current_input;
+}
 
 // Display frameBuffer on screen
 void displayOnWindow(uint8 *frameBuffer) {

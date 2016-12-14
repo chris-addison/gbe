@@ -13,6 +13,7 @@
 #define SCROLL_Y 0xFF42
 #define STAT 0xFF41
 #define LCDC 0xFF40
+#define JOYPAD 0xFF00
 #define INTERRUPTS_ENABLED 0xFFFF
 #define INTERRUPT_FLAGS 0xFF0F
 

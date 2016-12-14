@@ -14,7 +14,7 @@ all: cli_linux
 
 # cli only builds
 cli_linux: DEFINES += -DLINUX -DDEBUG
-cli_linux: gbe.o opcodes.o memory.o cartridge.o debug.o cpu.o screen.o interrupts.o common.o
+cli_linux: gbe.o opcodes.o memory.o cartridge.o debug.o cpu.o screen.o interrupts.o common.o joypad.o
 	$(CC) $(FLAGS) $(DIRECTORY)frontend/cli/cli.c -c $(DEFINES)
 	$(CC) $(FLAGS) -o $(NAME) cli.o $^
 	rm *.o
@@ -24,7 +24,7 @@ cli_windows:
 
 # experimental x11
 x11: DEFINES += -DDISPLAY -DLINUX -DX11 -DOPENGL
-x11: gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o display.o
+x11: gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o display.o joypad.o
 	$(CC) $(FLAGS) $(DIRECTORY)frontend/x11/x11.c -c $(DEFINES)
 	$(CC) $(FLAGS) -o $(NAME) x11.o $^ $(X11) $(OPENGL)
 	rm *.o
@@ -69,6 +69,9 @@ common.o:
 
 display.o:
 	$(CC) $(FLAGS) -c $(DIRECTORY)display.c $(DEFINES)
+
+joypad.o:
+	$(CC) $(FLAGS) -c $(DIRECTORY)joypad.c $(DEFINES)
 
 clean:
 	rm gbe *.o

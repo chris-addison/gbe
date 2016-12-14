@@ -2,11 +2,15 @@
 #include "types.h"
 #include "cpu.h"
 #include "display.h"
+#include "joypad.h"
 #include <stdio.h>
 
 //read a byte from a given memory address
 uint8 readByte(uint16 address, cpu_state *cpu) {
     if (cpu->cart_type == 0x00 || address < 0x4000 || address > 0xC000) {
+        if (address == JOYPAD) {
+            return getJoypadState(cpu);
+        }
         return cpu->MEM[address];
     } else if (address < 0x8000) { //handle mbc here
         //get address in rom bank
