@@ -5,13 +5,14 @@
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
-#include <GL/gl.h>
 #include <GL/glx.h>
-#include <GL/glu.h>
+
+#include "../frontend.h"
 
 #include "../../window.h"
 #include "../../display.h"
 #include "../../input.h"
+#include "../../gfx/gl.h"
 
 #define WINDOW_HEIGHT 288
 #define WINDOW_WIDTH 320
@@ -28,11 +29,10 @@ XVisualInfo *visualInfo;
 Colormap colormap;
 GLXContext glContext;
 GLuint textureID;
-input current_input;
 
 // Get current input
-input getInput() {    
-    if (XPending(display)) {
+void getInput(input current_input) {
+    while (XPending(display)) {
         XNextEvent(display, &event);
         if (event.type == KeyPress || event.type == KeyRelease) {
             printf("Key code is: %d\n", event.xkey.keycode);
@@ -72,31 +72,16 @@ input getInput() {
             }
         }
     }
-    return current_input;
+}
+
+// Swap buffers
+void frontend_swap_buffers() {
+    glXSwapBuffers(display, window);
 }
 
 // Display frameBuffer on screen
 void displayOnWindow(uint8 *frameBuffer) {
-    //XGetWindowAttributes(display, window, &windowAttributes);
-    //glViewport(0, 0, windowAttributes.width, windowAttributes.height);
-    /*glClear(GL_COLOR_BUFFER_BIT);
-    glEnable(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-    //TODO: switch to non-deprecated method of drawing
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 4, 160, 144, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
-    glColor3f(1, 1, 1);
-    glBegin(GL_QUADS);
-    glTexCoord2i(0, 1); glVertex2i(-1, -1);
-    glTexCoord2i(0, 0); glVertex2i(-1, 1);
-    glTexCoord2i(1, 0); glVertex2i(1, 1);
-    glTexCoord2i(1, 1); glVertex2i(1, -1);
-    glEnd();*/
-    glRasterPos2f(-1, 1);
-    glPixelZoom(2, -2);
-    glDrawPixels(DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
-    glXSwapBuffers(display, window);
+    gl_display_framebuffer_on_window(frameBuffer);
 }
 
 // CLose display.
@@ -137,14 +122,13 @@ void startDisplay() {
 
     glContext = glXCreateContext(display, visualInfo, NULL, GL_TRUE);
     glXMakeCurrent(display, window, glContext);
-    glClearColor( 1, 1, 1, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glXSwapBuffers(display, window);
+    gl_clear_window();
 }
 
 // Run emulator from this method.
 int main(int argc, char *argv[]) {
     startDisplay();
-    startEmulator(argc, argv);
+    int out = startEmulator(argc, argv);
     stopDisplay();
+    return out;
 }

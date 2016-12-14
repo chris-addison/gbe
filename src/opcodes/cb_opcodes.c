@@ -604,6 +604,24 @@ int prefixCB(cpu_state *cpu) {
         case 0xC1: //SET 0, C
             set(0, &cpu->registers.C, opcode, cpu);
             break;
+        case 0xC2: //SET 0, D
+            set(0, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xC3: //SET 0, E
+            set(0, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xC4: //SET 0, H
+            set(0, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xC5: //SET 0, L
+            set(0, &cpu->registers.L, opcode, cpu);
+            break;
+        case 0xC6: //SET 0, (HL)
+            set_m(0, opcode, cpu);
+            break;
+        case 0xC7: //SET 0, A
+            set(0, &cpu->registers.A, opcode, cpu);
+            break;
         case 0xCE: //SET 1, (HL)
             set_m(1, opcode, cpu);
             break;
@@ -622,11 +640,17 @@ int prefixCB(cpu_state *cpu) {
         case 0xE6: //SET 4, (HL)
             set_m(4, opcode, cpu);
             break;
+        case 0xE7: //SET 4, A
+            set(4, &cpu->registers.A, opcode, cpu);
+            break;
         case 0xEE: //SET 5, (HL)
             set_m(5, opcode, cpu);
             break;
         case 0xF6: //SET 6, (HL)
             set_m(6, opcode, cpu);
+            break;
+        case 0xF7: //SET 6, A
+            set(4, &cpu->registers.A, opcode, cpu);
             break;
         case 0xFE: //SET 7, (HL)
             set_m(7, opcode, cpu);

@@ -33,18 +33,14 @@ int startEmulator(int argc, char *argv[]) {
     // Close the rom now that all data has been read
     romClose(rom);
 
-    int cycles = 0;
+    uint8 cycles = 0;    
     // Simple game loop.
     while(true) {
-        cycles++;
-        if (cpu->MEM[0xFF00] == 0x10 || cpu->MEM[0xFF00] == 0x20) {
-            //printf("result: 0x%X\n", cpu->MEM[0xFF00]);
-            //cpu->MEM[0xff00] = ~cpu->MEM[0xFF00]; //SET NO BUTTONS PRESSED
-            //cpu->MEM[0xFF00] = 0xFE;
-            //if (cycles > 100000) {
-                //cpu->MEM[0xFF00] &= 0xE;
-            //}
-        }        
+        // TEMP clock
+        if (cycles == 255) {
+            cpu->MEM[0xFF04]++;
+        }
+        cycles++;      
         if (cpu->wait <= 0) {            
             executeCPU(cpu);
             //update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
