@@ -2,8 +2,6 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#ifdef DISPLAY
-    #include "display.h"
-#endif
+
 
 #endif /* MAIN_H */

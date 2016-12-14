@@ -29,7 +29,7 @@ void clearInterruptFlag(uint8 flag, cpu_state *cpu) {
     writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) & ~flag, cpu);
 }
 
-//save the PC, jump to interrupt handler, and reset the ime
+// Save the PC, jump to interrupt handler, and reset the ime
 static void interruptVBlank(cpu_state *cpu) {
     clearInterruptFlag(INTR_V_BLANK, cpu);
     cpu->halt = false;
@@ -39,7 +39,17 @@ static void interruptVBlank(cpu_state *cpu) {
     cpu->wait = 12;
 }
 
-//check interrupts and act on them
+// Save the PC, just ot interrupt handler, and reset ime
+static void interruptJoypad(cpu_state *cpu) {
+    clearInterruptFlag(INTR_V_BLANK, cpu);
+    cpu->halt = false;
+    cpu->ime = false;
+    writeShortToStack(cpu->PC, cpu);
+    cpu->PC = 0x60;
+    cpu->wait = 12;
+}
+
+// Check interrupts and act on them
 void checkInterrupts(cpu_state *cpu) {
     //printByte(readByte(INTERRUPT_FLAGS, cpu));
     if (cpu->ime && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
@@ -57,7 +67,8 @@ void checkInterrupts(cpu_state *cpu) {
 
         }
         if (interrupt & INTR_JOYPAD) {
-
+            printf("interrupt joypad");
+            interruptJoypad(cpu);
         }
     }
 }
