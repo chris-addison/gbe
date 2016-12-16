@@ -44,7 +44,7 @@ int startEmulator(int argc, char *argv[]) {
         if (cpu->wait <= 0) {            
             executeCPU(cpu);
             //update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
-            updateIME(cpu);            
+            updateIME(cpu);    
         }
         //printf("%X\n", cpu->MEM[0xFF00]);
         updateScreen(cpu);

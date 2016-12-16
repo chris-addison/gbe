@@ -12,6 +12,6 @@ typedef struct input {
     bool right;
 } input;
 
-extern void getInput(input current_input);
+extern void getInput(input *current_input);
 
 #endif /* INPUT_H */

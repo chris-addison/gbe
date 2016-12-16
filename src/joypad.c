@@ -24,12 +24,12 @@ input current_inputs = {};
 // 0xD is left
 // 0xE is right
 uint8 getJoypadState(cpu_state *cpu) {
-    // Get the inputs from the frontend
-    getInput(current_inputs);
+    // Get the inputs from the frontend    
     cpu->MEM[JOYPAD] |= 0x0F;
     //printf("Status: 0x%X\n", cpu->MEM[JOYPAD]);
     // Select the column
     if (readBit(4, &cpu->MEM[JOYPAD])) {
+        getInput(&current_inputs);
         cpu->MEM[JOYPAD] = 0x1F;      
         if (current_inputs.A) {
             cpu->MEM[JOYPAD] &= 0xE;
@@ -39,12 +39,13 @@ uint8 getJoypadState(cpu_state *cpu) {
         }
         if (current_inputs.start) {
             cpu->MEM[JOYPAD] &= 0x7;
-            printf("Pressed");
+            //fprintf(stdout, "Pressed\n");
         }
         if (current_inputs.select) {
             cpu->MEM[JOYPAD] &= 0xB;
         }
     } else if (readBit(5, &cpu->MEM[JOYPAD])) {
+        getInput(&current_inputs);
         cpu->MEM[JOYPAD] = 0x2F;
         if (current_inputs.up) {
             cpu->MEM[JOYPAD] &= 0xB;

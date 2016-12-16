@@ -30,8 +30,11 @@ x11: gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o co
 	rm *.o
 
 # experimental sdl
-sdl:
-	$(CC) $(FLAGS) $(DIRECTORY)main.c -o $(NAME) -DDISPLAY -DLINUX -DSDL $(SDL)
+sdl: DEFINES += -DDISPLAY -DLINUX -DSDL
+sdl: gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o display.o joypad.o
+	$(CC) $(FLAGS) $(DIRECTORY)frontend/sdl/sdl.c -c $(DEFINES)
+	$(CC) $(FLAGS) -o $(NAME) sdl.o $^ $(SDL)
+	rm *.o
 
 # testing builds
 test_linux:

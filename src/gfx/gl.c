@@ -5,9 +5,16 @@
 #include "../display.h"
 #include "../frontend/frontend.h"
 
+// Update viewport size
+void gl_update_viewport() {
+    windowSize window = {};
+    frontend_get_window_size(&window);
+    glViewport(0, 0, window.width, window.height);
+}
 
-
-void gl_display_framebuffer_on_window(uint8* frameBuffer) {
+// Draw the framebuffer to the window
+void gl_display_framebuffer_on_window(uint8 *frameBuffer) {
+    gl_update_viewport();
     //XGetWindowAttributes(display, window, &windowAttributes);
     //glViewport(0, 0, windowAttributes.width, windowAttributes.height);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -24,12 +31,13 @@ void gl_display_framebuffer_on_window(uint8* frameBuffer) {
     glTexCoord2i(1, 0); glVertex2i(1, 1);
     glTexCoord2i(1, 1); glVertex2i(1, -1);
     glEnd();
-    glRasterPos2f(-1, 1);
+    /*glRasterPos2f(-1, 1);
     glPixelZoom(2, -2);
-    glDrawPixels(DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
+    glDrawPixels(DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);*/
     frontend_swap_buffers();
 }
 
+// Clear the window 
 void gl_clear_window() {
     glClearColor(1, 1, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT);

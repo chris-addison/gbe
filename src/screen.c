@@ -63,7 +63,7 @@ void updateScreen(cpu_state *cpu) {
             if (cycles >= 204) {
                 incrementScanline(cpu);
                 //switch to vblank when the scanline hits 144
-                if (readScanline(cpu) > 144) {
+                if (readScanline(cpu) > 143) {
                     //write new status to the the STAT register
                     setMode(V_BLANK, cpu);
                     //set an interrupt flag
