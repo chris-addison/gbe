@@ -11,6 +11,9 @@
 #include "joypad.h"
 #include <stdlib.h>
 
+cpu_state *cpu;
+uint8 cycles_timer = 0; 
+
 int startEmulator(int argc, char *argv[]) {
     // Catch case when no file provided
     if (argc < 2) {
@@ -22,7 +25,7 @@ int startEmulator(int argc, char *argv[]) {
     FILE *rom = romLoad(argv[1]);
 
     // Set up cpu
-    cpu_state *cpu = createCPU();
+    cpu = createCPU();
 
     // Load cartridge
     cartridgeLoad(cpu, rom);
@@ -32,29 +35,33 @@ int startEmulator(int argc, char *argv[]) {
 
     // Close the rom now that all data has been read
     romClose(rom);
+    
+    return 0;
+}
 
-    uint8 cycles = 0;    
-    // Simple game loop.
-    while(true) {
-        // TEMP clock
-        if (cycles == 255) {
-            cpu->MEM[0xFF04]++;
-        }
-        cycles++;      
-        if (cpu->wait <= 0) {            
-            executeCPU(cpu);
-            //update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
-            updateIME(cpu);    
-        }
-        //printf("%X\n", cpu->MEM[0xFF00]);
+// Step the emulator one instruction.
+int cycleEmulator() {
+    // Execute instruction       
+    executeCPU(cpu);
+    // Update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
+    updateIME(cpu);
+    // TEMP clock
+    if (cycles_timer == 255) {
+        cpu->MEM[0xFF04]++;
+    }
+    cycles_timer++;
+    while (cpu->wait > 0) {
         updateScreen(cpu);
         checkInterrupts(cpu);
-        cycleCPU(cpu);        
+        cycleCPU(cpu);
     }
+    // Instruction complete return 0
+    return 0;
+}
 
+void stopEmulator() {
     //free cpu, cartridge at end
     free(cpu->CART_ROM);
     free(cpu->CART_RAM);
     free(cpu);
-    return 0;
 }

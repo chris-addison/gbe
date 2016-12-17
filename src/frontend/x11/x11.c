@@ -131,6 +131,11 @@ void stopDisplay() {
 int main(int argc, char *argv[]) {
     startDisplay();
     int out = startEmulator(argc, argv);
+    // Run until error
+    while (!out) {
+        out = cycleEmulator();
+    }
+    stopEmulator();
     stopDisplay();
     return out;
 }

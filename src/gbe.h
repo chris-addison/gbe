@@ -3,5 +3,7 @@
 #define GBE_H
 
 extern int startEmulator(int argc, char *argv[]);
+extern int cycleEmulator();
+extern void stopEmulator();
 
 #endif /* GBE_H */
