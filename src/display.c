@@ -6,7 +6,7 @@
 const uint8 COLOURS[] = {0xFF, 0xC0, 0x60, 0x00};
 uint8 backgroundColourOffset[] = {0, 1, 2, 3};
 
-uint8 frameBuffer[3 * DISPLAY_WIDTH * DISPLAY_HEIGHT];
+uint8 frameBuffer[4 * DISPLAY_WIDTH * DISPLAY_HEIGHT];
 uint8 tiles[384][8][8];
 
 // Update colour palette for the background
@@ -54,9 +54,10 @@ static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
         }
         short drawOffset = DISPLAY_WIDTH * scanLine;
         for (int i = 0; i < DISPLAY_WIDTH; i++) {
-            frameBuffer[(drawOffset + i)*3 + 0] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
-            frameBuffer[(drawOffset + i)*3 + 1] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
-            frameBuffer[(drawOffset + i)*3 + 2] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+            frameBuffer[(drawOffset + i)*4 + 0] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+            frameBuffer[(drawOffset + i)*4 + 1] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+            frameBuffer[(drawOffset + i)*4 + 2] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+            frameBuffer[(drawOffset + i)*4 + 3] = 0xFF;
             x++;
             if (x == 8) {
                 x = 0;
@@ -97,10 +98,11 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
         }
         short drawOffset = DISPLAY_WIDTH * scanLine;
         for (int i = windowX; i < DISPLAY_WIDTH; i++) {
-            if (i >= 0) {
-                frameBuffer[(drawOffset + i)*3 + 0] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
-                frameBuffer[(drawOffset + i)*3 + 1] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
-                frameBuffer[(drawOffset + i)*3 + 2] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+            if (i >= 0) {                
+                frameBuffer[(drawOffset + i)*4 + 0] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+                frameBuffer[(drawOffset + i)*4 + 1] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+                frameBuffer[(drawOffset + i)*4 + 2] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+                frameBuffer[(drawOffset + i)*4 + 3] = 0xFF;
             }
             x++;
             if (x == 8) {
