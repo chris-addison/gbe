@@ -2,8 +2,8 @@
 #define INPUT_H
 
 typedef struct input {
-    bool A;
-    bool B;
+    bool a;
+    bool b;
     bool start;
     bool select;
     bool up;

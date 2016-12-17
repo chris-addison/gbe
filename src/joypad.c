@@ -31,40 +31,41 @@ uint8 getJoypadState(cpu_state *cpu) {
     if (readBit(4, &cpu->MEM[JOYPAD])) {
         getInput(&current_inputs);
         cpu->MEM[JOYPAD] = 0x1F;      
-        if (current_inputs.A) {
+        if (current_inputs.a) {
             cpu->MEM[JOYPAD] &= 0xE;
+            fprintf(stdout, "A\n");
         }
-        if (current_inputs.B) {
+        if (current_inputs.b) {
             cpu->MEM[JOYPAD] &= 0xD;
+            fprintf(stdout, "B\n");
         }
         if (current_inputs.start) {
             cpu->MEM[JOYPAD] &= 0x7;
-            //fprintf(stdout, "Pressed\n");
+            fprintf(stdout, "Start\n");
         }
         if (current_inputs.select) {
             cpu->MEM[JOYPAD] &= 0xB;
+            fprintf(stdout, "Select\n");
         }
     } else if (readBit(5, &cpu->MEM[JOYPAD])) {
         getInput(&current_inputs);
         cpu->MEM[JOYPAD] = 0x2F;
         if (current_inputs.up) {
             cpu->MEM[JOYPAD] &= 0xB;
+            fprintf(stdout, "Up\n");
         }
         if (current_inputs.down) {
             cpu->MEM[JOYPAD] &= 0x7;
+            fprintf(stdout, "Down\n");
         }
         if (current_inputs.left) {
             cpu->MEM[JOYPAD] &= 0xD;
+            fprintf(stdout, "Left\n");
         }
         if (current_inputs.right) {
             cpu->MEM[JOYPAD] &= 0xE;
+            fprintf(stdout, "Right\n");
         }
-    }
-
-    if (current_inputs.A || current_inputs.B || current_inputs.start || current_inputs.select ||
-     current_inputs.up || current_inputs.down || current_inputs.left || current_inputs.right) {
-        //printf("Interrupt\n");
-        setInterruptFlag(INTR_JOYPAD, cpu);
     }
 
     // No column selected, so return nothing.

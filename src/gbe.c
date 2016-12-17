@@ -64,6 +64,15 @@ int cycleEmulator() {
     return 0;
 }
 
+// Pass interface interrupts to emulator. Multiple flags can be sent via logical OR.
+// Just joypad for now.
+void emulatorInterrupt(uint32 interruptFlag) {
+    // Pass on interrupt for joypad input
+    if (interruptFlag & EMULATOR_INTER_JOYPAD) {
+        setInterruptFlag(INTR_JOYPAD, cpu);
+    }
+}
+
 void stopEmulator() {
     //free cpu, cartridge at end
     free(cpu->CART_ROM);
