@@ -30,45 +30,9 @@ Colormap colormap;
 GLXContext glContext;
 GLuint textureID;
 
-static void clearStdin() {
-    int c;
-    while((c = getchar()) != '\n' && c != EOF ) {}
-}
-
 // Get current input
 void getInput(input *current_input) {
-    current_input->A = false;
-    current_input->B = false;
-    current_input->select = false;
-    current_input->start = false;
-    current_input->up = false;
-    current_input->down = false;
-    current_input->left = false;
-    current_input->right = false;
-    char button[11];
-    scanf("%10s", button);
-    clearStdin();
-    if (strcmp("n", button)) {
-        return;
-    } else if (strcmp("A", button)) {
-       current_input->A = true;
-    } else if (strcmp("B", button)) {
-       current_input->B = true;
-    } else if (strcmp("Start", button)) {
-       current_input->start = true;
-    } else if (strcmp("Select", button)) {
-       current_input->select = true;
-    } else if (strcmp("U", button)) {
-       current_input->up = true;
-    } else if (strcmp("D", button)) {
-       current_input->down = true;
-    } else if (strcmp("L", button)) {
-       current_input->left = true;
-    } else if (strcmp("R", button)) {
-       current_input->right = true;
-    }
-    //current_input->A = true;
-    /*if (XPending(display)) {
+    if (XPending(display)) {
         XNextEvent(display, &event);
         if (event.type == KeyPress || event.type == KeyRelease) {
             //printf("Key code is: %d\n", event.xkey.keycode);
@@ -101,7 +65,7 @@ void getInput(input *current_input) {
                     break;
             }
         }
-    }*/
+    }
 }
 
 // Swap buffers

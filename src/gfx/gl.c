@@ -23,7 +23,7 @@ void gl_display_framebuffer_on_window(uint8 *frameBuffer) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
     //TODO: switch to non-deprecated method of drawing
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 4, 160, 144, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 4, 160, 144, GL_RGBA, GL_UNSIGNED_BYTE, frameBuffer);
     glColor3f(1, 1, 1);
     glBegin(GL_QUADS);
     glTexCoord2i(0, 1); glVertex2i(-1, -1);
@@ -33,7 +33,7 @@ void gl_display_framebuffer_on_window(uint8 *frameBuffer) {
     glEnd();
     /*glRasterPos2f(-1, 1);
     glPixelZoom(2, -2);
-    glDrawPixels(DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, frameBuffer);*/
+    glDrawPixels(DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, frameBuffer);*/
     frontend_swap_buffers();
 }
 
