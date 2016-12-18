@@ -48,12 +48,8 @@ void loadTiles(cpu_state *cpu) {
     }
 }
 
-//bool backgroundEnabled = true;
 // Load Background into framebuffer
 static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
-    //if (scanLine == 0 || scanLine > 143) {
-        //backgroundEnabled = readBit(0, &cpu->MEM[LCDC]);
-    //}
     // Check if background enabled
     if (readBit(0, &cpu->MEM[LCDC])) {
         int mapLocation = (readBit(3, &cpu->MEM[LCDC])) ? 0x9C00 : 0x9800;
@@ -68,7 +64,7 @@ static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
             tile = ((int8) tile) + 256;
         }
         short drawOffset = DISPLAY_WIDTH * scanLine;
-        for (int i = 0; i < DISPLAY_WIDTH; i++) {
+        for (uint16 i = 0; i < DISPLAY_WIDTH; i++) {
             frameBuffer[(drawOffset + i)*4 + 0] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
             frameBuffer[(drawOffset + i)*4 + 1] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
             frameBuffer[(drawOffset + i)*4 + 2] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
@@ -86,7 +82,7 @@ static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
         }
     } else { // Clear screen if no background
         short drawOffset = DISPLAY_WIDTH * scanLine;
-        for (int i = 0; i < DISPLAY_WIDTH; i++) {
+        for (uint16 i = 0; i < DISPLAY_WIDTH; i++) {
             frameBuffer[(drawOffset + i)*4 + 0] = 0xFF;
             frameBuffer[(drawOffset + i)*4 + 1] = 0xFF;
             frameBuffer[(drawOffset + i)*4 + 2] = 0xFF;

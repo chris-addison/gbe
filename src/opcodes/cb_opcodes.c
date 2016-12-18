@@ -550,11 +550,47 @@ int prefixCB(cpu_state *cpu) {
         case 0x7F: //BIT 7, A
             bit(7, &cpu->registers.A, opcode, cpu);
             break;
+        case 0x80: //RES 0, B
+            res(0, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x81: //RES 0, C
+            res(0, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x82: //RES 0, D
+            res(0, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x83: //RES 0, E
+            res(0, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x84: //RES 0, H
+            res(0, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x85: //RES 0, L
+            res(0, &cpu->registers.L, opcode, cpu);
+            break;
         case 0x86: //RES 0, (HL)
             res_m(0, opcode, cpu);
             break;
         case 0x87: //RES 0, A
             res(0, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x88: //RES 1, B
+            res(1, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x89: //RES 1, C
+            res(1, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x8A: //RES 1, D
+            res(1, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x8B: //RES 1, E
+            res(1, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x8C: //RES 1, H
+            res(1, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x8D: //RES 1, L
+            res(1, &cpu->registers.L, opcode, cpu);
             break;
         case 0x8E: //RES 1, (HL)
             res_m(1, opcode, cpu);
@@ -562,11 +598,47 @@ int prefixCB(cpu_state *cpu) {
         case 0x8F: //RES 1, A
             res(1, &cpu->registers.A, opcode, cpu);
             break;
+        case 0x90: //RES 2, B
+            res(2, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x91: //RES 2, C
+            res(2, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x92: //RES 2, D
+            res(2, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x93: //RES 2, E
+            res(2, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x94: //RES 2, H
+            res(2, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x95: //RES 2, L
+            res(2, &cpu->registers.L, opcode, cpu);
+            break;
         case 0x96: //RES 2, (HL)
             res_m(2, opcode, cpu);
             break;
         case 0x97: //RES 2, A
-            res(2, &cpu->registers.A, opcode, cpu);
+            res(3, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0x98: //RES 3, B
+            res(3, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0x99: //RES 3, C
+            res(3, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0x9A: //RES 3, D
+            res(3, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0x9B: //RES 3, E
+            res(3, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0x9C: //RES 3, H
+            res(3, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0x9D: //RES 3, L
+            res(3, &cpu->registers.L, opcode, cpu);
             break;
         case 0x9E: //RES 3, (HL)
             res_m(3, opcode, cpu);
@@ -574,11 +646,47 @@ int prefixCB(cpu_state *cpu) {
         case 0x9F: //RES 3, A
             res(3, &cpu->registers.A, opcode, cpu);
             break;
+        case 0xA0: //RES 4, B
+            res(4, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xA1: //RES 4, C
+            res(4, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xA2: //RES 4, D
+            res(4, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xA3: //RES 4, E
+            res(4, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xA4: //RES 4, H
+            res(4, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xA5: //RES 4, L
+            res(4, &cpu->registers.L, opcode, cpu);
+            break;
         case 0xA6: //RES 4, (HL)
             res_m(4, opcode, cpu);
             break;
         case 0xA7: //RES 4, A
             res(4, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xA8: //RES 5, B
+            res(5, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xA9: //RES 5, C
+            res(5, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xAA: //RES 5, D
+            res(5, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xAB: //RES 5, E
+            res(5, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xAC: //RES 5, H
+            res(5, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xAD: //RES 5, L
+            res(5, &cpu->registers.L, opcode, cpu);
             break;
         case 0xAE: //RES 5, (HL)
             res_m(5, opcode, cpu);
@@ -586,11 +694,47 @@ int prefixCB(cpu_state *cpu) {
         case 0xAF: //RES 5, A
             res(5, &cpu->registers.A, opcode, cpu);
             break;
+        case 0xB0: //RES 6, B
+            res(6, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xB1: //RES 6, C
+            res(6, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xB2: //RES 6, D
+            res(6, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xB3: //RES 6, E
+            res(6, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xB4: //RES 6, H
+            res(6, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xB5: //RES 6, L
+            res(6, &cpu->registers.L, opcode, cpu);
+            break;
         case 0xB6: //RES 6, (HL)
             res_m(6, opcode, cpu);
             break;
         case 0xB7: //RES 6, A
             res(6, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xB8: //RES 7, B
+            res(7, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xB9: //RES 7, C
+            res(7, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xBA: //RES 7, D
+            res(7, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xBB: //RES 7, E
+            res(7, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xBC: //RES 7, H
+            res(7, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xBD: //RES 7, L
+            res(7, &cpu->registers.L, opcode, cpu);
             break;
         case 0xBE: //RES 7, (HL)
             res_m(7, opcode, cpu);
@@ -622,35 +766,167 @@ int prefixCB(cpu_state *cpu) {
         case 0xC7: //SET 0, A
             set(0, &cpu->registers.A, opcode, cpu);
             break;
+        case 0xC8: //SET 1, B
+            set(1, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xC9: //SET 1, C
+            set(1, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xCA: //SET 1, D
+            set(1, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xCB: //SET 1, E
+            set(1, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xCC: //SET 1, H
+            set(1, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xCD: //SET 1, L
+            set(1, &cpu->registers.L, opcode, cpu);
+            break;
         case 0xCE: //SET 1, (HL)
             set_m(1, opcode, cpu);
             break;
         case 0xCF: //SET 1, A
         	set(1, &cpu->registers.A, opcode, cpu);
         	break;
+        case 0xD0: //SET 2, B
+            set(2, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xD1: //SET 2, C
+            set(2, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xD2: //SET 2, D
+            set(2, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xD3: //SET 2, E
+            set(2, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xD4: //SET 2, H
+            set(2, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xD5: //SET 2, L
+            set(2, &cpu->registers.L, opcode, cpu);
+            break;
         case 0xD6: //SET 2, (HL)
             set_m(2, opcode, cpu);
+            break;
+        case 0xD7: //SET 2, A
+            set(2, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xD8: //SET 3, B
+            set(3, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xD9: //SET 3, C
+            set(3, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xDA: //SET 3, D
+            set(3, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xDB: //SET 3, E
+            set(3, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xDC: //SET 3, H
+            set(3, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xDD: //SET 3, L
+            set(3, &cpu->registers.L, opcode, cpu);
             break;
         case 0xDE: //SET 3, (HL)
             set_m(3, opcode, cpu);
             break;
+        case 0xDF: //SET 3, A
+        	set(3, &cpu->registers.A, opcode, cpu);
+        	break;
+        case 0xE0: //SET 4, B
+            set(4, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xE1: //SET 4, C
+            set(4, &cpu->registers.C, opcode, cpu);
+            break;
         case 0xE2: //SET 4, D
             set(4, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xE3: //SET 4, E
+            set(4, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xE4: //SET 4, H
+            set(4, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xE5: //SET 4, L
+            set(4, &cpu->registers.L, opcode, cpu);
             break;
         case 0xE6: //SET 4, (HL)
             set_m(4, opcode, cpu);
             break;
         case 0xE7: //SET 4, A
-            set(4, &cpu->registers.A, opcode, cpu);
+            set(5, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xE8: //SET 5, B
+            set(5, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xE9: //SET 5, C
+            set(5, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xEA: //SET 5, D
+            set(5, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xEB: //SET 5, E
+            set(5, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xEC: //SET 5, H
+            set(5, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xED: //SET 5, L
+            set(5, &cpu->registers.L, opcode, cpu);
             break;
         case 0xEE: //SET 5, (HL)
             set_m(5, opcode, cpu);
+            break;
+        case 0xEF: //SET 5, A
+        	set(5, &cpu->registers.A, opcode, cpu);
+        	break;
+        case 0xF0: //SET 6, B
+            set(6, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xF1: //SET 6, C
+            set(6, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xF2: //SET 6, D
+            set(6, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xF3: //SET 6, E
+            set(6, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xF4: //SET 6, H
+            set(6, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xF5: //SET 6, L
+            set(6, &cpu->registers.L, opcode, cpu);
             break;
         case 0xF6: //SET 6, (HL)
             set_m(6, opcode, cpu);
             break;
         case 0xF7: //SET 6, A
-            set(4, &cpu->registers.A, opcode, cpu);
+            set(6, &cpu->registers.A, opcode, cpu);
+            break;
+        case 0xF8: //SET 7, B
+            set(7, &cpu->registers.B, opcode, cpu);
+            break;
+        case 0xF9: //SET 7, C
+            set(7, &cpu->registers.C, opcode, cpu);
+            break;
+        case 0xFA: //SET 7, D
+            set(7, &cpu->registers.D, opcode, cpu);
+            break;
+        case 0xFB: //SET 7, E
+            set(7, &cpu->registers.E, opcode, cpu);
+            break;
+        case 0xFC: //SET 7, H
+            set(7, &cpu->registers.H, opcode, cpu);
+            break;
+        case 0xFD: //SET 7, L
+            set(7, &cpu->registers.L, opcode, cpu);
             break;
         case 0xFE: //SET 7, (HL)
             set_m(7, opcode, cpu);
