@@ -632,7 +632,7 @@ int prefixCB(cpu_state *cpu) {
             res_m(2, opcode, cpu);
             break;
         case 0x97: //RES 2, A
-            res(3, &cpu->registers.A, opcode, cpu);
+            res(2, &cpu->registers.A, opcode, cpu);
             break;
         case 0x98: //RES 3, B
             res(3, &cpu->registers.B, opcode, cpu);
@@ -872,7 +872,7 @@ int prefixCB(cpu_state *cpu) {
             set_m(4, opcode, cpu);
             break;
         case 0xE7: //SET 4, A
-            set(5, &cpu->registers.A, opcode, cpu);
+            set(4, &cpu->registers.A, opcode, cpu);
             break;
         case 0xE8: //SET 5, B
             set(5, &cpu->registers.B, opcode, cpu);
