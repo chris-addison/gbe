@@ -32,37 +32,29 @@ uint8 getJoypadState(cpu_state *cpu) {
         getInput(&current_inputs);
         if (current_inputs.a) {
             cpu->MEM[JOYPAD] &= 0xFE;
-            fprintf(stdout, "A\n");
         }
         if (current_inputs.b) {
             cpu->MEM[JOYPAD] &= 0xFD;
-            fprintf(stdout, "B\n");
         }
         if (current_inputs.start) {
             cpu->MEM[JOYPAD] &= 0xF7;
-            fprintf(stdout, "Start\n");
         }
         if (current_inputs.select) {
             cpu->MEM[JOYPAD] &= 0xFB;
-            fprintf(stdout, "Select\n");
         }
     } else if (readBit(5, &cpu->MEM[JOYPAD])) {
         getInput(&current_inputs);
         if (current_inputs.up) {
             cpu->MEM[JOYPAD] &= 0xFB;
-            fprintf(stdout, "Up\n");
         }
         if (current_inputs.down) {
             cpu->MEM[JOYPAD] &= 0xF7;
-            fprintf(stdout, "Down\n");
         }
         if (current_inputs.left) {
             cpu->MEM[JOYPAD] &= 0xFD;
-            fprintf(stdout, "Left\n");
         }
         if (current_inputs.right) {
             cpu->MEM[JOYPAD] &= 0xFE;
-            fprintf(stdout, "Right\n");
         }
     }
 

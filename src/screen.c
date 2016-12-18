@@ -11,7 +11,8 @@
 #include <time.h>
 
 uint16 cycles = 0;
-bool displayActive = false;
+bool displayActive = true;
+uint8 displayActiveCounter = 0;
 
 //read the current scanline(LY) from 0xFF44
 static uint8 readScanline(cpu_state *cpu) {
@@ -60,70 +61,88 @@ static void setMode(uint8 mode, cpu_state *cpu) {
 
 // Single step for the logic to control the screen
 void updateScreen(cpu_state *cpu) {
-    uint8 screenMode = readByte(STAT, cpu) & 0b11; //grab last two bits for checking the screen mode
-    cycles++;
     //Order and number of cycles ref: http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
     //TL;DR: flow is 143 * (OAM -> VRAM -> H_BLANK) -> 10 * V_BLANK
-    switch (screenMode) {
-        case OAM:
-            if (cycles >= 80) {
-                setMode(VRAM, cpu);
-                cycles = 0;
-            }
-            break;
-        case VRAM:
-            if (cycles >= 172) {
-                // Load scanline during VRAM
-                #ifdef DISPLAY
-                    if (displayActive) {
-                        loadScanline(cpu);
-                    }
-                #endif
-                setMode(H_BLANK, cpu);
-                cycles = 0;
-            }
-            break;
-        case H_BLANK:
-            if (cycles >= 204) {
-                incrementScanline(cpu);
-                //switch to vblank when the scanline hits 144
-                if (readScanline(cpu) > 143) {
-                    //write new status to the the STAT register
-                    setMode(V_BLANK, cpu);
-                    //set an interrupt flag
-                    setInterruptFlag(INTR_V_BLANK, cpu);
-                    // Draw the frame at beginning of v blank.
-                    // Only display if correct bit is set. Ths can only be togged during V Blank
+    if (displayActive) { // DISPLAY ENABLED
+        uint8 screenMode = readByte(STAT, cpu) & 0b11; //grab last two bits for checking the screen mode
+        cycles++;
+        switch (screenMode) {
+            case OAM:
+                if (cycles >= 80) {
+                    setMode(VRAM, cpu);
+                    cycles = 0;
+                }
+                break;
+            case VRAM:
+                if (cycles >= 172) {
+                    // Load scanline during VRAM
                     #ifdef DISPLAY
-                        if (readBit(7, &cpu->MEM[LCDC])) {
-                            displayActive = true;
-                            draw(cpu);
-                        } else {
-                            displayActive = false;
+                        if (displayActive) {
+                            loadScanline(cpu);
                         }
                     #endif
-                } else {
-                    setMode(OAM, cpu);
+                    setMode(H_BLANK, cpu);
+                    cycles = 0;
                 }
-                cycles = 0;
-            }
-            break;
-        case V_BLANK:
-            if (cycles >= 204) {
-                incrementScanline(cpu);
-                //reset the scanline and switch the mode back to OAM
-                if (readScanline(cpu) > 153) {
-                    //reset the scanline back to 0
-                    setScanline(0, cpu);
-                    //write new status to the the STAT register
-                    setMode(OAM, cpu);
-                    //load tiles as V Blank is now over
-                    #ifdef DISPLAY
-                        loadTiles(cpu);
-                    #endif
+                break;
+            case H_BLANK:
+                if (cycles >= 204) {
+                    incrementScanline(cpu);
+                    //switch to vblank when the scanline hits 144
+                    if (readScanline(cpu) > 143) {
+                        //write new status to the the STAT register
+                        setMode(V_BLANK, cpu);
+                        //set an interrupt flag
+                        setInterruptFlag(INTR_V_BLANK, cpu);
+                        // Draw the frame at beginning of v blank.
+                        // Only display if correct bit is set. Ths can only be togged during V Blank
+                        #ifdef DISPLAY
+                            resetWindowLine();
+                            if (readBit(7, &cpu->MEM[LCDC])) {
+                                draw(cpu);
+                            } else {
+                                displayActive = false;
+                                displayActiveCounter = 255;
+                            }
+                        #endif
+                    } else {
+                        setMode(OAM, cpu);
+                    }
+                    cycles = 0;
                 }
+                break;
+            case V_BLANK:
+                if (cycles >= 204) {
+                    incrementScanline(cpu);
+                    //reset the scanline and switch the mode back to OAM
+                    if (readScanline(cpu) > 153) {
+                        //reset the scanline back to 0
+                        setScanline(0, cpu);
+                        //write new status to the the STAT register
+                        setMode(OAM, cpu);
+                        //load tiles as V Blank is now over
+                        #ifdef DISPLAY
+                            loadTiles(cpu);
+                        #endif
+                    }
+                    cycles = 0;
+                }
+                break;
+        }
+    } else { // DISPLAY DISABLED
+        if (!readBit(7, &cpu->MEM[LCDC])) {
+            displayActiveCounter = 255;
+        } else {
+            displayActiveCounter--;
+            if (displayActiveCounter == 0) {
+                displayActive = true;
+                #ifdef DISPLAY
+                    resetWindowLine();
+                #endif
                 cycles = 0;
+                setScanline(0, cpu);
+                setMode(V_BLANK, cpu);
             }
-            break;
+        }
     }
 }

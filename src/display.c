@@ -84,35 +84,46 @@ static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
                 }
             }
         }
+    } else { // Clear screen if no background
+        short drawOffset = DISPLAY_WIDTH * scanLine;
+        for (int i = 0; i < DISPLAY_WIDTH; i++) {
+            frameBuffer[(drawOffset + i)*4 + 0] = 0xFF;
+            frameBuffer[(drawOffset + i)*4 + 1] = 0xFF;
+            frameBuffer[(drawOffset + i)*4 + 2] = 0xFF;
+            frameBuffer[(drawOffset + i)*4 + 3] = 0xFF;
+        }
     }
 }
 
-//uint8 nextPosition = 0;
+static uint8 display_window_line = 0;
+
+void resetWindowLine() {
+    display_window_line = 0;
+}
+
 // Load window into frameBuffer
 static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
     // Check if window is enabled
     if (readBit(5, &cpu->MEM[LCDC])) {
         int16 windowX = cpu->MEM[WINDOW_X] - 7;
         uint8 windowY = cpu->MEM[WINDOW_Y];
-        //printf("Window enabled! RAW_X: %d X: %d Y: %d\n", cpu->MEM[WINDOW_X], windowX, windowY);
-        // Skip line if the window is below
-        if (scanLine < windowY) {
+        // Skip line if the window is below, or off screen
+        if (scanLine < windowY || windowX > 159 || windowY > 143) {
             return;
         }
-        int mapLocation = (readBit(6, &cpu->MEM[LCDC])) ? 0x9C00 : 0x9800;
+        uint16 mapLocation = (readBit(6, &cpu->MEM[LCDC])) ? 0x9C00 : 0x9800;
         // Draw tileset onto the window
-        mapLocation += ((scanLine + cpu->MEM[WINDOW_Y]) >> 3) << 5;
-        short lineOffset = cpu->MEM[WINDOW_X] >> 3;
-        short x = (cpu->MEM[WINDOW_X] - 7) & 7;
-        short y = (scanLine + cpu->MEM[WINDOW_Y]) & 7;
-        //nextPosition++;
+        mapLocation += (display_window_line >> 3) << 5;
+        short lineOffset = windowX >> 3;
+        short x = 0;
+        short y = display_window_line % 8;
         short tile = cpu->MEM[mapLocation + lineOffset];
         // Tile set 0 is numbered -128 to 128
         if (!tileSet) {
             tile = ((int8) tile) + 256;
         }
         short drawOffset = DISPLAY_WIDTH * scanLine;
-        for (int i = windowX; i < DISPLAY_WIDTH; i++) {
+        for (int16 i = windowX; i < DISPLAY_WIDTH; i++) {
             if (i >= 0) {
                 frameBuffer[(drawOffset + i)*4 + 0] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
                 frameBuffer[(drawOffset + i)*4 + 1] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
@@ -130,6 +141,7 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
                 }
             }
         }
+        display_window_line++;
     }
 }
 
@@ -162,7 +174,8 @@ static void loadSpriteLine(uint8 scanLine, cpu_state *cpu) {
             // Set sprite height based on the LCDC bit
             uint8 height = (sprite8x16) ? 16 : 8;
 
-            //fprintf(stdout, "x: %d y: %d tile: %d attrubutes: %X height: %d scanline: %d\n", spriteX, spriteY, tile, attributes, height, scanLine);
+            //fprintf(stdout, "x: 0x%X y: 0x%X tile: 0x%X attrubutes: 0x%X\n", spriteX, spriteY, tile, attributes);
+            //fprintf(stdout, "C: 0x%X\n", cpu->registers.C);
 
             // Check if sprite is on this line number
             if ((scanLine >= spriteY) && (scanLine < (spriteY + height))) {
@@ -178,7 +191,7 @@ static void loadSpriteLine(uint8 scanLine, cpu_state *cpu) {
                 // Iterate over the length of the title
                 for (uint8 x = 0; x < 8; x++) {
                     // Skip pixel if off screen
-                    if (x + spriteX < 0) {
+                    if (x + spriteX < 0 || x + spriteX > 143) {
                         continue;
                     }
                     // Switch tile for 8x16 sprite

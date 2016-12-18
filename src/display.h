@@ -9,6 +9,7 @@
 
 extern void updateBackgroundColour(uint8 value);
 extern void updateSpritePalette(uint8 palette, uint8 value);
+extern void resetWindowLine();
 extern void loadTiles(cpu_state *cpu);
 extern void loadScanline(cpu_state *cpu);
 extern void draw(cpu_state *cpu);
