@@ -1,7 +1,9 @@
 #include "memory.h"
 #include "types.h"
 #include "cpu.h"
-#include "display.h"
+#ifdef DISPLAY
+    #include "display.h"
+#endif
 #include "joypad.h"
 #include <stdio.h>
 
@@ -42,12 +44,30 @@ uint8 readNextByte(cpu_state *cpu) {
     return byte;
 }
 
+void transferOAM(uint8 value, cpu_state *cpu) {
+    //printf("DMA\n");
+    uint16 address = ((uint16) value) << 8;
+    //printf("address: 0x%X\n", address);
+    for (uint8 i = 0; i < 160; i++) {
+        //if (cpu->MEM[address + i]) {
+            //printf("something here! 0x%X\n", cpu->MEM[address + i]);
+        //}
+        cpu->MEM[0xFE00 + i] = cpu->MEM[address + i];
+    }
+}
+
 //write a byte to the given memory address
 void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
+    if (address >= 0xED00 && address < 0xED00 + 160) {
+            printf("Writing OAM byte now: 0x%X\n", value);
+        }
     //handle the echo of internal memory at 0xC000->0xDDFF and 0xE000->0xFDFF
     if (address >= 0xC000 && address < 0xDE00) {
         cpu->MEM[address + 0x2000] = value;
     } else if (address >= 0xE000 && address < 0xFE00) {
+        if (address >= 0xED00 && address < 0xED00 + 160) {
+            printf("Writing OAM byte now: 0x%X\n", value);
+        }
         cpu->MEM[address - 0x2000] = value;
     }
     if (cpu->cart_type == 0x00 || address >= 0xC000) {
@@ -55,8 +75,15 @@ void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
         #ifdef DISPLAY
             if (address == BG_PALETTE) {
                 updateBackgroundColour(value);
+            } else if (address == SP_PALETTE_0) {
+                updateSpritePalette(0, value);
+            } else if (address == SP_PALETTE_1) {
+                updateSpritePalette(1, value);
             }
         #endif
+        if (address == DMA) {
+            transferOAM(value, cpu);
+        }
         cpu->MEM[address] = value;
     } else { //handle the mbcs here
         //printf("%X:\thandle mbc address = %X, value = %X\n", cpu->PC, address, value);

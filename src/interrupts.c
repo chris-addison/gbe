@@ -40,8 +40,18 @@ static void interruptVBlank(cpu_state *cpu) {
 }
 
 // Save the PC, just ot interrupt handler, and reset ime
+static void interruptSTAT(cpu_state *cpu) {
+    clearInterruptFlag(INTR_STAT, cpu);
+    cpu->halt = false;
+    cpu->ime = false;
+    writeShortToStack(cpu->PC, cpu);
+    cpu->PC = 0x48;
+    cpu->wait = 12;
+}
+
+// Save the PC, just ot interrupt handler, and reset ime
 static void interruptJoypad(cpu_state *cpu) {
-    clearInterruptFlag(INTR_V_BLANK, cpu);
+    clearInterruptFlag(INTR_JOYPAD, cpu);
     cpu->halt = false;
     cpu->ime = false;
     writeShortToStack(cpu->PC, cpu);
@@ -53,12 +63,14 @@ static void interruptJoypad(cpu_state *cpu) {
 void checkInterrupts(cpu_state *cpu) {
     //printByte(readByte(INTERRUPT_FLAGS, cpu));
     if (cpu->ime && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
+        //printf("INTERRUPTS E: 0x%X\n", readByte(INTERRUPTS_ENABLED, cpu));
         uint8 interrupt = readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);
         if (interrupt & INTR_V_BLANK) {
             interruptVBlank(cpu);
         }
         if (interrupt & INTR_STAT) {
-
+            printf("interrupt STAT\n");
+            interruptSTAT(cpu);
         }
         if (interrupt & INTR_TIMER) {
 

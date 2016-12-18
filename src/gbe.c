@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 cpu_state *cpu;
-uint8 cycles_timer = 0; 
+uint8 cycles_timer = 0;
 
 int startEmulator(int argc, char *argv[]) {
     // Catch case when no file provided
@@ -35,7 +35,7 @@ int startEmulator(int argc, char *argv[]) {
 
     // Close the rom now that all data has been read
     romClose(rom);
-    
+
     return 0;
 }
 
@@ -45,10 +45,10 @@ int cycleEmulator() {
     // Run single instruction loop
     while (continue_running) {
         if (cpu->wait <= 0) {
-            // Execute instruction       
+            // Execute instruction
             executeCPU(cpu);
             // Update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
-            updateIME(cpu);    
+            updateIME(cpu);
             // Instruction complete return 0
             continue_running = false;
         }

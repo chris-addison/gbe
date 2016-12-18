@@ -7,12 +7,17 @@
 //memory locations
 #define WINDOW_X 0xFF4B
 #define WINDOW_Y 0xFF4A
+#define SP_PALETTE_1 0xFF49
+#define SP_PALETTE_0 0xFF48
 #define BG_PALETTE 0xFF47
+#define DMA 0xFF46
+#define SYC 0xFF45
 #define SCANLINE 0xFF44
 #define SCROLL_X 0xFF43
 #define SCROLL_Y 0xFF42
 #define STAT 0xFF41
 #define LCDC 0xFF40
+#define DIV 0xFF04
 #define JOYPAD 0xFF00
 #define INTERRUPTS_ENABLED 0xFFFF
 #define INTERRUPT_FLAGS 0xFF0F

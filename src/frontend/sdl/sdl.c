@@ -5,8 +5,8 @@
 #include "../../input.h"
 #include "../../gbe.h"
 
-#define WINDOW_HEIGHT 144
-#define WINDOW_WIDTH 160
+#define WINDOW_HEIGHT 288
+#define WINDOW_WIDTH 320
 #define SDL_CHECK_CYCLES_NUM 256
 
 SDL_Window* window = NULL;

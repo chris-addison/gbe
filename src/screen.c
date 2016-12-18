@@ -18,23 +18,47 @@ static uint8 readScanline(cpu_state *cpu) {
     return readByte(SCANLINE, cpu);
 }
 
+// Check to see if scanline equals the the LY Compare value. If equal set flag and fire
+// interrupt if enabled.
+static void updateCoincidenceFlag(cpu_state * cpu) {
+    if (readScanline(cpu) == readByte(SYC, cpu)) {
+        writeByte(STAT, readByte(STAT, cpu) | CONINCIDENCE_FLAG, cpu);
+        // Fire interrupt if enabled
+        if (readByte(STAT, cpu) & SCREEN_INTER_LYC) {
+            setInterruptFlag(INTR_STAT, cpu);
+        }
+    } else {
+        writeByte(STAT, readByte(STAT, cpu) & ~CONINCIDENCE_FLAG, cpu);
+    }
+}
+
 //increment the current scanline(LY)
 static void incrementScanline(cpu_state *cpu) {
     writeByte(SCANLINE, readScanline(cpu) + 1, cpu);
+    updateCoincidenceFlag(cpu);
 }
 
 //set the scanline(LY)
 static void setScanline(uint8 scanline, cpu_state *cpu) {
     writeByte(SCANLINE, scanline, cpu);
+    updateCoincidenceFlag(cpu);
 }
 
-//set the current screen mode in the STAT register in memory
+// Set the current screen mode in the STAT register in memory
 static void setMode(uint8 mode, cpu_state *cpu) {
-    //fetch current STAT and set the correct lower two bits
+    // Fetch current STAT and set the correct lower two bits
     writeByte(STAT, (readByte(STAT, cpu) & ~0b11) | mode, cpu);
+    // Check what interrupts for STAT are enabled and fire if switching into that mode
+    if (mode == H_BLANK && readByte(STAT, cpu) & SCREEN_INTER_H_BLANK) {
+        setInterruptFlag(INTR_STAT, cpu);
+    } else if (mode == V_BLANK && readByte(STAT, cpu) & SCREEN_INTER_V_BLANK) {
+        setInterruptFlag(INTR_STAT, cpu);
+    } else if (mode == OAM && readByte(STAT, cpu) & SCREEN_INTER_OAM) {
+        setInterruptFlag(INTR_STAT, cpu);
+    }
 }
 
-//logic to control the screen
+// Single step for the logic to control the screen
 void updateScreen(cpu_state *cpu) {
     uint8 screenMode = readByte(STAT, cpu) & 0b11; //grab last two bits for checking the screen mode
     cycles++;
