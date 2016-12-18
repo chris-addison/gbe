@@ -93,7 +93,7 @@ static void cycleTimer(cpu_state *cpu) {
 // Cycle the clock for DIV
 static void cycleClock(cpu_state *cpu) {
     if (cycles_timer == 255) {
-        writeByte(DIV, readByte(DIV, cpu) + 1, cpu);
+        cpu->MEM[DIV] += 1;
     }
     cycles_timer++;
 }

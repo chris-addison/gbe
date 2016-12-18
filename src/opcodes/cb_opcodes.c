@@ -352,8 +352,20 @@ int prefixCB(cpu_state *cpu) {
         case 0x38: //SRL B
             srl(&cpu->registers.B, opcode, cpu);
             break;
+        case 0x39: //SRL C
+            srl(&cpu->registers.C, opcode, cpu);
+            break;
+        case 0x3A: //SRL D
+            srl(&cpu->registers.D, opcode, cpu);
+            break;
         case 0x3B: //SRL E
             srl(&cpu->registers.E, opcode, cpu);
+            break;
+        case 0x3C: //SRL H
+            srl(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x3D: //SRL L
+            srl(&cpu->registers.L, opcode, cpu);
             break;
         case 0x3F: //SRL A
             srl(&cpu->registers.A, opcode, cpu);
