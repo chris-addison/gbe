@@ -5,6 +5,7 @@
 #include "cpu.h"
 
 //memory locations
+#define INTERRUPTS_ENABLED 0xFFFF
 #define WINDOW_X 0xFF4B
 #define WINDOW_Y 0xFF4A
 #define SP_PALETTE_1 0xFF49
@@ -17,10 +18,12 @@
 #define SCROLL_Y 0xFF42
 #define STAT 0xFF41
 #define LCDC 0xFF40
+#define INTERRUPT_FLAGS 0xFF0F
+#define TAC 0xFF07
+#define TMA 0xFF06
+#define TIMA 0xFF05
 #define DIV 0xFF04
 #define JOYPAD 0xFF00
-#define INTERRUPTS_ENABLED 0xFFFF
-#define INTERRUPT_FLAGS 0xFF0F
 
 extern uint8 readByte(uint16 address, cpu_state *cpu);
 extern uint8 readNextByte(cpu_state *cpu);

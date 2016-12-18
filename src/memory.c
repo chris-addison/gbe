@@ -1,6 +1,7 @@
 #include "memory.h"
 #include "types.h"
 #include "cpu.h"
+#include "screen.h"
 #ifdef DISPLAY
     #include "display.h"
 #endif
@@ -83,6 +84,8 @@ void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
         #endif
         if (address == DMA) {
             transferOAM(value, cpu);
+        } else if (address == DIV) {
+            value = 0;
         }
         cpu->MEM[address] = value;
     } else { //handle the mbcs here

@@ -162,7 +162,7 @@ static void loadSpriteLine(uint8 scanLine, cpu_state *cpu) {
             // Set sprite height based on the LCDC bit
             uint8 height = (sprite8x16) ? 16 : 8;
 
-            fprintf(stdout, "x: %d y: %d tile: %d attrubutes: %X height: %d scanline: %d\n", spriteX, spriteY, tile, attributes, height, scanLine);
+            //fprintf(stdout, "x: %d y: %d tile: %d attrubutes: %X height: %d scanline: %d\n", spriteX, spriteY, tile, attributes, height, scanLine);
 
             // Check if sprite is on this line number
             if ((scanLine >= spriteY) && (scanLine < (spriteY + height))) {

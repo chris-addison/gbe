@@ -12,7 +12,6 @@
 #include <stdlib.h>
 
 cpu_state *cpu;
-uint8 cycles_timer = 0;
 
 int startEmulator(int argc, char *argv[]) {
     // Catch case when no file provided
@@ -52,11 +51,6 @@ int cycleEmulator() {
             // Instruction complete return 0
             continue_running = false;
         }
-        // TEMP clock
-        if (cycles_timer == 255) {
-            cpu->MEM[0xFF04]++;
-        }
-        cycles_timer++;
         updateScreen(cpu);
         checkInterrupts(cpu);
         cycleCPU(cpu);
