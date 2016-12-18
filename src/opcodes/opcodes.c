@@ -513,7 +513,7 @@ int execute(cpu_state * cpu) {
     if (cpu->halt) {
         return 0;
     }
-    //printInstruction(cpu->PC, cpu);
+    //printInstruction(true, cpu->PC, cpu);
     //grab instruction
     uint8 opcode = readNextByte(cpu);
     //find and execute next instruction
