@@ -9,8 +9,12 @@ uint8 backgroundColourOffset[] = {0, 1, 2, 3};
 uint8 spritePaletteZero[] = {0, 1, 2, 3};
 uint8 spritePaletteOne[] = {0, 1, 2, 3};
 
-uint8 frameBuffer[4 * DISPLAY_WIDTH * DISPLAY_HEIGHT];
-uint8 tiles[384][8][8];
+// Store the un-offset colour of the current scanline.
+// Used to decided whether sprites will draw if they don't have priority
+// Without this, sprites will be invisible on some games
+static uint8 lineBuffer[DISPLAY_WIDTH];
+static uint8 frameBuffer[4 * DISPLAY_WIDTH * DISPLAY_HEIGHT];
+static uint8 tiles[384][8][8];
 
 // Update colour palette for the background
 void updateBackgroundColour(uint8 value) {
@@ -65,10 +69,12 @@ static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
         }
         short drawOffset = DISPLAY_WIDTH * scanLine;
         for (uint16 i = 0; i < DISPLAY_WIDTH; i++) {
-            frameBuffer[(drawOffset + i)*4 + 0] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
-            frameBuffer[(drawOffset + i)*4 + 1] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
-            frameBuffer[(drawOffset + i)*4 + 2] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+            uint8 colour = tiles[tile][x][y];
+            frameBuffer[(drawOffset + i)*4 + 0] = COLOURS[backgroundColourOffset[colour]];
+            frameBuffer[(drawOffset + i)*4 + 1] = COLOURS[backgroundColourOffset[colour]];
+            frameBuffer[(drawOffset + i)*4 + 2] = COLOURS[backgroundColourOffset[colour]];
             frameBuffer[(drawOffset + i)*4 + 3] = 0xFF;
+            lineBuffer[i] = colour;
             x++;
             if (x == 8) {
                 x = 0;
@@ -87,12 +93,16 @@ static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
             frameBuffer[(drawOffset + i)*4 + 1] = 0xFF;
             frameBuffer[(drawOffset + i)*4 + 2] = 0xFF;
             frameBuffer[(drawOffset + i)*4 + 3] = 0xFF;
+            lineBuffer[i] = 0;
         }
     }
 }
 
+// Current window line. GB can pause the display of a window and restart at the same line somewhere down
+// the screen. This allows for split UIs among other things.
 static uint8 display_window_line = 0;
 
+// Set window line to 0.
 void resetWindowLine() {
     display_window_line = 0;
 }
@@ -121,10 +131,12 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
         short drawOffset = DISPLAY_WIDTH * scanLine;
         for (int16 i = windowX; i < DISPLAY_WIDTH; i++) {
             if (i >= 0) {
-                frameBuffer[(drawOffset + i)*4 + 0] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
-                frameBuffer[(drawOffset + i)*4 + 1] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
-                frameBuffer[(drawOffset + i)*4 + 2] = COLOURS[backgroundColourOffset[tiles[tile][x][y]]];
+                uint8 colour = tiles[tile][x][y];
+                frameBuffer[(drawOffset + i)*4 + 0] = COLOURS[backgroundColourOffset[colour]];
+                frameBuffer[(drawOffset + i)*4 + 1] = COLOURS[backgroundColourOffset[colour]];
+                frameBuffer[(drawOffset + i)*4 + 2] = COLOURS[backgroundColourOffset[colour]];
                 frameBuffer[(drawOffset + i)*4 + 3] = 0xFF;
+                lineBuffer[i] = colour;
             }
             x++;
             if (x == 8) {
@@ -141,6 +153,7 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
     }
 }
 
+// Add spites onto the current scanline in framebuffer
 static void loadSpriteLine(uint8 scanLine, cpu_state *cpu) {
     // Check if sprites enabled
     if (readBit(1, &cpu->MEM[LCDC])) {
@@ -186,8 +199,10 @@ static void loadSpriteLine(uint8 scanLine, cpu_state *cpu) {
                 //printf("x: %d y: %d \n", spriteX, y);
                 // Iterate over the length of the title
                 for (uint8 x = 0; x < 8; x++) {
+                    //printf("POS: %d x: %d sx: %d\n", x + spriteX, x, spriteX);
                     // Skip pixel if off screen
-                    if (x + spriteX < 0 || x + spriteX > 143) {
+                    if (x + spriteX < 0 || x + spriteX > 159) {
+                        //printf("POS: %d x: %d sx: %d\n", x + spriteX, x, spriteX);
                         continue;
                     }
                     // Switch tile for 8x16 sprite
@@ -200,13 +215,15 @@ static void loadSpriteLine(uint8 scanLine, cpu_state *cpu) {
                         continue;
                     }
                     colour = (palette) ?  spritePaletteOne[tiles[tile][drawX][drawY]] : spritePaletteZero[tiles[tile][drawX][drawY]];
-                    if (!priority || frameBuffer[(drawOffset + x + spriteX)*4 + 0] == 0xFF) {
+                    if (!priority || !lineBuffer[x + spriteX]) {
                         frameBuffer[(drawOffset + x + spriteX)*4 + 0] = COLOURS[colour];
                         frameBuffer[(drawOffset + x + spriteX)*4 + 1] = COLOURS[colour];
                         frameBuffer[(drawOffset + x + spriteX)*4 + 2] = COLOURS[colour];
                         frameBuffer[(drawOffset + x + spriteX)*4 + 3] = 0xFF;
                     }
                 }
+            } else {
+                //fprintf(stdout, "x: 0x%X y: 0x%X tile: 0x%X attrubutes: 0x%X\n", spriteX, spriteY, tile, attributes);
             }
         }
     }
