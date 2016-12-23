@@ -56,18 +56,22 @@ void loadTiles(cpu_state *cpu) {
 static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
     // Check if background enabled
     if (readBit(0, &cpu->MEM[LCDC])) {
-        int mapLocation = (readBit(3, &cpu->MEM[LCDC])) ? 0x9C00 : 0x9800;
+        // Select map location
+        uint16 mapLocation = (readBit(3, &cpu->MEM[LCDC])) ? 0x9C00 : 0x9800;
         // Draw tileset onto the window
-        mapLocation += ((scanLine + cpu->MEM[SCROLL_Y]) >> 3) << 5;
-        short lineOffset = cpu->MEM[SCROLL_X] >> 3;
-        short x = cpu->MEM[SCROLL_X] & 7;
-        short y = (scanLine + cpu->MEM[SCROLL_Y]) & 7;
-        short tile = cpu->MEM[mapLocation + lineOffset];
-        // Tile set 0 is numbered -128 to 128
+        // Wrap the y offset at 32 to wrap the background vertically. Map is 32x32. Same for xOffset below.
+        uint16 yOffset = (((scanLine + cpu->MEM[SCROLL_Y]) >> 3) % 32) << 5;
+        uint16 xOffset = (cpu->MEM[SCROLL_X] >> 3) % 32;
+        short x = cpu->MEM[SCROLL_X] % 8;
+        short y = (scanLine + cpu->MEM[SCROLL_Y]) % 8;
+        uint16 tile = cpu->MEM[mapLocation + xOffset + yOffset];
+        // Tile set 0 is numbered -128 to 128. In tiles array it takes index 128 to 383.
         if (!tileSet) {
             tile = ((int8) tile) + 256;
         }
-        short drawOffset = DISPLAY_WIDTH * scanLine;
+        // Pixel offset for the current scanline
+        uint16 drawOffset = DISPLAY_WIDTH * scanLine;
+        // Put data in framebuffer
         for (uint16 i = 0; i < DISPLAY_WIDTH; i++) {
             uint8 colour = tiles[tile][x][y];
             frameBuffer[(drawOffset + i)*4 + 0] = COLOURS[backgroundColourOffset[colour]];
@@ -76,11 +80,12 @@ static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
             frameBuffer[(drawOffset + i)*4 + 3] = 0xFF;
             lineBuffer[i] = colour;
             x++;
+            // Tile completed, draw next one.
             if (x == 8) {
                 x = 0;
-                lineOffset = (lineOffset + 1) & 31;
-                tile = cpu->MEM[mapLocation + lineOffset];
-                // Tile set 0 is numbered -128 to 128
+                xOffset = (xOffset + 1) % 32; // Wrap the x offset at 32 to wrap background horizonally. See above.
+                tile = cpu->MEM[mapLocation + xOffset + yOffset];
+                // Tile set 0 is numbered -128 to 128. In tiles array it takes index 128 to 383.
                 if (!tileSet) {
                     tile = ((int8) tile) + 256;
                 }
@@ -119,11 +124,11 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
         }
         uint16 mapLocation = (readBit(6, &cpu->MEM[LCDC])) ? 0x9C00 : 0x9800;
         // Draw tileset onto the window
-        mapLocation += (display_window_line >> 3) << 5;
-        short lineOffset = windowX >> 3;
+        uint16 xOffset = windowX >> 3;
+        uint16 yOffset = (display_window_line >> 3) << 5;
         short x = 0;
         short y = display_window_line % 8;
-        short tile = cpu->MEM[mapLocation + lineOffset];
+        uint16 tile = cpu->MEM[mapLocation + xOffset + yOffset];
         // Tile set 0 is numbered -128 to 128
         if (!tileSet) {
             tile = ((int8) tile) + 256;
@@ -141,8 +146,8 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
             x++;
             if (x == 8) {
                 x = 0;
-                lineOffset = (lineOffset + 1) & 31;
-                tile = cpu->MEM[mapLocation + lineOffset];
+                xOffset += 1;
+                tile = cpu->MEM[mapLocation + xOffset + yOffset];
                 // Tile set 0 is numbered -128 to 128
                 if (!tileSet) {
                     tile = ((int8) tile) + 256;
