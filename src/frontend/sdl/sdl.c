@@ -129,6 +129,10 @@ void handeKeyEvent(SDL_Event *event) {
         local_input.right   = (event->type == SDL_KEYDOWN);
     } else if (event->key.keysym.sym == SDLK_SPACE) {
         local_input.unlock  = (event->type == SDL_KEYDOWN);
+    } else if (event->key.keysym.sym == SDLK_ESCAPE) {
+        stopEmulator();
+        stopDisplay();
+        exit(0);
     }
 }
 
