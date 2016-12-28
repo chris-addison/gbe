@@ -1,4 +1,5 @@
 #include "SDL2/SDL.h"
+#include <inttypes.h>
 #include "../frontend.h"
 #include "../../window.h"
 #include "../../display.h"
@@ -13,7 +14,10 @@ SDL_Window* window = NULL;
 SDL_Texture* texture = NULL;
 SDL_Renderer* renderer = NULL;
 
-input local_input = {};
+uint64_t last_frame_time = 0;
+double sdl_frame_time = (1000/60.0);
+
+frontend_input local_input = {};
 
 // Swap buffers
 void frontend_swap_buffers() {
@@ -32,16 +36,32 @@ void frontend_get_window_size(windowSize *size) {
 
 // Get texture ready to be displayed
 void displayOnWindow(uint8 *frameBuffer) {
-    // Convert framebuffer to texture to display
-    SDL_Surface* frame = SDL_CreateRGBSurfaceFrom(frameBuffer, DISPLAY_WIDTH, DISPLAY_HEIGHT, 32, DISPLAY_WIDTH * 4, 0, 0, 0, 0);
-    // If texture isn't loaded yet, create one; else update existing texture.
-    if (texture == NULL) {
-        texture = SDL_CreateTextureFromSurface(renderer, frame);
-    } else {
-        SDL_UpdateTexture(texture, NULL, frame->pixels, frame->pitch);
+    // Get current time
+    uint64_t frame_time = SDL_GetPerformanceCounter();
+    // Get difference in time
+    double frame_time_diff = (frame_time - last_frame_time) * 1000 / (double)SDL_GetPerformanceFrequency();
+    // Draw a frame every 1/60 of a second
+    if (frame_time_diff >= sdl_frame_time || !local_input.unlock) {
+        // If locked frame rate, wait until end of frame
+        if (frame_time_diff < sdl_frame_time) {
+            // Wait until end of frame
+            SDL_Delay(sdl_frame_time - frame_time_diff);
+            // Update frame time
+            frame_time = SDL_GetPerformanceCounter();
+        }
+        // Update last frame time
+        last_frame_time = frame_time;
+        // Convert framebuffer to texture to display
+        SDL_Surface* frame = SDL_CreateRGBSurfaceFrom(frameBuffer, DISPLAY_WIDTH, DISPLAY_HEIGHT, 32, DISPLAY_WIDTH * 4, 0, 0, 0, 0);
+        // If texture isn't loaded yet, create one; else update existing texture.
+        if (texture == NULL) {
+            texture = SDL_CreateTextureFromSurface(renderer, frame);
+        } else {
+            SDL_UpdateTexture(texture, NULL, frame->pixels, frame->pitch);
+        }
+        SDL_FreeSurface(frame);
+        frontend_swap_buffers();
     }
-    SDL_FreeSurface(frame);
-    frontend_swap_buffers();
 }
 
 // Get current input
@@ -107,6 +127,8 @@ void handeKeyEvent(SDL_Event *event) {
         local_input.left    = (event->type == SDL_KEYDOWN);
     } else if (event->key.keysym.sym == SDLK_RIGHT) {
         local_input.right   = (event->type == SDL_KEYDOWN);
+    } else if (event->key.keysym.sym == SDLK_SPACE) {
+        local_input.unlock  = (event->type == SDL_KEYDOWN);
     }
 }
 

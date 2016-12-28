@@ -129,7 +129,7 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
         short x = 0;
         short y = display_window_line % 8;
         uint16 tile = cpu->MEM[mapLocation + xOffset + yOffset];
-        // Tile set 0 is numbered -128 to 128
+        // Tile set 0 is numbered -128 to 128. In tiles array it takes index 128 to 383.
         if (!tileSet) {
             tile = ((int8) tile) + 256;
         }
@@ -148,7 +148,7 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
                 x = 0;
                 xOffset += 1;
                 tile = cpu->MEM[mapLocation + xOffset + yOffset];
-                // Tile set 0 is numbered -128 to 128
+                // Tile set 0 is numbered -128 to 128. In tiles array it takes index 128 to 383.
                 if (!tileSet) {
                     tile = ((int8) tile) + 256;
                 }
