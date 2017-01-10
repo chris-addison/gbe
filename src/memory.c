@@ -55,6 +55,8 @@ void transferOAM(uint8 value, cpu_state *cpu) {
         //}
         cpu->MEM[0xFE00 + i] = cpu->MEM[address + i];
     }
+    // Transfer OAM takes 160 cycles.
+    cpu->wait += 160;
 }
 
 //write a byte to the given memory address

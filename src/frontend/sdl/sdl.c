@@ -8,7 +8,7 @@
 
 #define WINDOW_HEIGHT 288
 #define WINDOW_WIDTH 320
-#define SDL_CHECK_CYCLES_NUM 256
+#define SDL_CHECK_CYCLES_NUM 1024
 
 SDL_Window* window = NULL;
 SDL_Texture* texture = NULL;
