@@ -32,14 +32,14 @@ void printInstruction(bool showPC, uint16 PC, cpu_state *cpu) {
     }
     uint8 opcode = readByte(PC, cpu);
     if (opcode == 0xCB) { //print CB prefix instruction
-        printf("%s\n", cbOpcodes[readByte(PC + 1, cpu)].name);
-    } else if (opcodes[opcode].bytes == 1) { //print single byte instruction
-        printf("%s\n", opcodes[opcode].name);
-    } else if (opcodes[opcode].bytes == 2) { //print two byte instruction
-        printf(opcodes[opcode].name, readByte(PC + 1, cpu));
+        printf("%s\n", get_cb_opcode(readByte(PC + 1, cpu)).name);
+    } else if (get_opcode(opcode).bytes == 1) { //print single byte instruction
+        printf("%s\n", get_opcode(opcode).name);
+    } else if (get_opcode(opcode).bytes == 2) { //print two byte instruction
+        printf(get_opcode(opcode).name, readByte(PC + 1, cpu));
         printf("\n");
     } else { //print three byte instruction
-        printf(opcodes[opcode].name, readShort(PC + 1, cpu));
+        printf(get_opcode(opcode).name, readShort(PC + 1, cpu));
         printf("\n");
     }
 }
@@ -53,14 +53,14 @@ void printInstructionToFile(uint16 PC, FILE *file, cpu_state *cpu) {
     fprintf(file, "0x%04X:  ", PC);
     uint8 opcode = readByte(PC, cpu);
     if (opcode == 0xCB) { //print CB prefix instruction
-        fprintf(file, "%s\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", cbOpcodes[readByte(PC + 1, cpu)].name, cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
-    } else if (opcodes[opcode].bytes == 1) { //print single byte instruction
-        fprintf(file, "%s\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", opcodes[opcode].name, cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
-    } else if (opcodes[opcode].bytes == 2) { //print two byte instruction
-        fprintf(file, opcodes[opcode].name, readByte(PC + 1, cpu));
+        fprintf(file, "%s\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", get_cb_opcode(readByte(PC + 1, cpu)).name, cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
+    } else if (get_opcode(opcode).bytes == 1) { //print single byte instruction
+        fprintf(file, "%s\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", get_opcode(opcode).name, cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
+    } else if (get_opcode(opcode).bytes == 2) { //print two byte instruction
+        fprintf(file, get_opcode(opcode).name, readByte(PC + 1, cpu));
         fprintf(file, "\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
     } else { //print three byte instruction
-        fprintf(file, opcodes[opcode].name, readShort(PC + 1, cpu));
+        fprintf(file, get_opcode(opcode).name, readShort(PC + 1, cpu));
         fprintf(file, "\nAF:\t%X\tBC:\t%X\tDE:\t%X\tHL:\t%X\n", cpu->registers.AF, cpu->registers.BC, cpu->registers.DE, cpu->registers.HL);
     }
 }

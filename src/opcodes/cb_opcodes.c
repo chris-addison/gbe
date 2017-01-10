@@ -15,7 +15,7 @@ static void rlc(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     clearFlag(HF, cpu);
     clearFlag(NF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //rotate a given register left, old bit 7 to carry bit and old carry bit to bit 0
@@ -34,7 +34,7 @@ static void rl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     clearFlag(HF, cpu);
     //reset negative flag
     clearFlag(NF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //rotate a given register left, old bit 0 to carry bit and bit 7
@@ -49,7 +49,7 @@ static void rrc(uint8* reg, uint8 opcode, cpu_state *cpu) {
     clearFlag(HF, cpu);
     //reset negative flag
     clearFlag(NF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //rotate a given register left, old bit 0 to carry bit and bit 7
@@ -64,7 +64,7 @@ static void rrc_m(uint8 opcode, cpu_state *cpu) {
     clearFlag(HF, cpu);
     //reset negative flag
     clearFlag(NF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //right rotate a given register. New 7th bit is set by the carry flag and the carry flag is set by old 1st bit.
@@ -83,7 +83,7 @@ static void rr(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     clearFlag(HF, cpu);
     //reset negative flag
     clearFlag(NF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //arithmetic left shift a given register. Set new bit 0 to 0 and put the old bit 7 into the carry flag
@@ -98,7 +98,7 @@ static void sla(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     clearFlag(HF, cpu);
     //reset negative flag
     clearFlag(NF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //arithmetic right shift a given register. Set new bit 7 to the previus bit 7 and put the old bit 0 into the carry flag
@@ -116,7 +116,7 @@ static void sra(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     clearFlag(HF, cpu);
     //reset negative flag
     clearFlag(NF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //logical right shift of given register. Set new bit 7 to 0 and put the old bit 0 into carry flag
@@ -131,7 +131,7 @@ static void srl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     clearFlag(HF, cpu);
     //reset negative flag
     clearFlag(NF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //swap the upper and lower nibbles of some register
@@ -146,7 +146,7 @@ static void swap(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     *reg = ((*reg & 0xF) << 4) | ((*reg & 0xF0) >> 4);
     //set or reset zero flag based on whether result is zero
     (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //swap the upper and lower nibbles of some register
@@ -161,7 +161,7 @@ static void swap_m(uint8 opcode, cpu_state *cpu) {
     writeByte(cpu->registers.HL, ((readByte(cpu->registers.HL, cpu) & 0xF) << 4) | ((readByte(cpu->registers.HL, cpu) & 0xF0) >> 4), cpu);
     //set or reset zero flag based on whether result is zero
     (readByte(cpu->registers.HL, cpu)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //set flags based on the status of a bit in a register
@@ -173,7 +173,7 @@ static void bit(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //set half-carry flag
     setFlag(HF, cpu);
     //no change to carry flag
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //set flags based on the status of a bit in memory
@@ -185,31 +185,31 @@ static void bit_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
     //set half-carry flag
     setFlag(HF, cpu);
     //no change to carry flag
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //set 1 bit
 static void set(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
     *reg |= (0b1 << bit);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //set 1 bit in memory location stored in HL
 static void set_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
     writeByte(cpu->registers.HL, readByte(cpu->registers.HL, cpu) | (0b1 << bit), cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //reset 1 bit
 void res(uint8 bit, uint8 *reg, uint8 opcode, cpu_state *cpu) {
     *reg &= ~(0b1 << bit);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //reset 1 bit in memory location stored in HL
 static void res_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
     writeByte(cpu->registers.HL, readByte(cpu->registers.HL, cpu) & ~(0b1 << bit), cpu);
-    cpu->wait = cbOpcodes[opcode].cycles;
+    cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
 //execute instruction with a 0xCB pefix
@@ -954,8 +954,15 @@ int prefixCB(cpu_state *cpu) {
     return 0;
 }
 
+const cb_opcode cb_opcodes[256];
+
+// Return information about requested opcode
+cb_opcode get_cb_opcode(uint8 value) {
+    return cb_opcodes[value];
+}
+
 // Store format to printf each instruction, its number of cycles, and how many bytes the instruction is in memory.
-const struct cbOpcode cbOpcodes[256] = {
+const cb_opcode cb_opcodes[256] = {
     { "0xCB00 RLC B", 8 },
     { "0xCB01 RLC C", 8 },
     { "0xCB02 RLC D", 8 },

@@ -3,20 +3,21 @@
 #include "../types.h"
 #include "../cpu.h"
 
-extern int execute(cpu_state * cpu);
-
-//structure to store list of opcodes and associated info
-struct opcode {
+typedef struct {
 	char* name;
 	uint8 cycles;
     uint8 cyclesMax;
     uint8 bytes;
-} extern const opcodes[256];
+} opcode;
 
-//structure to store list of CB-prefix opcodes
-struct cbOpcode {
+typedef struct {
     char* name;
     uint8 cycles;
-} extern const cbOpcodes[256];
+} cb_opcode;
+
+extern opcode get_opcode(uint8 value);
+extern cb_opcode get_cb_opcode(uint8 value);
+
+extern int execute(cpu_state * cpu);
 
 #endif /* OPCODE_H */

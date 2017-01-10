@@ -8,8 +8,8 @@
 #include <stdlib.h>
 
 // Create the cpu
-struct cpu_state* createCPU() {
-    struct cpu_state *cpu = (struct cpu_state *) malloc(sizeof(struct cpu_state));
+cpu_state* createCPU() {
+    cpu_state *cpu = (cpu_state *) malloc(sizeof(cpu_state));
     //setup the PC and SP
     cpu->PC = 0x100;
     cpu->SP = 0xFFFE;

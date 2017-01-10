@@ -17,7 +17,6 @@ cli_linux: DEFINES += -DLINUX -DDEBUG
 cli_linux: gbe.o opcodes.o memory.o cartridge.o debug.o cpu.o screen.o interrupts.o common.o joypad.o
 	$(CC) $(FLAGS) $(DIRECTORY)frontend/cli/cli.c -c $(DEFINES)
 	$(CC) $(FLAGS) -o $(NAME) cli.o $^
-	rm *.o
 
 cli_windows:
 	/usr/bin/x86_64-w64-mingw32-gcc $(FLAGS) $(DIRECTORY)main.c -o $(NAME)$(WINDOWS_EXE) -DWINDOWS
@@ -27,14 +26,12 @@ x11: DEFINES += -DDISPLAY -DLINUX -DX11 -DOPENGL
 x11: gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o display.o joypad.o gl.o
 	$(CC) $(FLAGS) $(DIRECTORY)frontend/x11/x11.c -c $(DEFINES)
 	$(CC) $(FLAGS) -o $(NAME) x11.o $^ $(X11) $(OPENGL)
-	rm *.o
 
 # experimental sdl
 sdl: DEFINES += -DDISPLAY -DLINUX -DSDL
 sdl: gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o display.o joypad.o
 	$(CC) $(FLAGS) $(DIRECTORY)frontend/sdl/sdl.c -c $(DEFINES)
 	$(CC) $(FLAGS) -o $(NAME) sdl.o $^ $(SDL)
-	rm *.o
 
 # testing builds
 test_linux:

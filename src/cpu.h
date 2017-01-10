@@ -10,7 +10,7 @@
 #define ZF 7
 
 //struct to hold the cpu state
-typedef struct cpu_state {
+typedef struct {
     uint8 MEM[0x10000];
     struct registers {
         union {
@@ -61,7 +61,7 @@ typedef struct cpu_state {
     bool ime;
 } cpu_state;
 
-extern struct cpu_state* createCPU();
+extern cpu_state* createCPU();
 extern void executeCPU(cpu_state *cpu);
 extern void cycleCPU(cpu_state *cpu);
 
