@@ -508,7 +508,7 @@ static void daa(uint8 opcode, cpu_state *cpu) {
 }
 
 //execute next instruction
-int execute(cpu_state * cpu) {
+int executeNextInstruction(cpu_state * cpu) {
     //don't execute if halt is called
     if (cpu->halt) {
         return 0;
@@ -1126,7 +1126,7 @@ int execute(cpu_state * cpu) {
             break;
         case 0xCB: //PREFIX CB
             //return result of the cb prefix instruction
-            return prefixCB(cpu);
+            return executeNextExtendedInstruction(cpu);
             break;
         case 0xCC: //CALL Z, a16
             call_c(readFlag(ZF, cpu), twoBytes(cpu), opcode, cpu);

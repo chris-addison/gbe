@@ -213,7 +213,7 @@ static void res_m(uint8 bit, uint8 opcode, cpu_state *cpu) {
 }
 
 //execute instruction with a 0xCB pefix
-int prefixCB(cpu_state *cpu) {
+int executeNextExtendedInstruction(cpu_state *cpu) {
     //grab instruction
     uint8 opcode = readNextByte(cpu);
     switch(opcode) {

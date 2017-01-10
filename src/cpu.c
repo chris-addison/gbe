@@ -51,7 +51,7 @@ void executeCPU(cpu_state *cpu) {
     #ifdef DEBUG
         debug(false, cpu);
     #endif
-    if (execute(cpu)) {
+    if (executeNextInstruction(cpu)) {
         #ifdef DEBUG
             // Force a run/runto to stop when an error has occurred
             debug(true, cpu);

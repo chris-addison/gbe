@@ -18,6 +18,6 @@ typedef struct {
 extern opcode get_opcode(uint8 value);
 extern cb_opcode get_cb_opcode(uint8 value);
 
-extern int execute(cpu_state * cpu);
+extern int executeNextInstruction(cpu_state * cpu);
 
 #endif /* OPCODE_H */
