@@ -1,4 +1,6 @@
 #include "../../gbe.h"
+#include "../frontend.h"
+#include "../../input.h"
 #include <stdbool.h>
 
 int main(int argc, char *argv[]) {
@@ -8,4 +10,8 @@ int main(int argc, char *argv[]) {
         out = cycleEmulator();
     }
     stopEmulator();
+}
+
+void getInput(input *current_input) {
+    // Do nothing
 }
