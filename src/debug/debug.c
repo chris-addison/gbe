@@ -33,7 +33,7 @@ bool debug(bool force, cpu_state * cpu) {
     // Only debug if stepping one instruction at a time.
     // If reach target address for runto then enter stepping again
     if (!force && (runUntilStop || (runToTarget && (targetAddress != cpu->PC)))) {
-        return true;
+        return false;
     } else if (runToTarget && (targetAddress == cpu->PC)) {
         runToTarget = false;
         targetAddress = 0x0;
