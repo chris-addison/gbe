@@ -45,7 +45,10 @@ int cycleEmulator() {
     while (continue_running) {
         if (cpu->wait <= 0) {
             // Execute instruction
-            executeCPU(cpu);
+            int errNum = executeCPU(cpu);
+            if (errNum) {
+                return errNum;
+            }
             // Update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
             updateIME(cpu);
             // Instruction complete return 0

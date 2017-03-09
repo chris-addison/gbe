@@ -6,6 +6,7 @@
 
 #define DEBUG_MAX_ARGS 5
 
-extern void debug(bool force, cpu_state * cpu);
+// Returns true to quit
+extern bool debug(bool force, cpu_state * cpu);
 
 #endif /* DEBUG_H */

@@ -62,7 +62,7 @@ typedef struct {
 } cpu_state;
 
 extern cpu_state* createCPU();
-extern void executeCPU(cpu_state *cpu);
+extern int executeCPU(cpu_state *cpu);
 extern void cycleCPU(cpu_state *cpu);
 
 #endif /* CPU_H */

@@ -55,18 +55,23 @@ cpu_state* createCPU() {
 }
 
 // Execute a single cpu step
-void executeCPU(cpu_state *cpu) {
+int executeCPU(cpu_state *cpu) {
     #ifdef DEBUG
-        debug(false, cpu);
+        if (debug(false, cpu)) {
+            return 1;
+        }
     #endif
-    if (executeNextInstruction(cpu)) {
+    int errNum = executeNextInstruction(cpu);
+    if (errNum) {
         #ifdef DEBUG
             // Force a run/runto to stop when an error has occurred
-            debug(true, cpu);
+            return (debug(true, cpu)) ? 1 : 0;
         #else
             // Exit if non-debug. TODO: output some sort of error message (Maybe method that can popup a box on display builds)
-            exit(369);
+            return errNum;
         #endif
+    } else {
+        return 0;
     }
 }
 

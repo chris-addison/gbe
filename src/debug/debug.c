@@ -29,11 +29,11 @@ static void clearStdin() {
 }
 
 // Simple gdb-like debug
-void debug(bool force, cpu_state * cpu) {
+bool debug(bool force, cpu_state * cpu) {
     // Only debug if stepping one instruction at a time.
     // If reach target address for runto then enter stepping again
     if (!force && (runUntilStop || (runToTarget && (targetAddress != cpu->PC)))) {
-        return;
+        return true;
     } else if (runToTarget && (targetAddress == cpu->PC)) {
         runToTarget = false;
         targetAddress = 0x0;
@@ -64,7 +64,7 @@ void debug(bool force, cpu_state * cpu) {
         } else if (strcmp(q, argv[0]) ^ strcmp(quit, argv[0])) {
             // Stop
             printf("Not continuing\n");
-            exit(0);
+            return true;
         } else if (!strcmp(op, argv[0])) {
             printInstruction(true, cpu->PC, cpu);
         } else if (!strcmp(run, argv[0])) {
@@ -137,4 +137,5 @@ void debug(bool force, cpu_state * cpu) {
             printf("Command: \"%s\" not recognised\n", command);
         }
     }
+    return false;
 }
