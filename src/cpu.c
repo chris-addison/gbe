@@ -17,12 +17,20 @@ cpu_state* createCPU() {
     cpu->ROM_bank = 1;
     cpu->RAM_bank = 0;
     cpu->RAM_enable = false;
+    // Setup interrupts
+    cpu->ime = false;
+    cpu->imeCounter = 0;
+    cpu->halt = false;
     //setup startup values of registers
     cpu->registers.AF = 0x01B0;
     cpu->registers.BC = 0x0013;
     cpu->registers.DE = 0x00D8;
     cpu->registers.HL = 0x014D;
     //setup startup memory values - excludes values set to 0
+    cpu->MEM[0xFF05] = 0x00; //TIMA
+    cpu->MEM[0xFF06] = 0x00; //TMA
+    cpu->MEM[0xFF07] = 0x00; //TAC
+    cpu->MEM[0xFF0F] = 0x00; //INTERRUPT FLAGS
     cpu->MEM[0xFF10] = 0x80;
     cpu->MEM[0xFF11] = 0xBF;
     cpu->MEM[0xFF12] = 0xF3;
