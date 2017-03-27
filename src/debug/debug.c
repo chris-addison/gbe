@@ -9,14 +9,15 @@
 #include <string.h>
 
 // Debug commands
-const char n[] = "n";
-const char next[] = "next";
-const char q[] = "q";
-const char quit[] = "quit";
-const char r[] = "r";
-const char op[] = "op";
-const char run[] = "run";
-const char runTo[] = "runto";
+static const char n[] = "n";
+static const char next[] = "next";
+static const char q[] = "q";
+static const char quit[] = "quit";
+static const char r[] = "r";
+static const char op[] = "op";
+static const char run[] = "run";
+static const char runTo[] = "runto";
+static const char mem[] = "mem";
 
 // Run-to some address variables
 bool runUntilStop = false;
@@ -76,6 +77,10 @@ bool debug(bool force, cpu_state * cpu) {
             targetAddress = strtol(argv[1], NULL, 0);
             runToTarget = true;
             break;
+        } else if (!strcmp(mem, argv[0])) {
+            uint16 location = strtol(argv[1], NULL, 0);
+            printByte(readByte(location, cpu));
+            printf("\n");
         } else if (!strcmp(r, argv[0])) {
             // Print registers, values at memory locations, and cartridge info.
             printf("A:\t");
