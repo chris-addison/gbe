@@ -76,13 +76,17 @@ static void interruptJoypad(cpu_state *cpu) {
 // Run timer
 static void cycleTimer(cpu_state *cpu) {
     uint8 timerControl = readByte(TAC, cpu);
+    // Run timer if enabled
     if (readBit(2, &timerControl)) {
         if (timer_counter >= TIMER_DURATION[timerControl & 0b11]) {
             timer_counter = 0;
             if (readByte(TIMA, cpu) == 255) {
+                // Load value from TMA register into TIMA register
                 writeByte(TIMA, readByte(TMA, cpu), cpu);
+                // Set interrupt
                 setInterruptFlag(INTR_TIMER, cpu);
             } else {
+                // Increment the TIMA register
                 writeByte(TIMA, readByte(TIMA, cpu) + 1, cpu);
             }
         }
@@ -118,7 +122,7 @@ void checkInterrupts(cpu_state *cpu) {
             interruptTimer(cpu);
         }
         if (interrupt & INTR_SERIAL) {
-
+            printf("interrupt serial\n");
         }
         if (interrupt & INTR_JOYPAD) {
             printf("interrupt joypad\n");

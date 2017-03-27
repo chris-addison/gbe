@@ -27,10 +27,11 @@ cpu_state* createCPU() {
     cpu->registers.DE = 0x00D8;
     cpu->registers.HL = 0x014D;
     //setup startup memory values - excludes values set to 0
-    cpu->MEM[0xFF05] = 0x00; //TIMA
-    cpu->MEM[0xFF06] = 0x00; //TMA
-    cpu->MEM[0xFF07] = 0x00; //TAC
-    cpu->MEM[0xFF0F] = 0x00; //INTERRUPT FLAGS
+    cpu->MEM[0xFF04] = 0x00; // DIV
+    cpu->MEM[0xFF05] = 0x00; // TIMA
+    cpu->MEM[0xFF06] = 0x00; // TMA
+    cpu->MEM[0xFF07] = 0xF8; // TAC
+    cpu->MEM[0xFF0F] = 0xE1; // INTERRUPT FLAGS
     cpu->MEM[0xFF10] = 0x80;
     cpu->MEM[0xFF11] = 0xBF;
     cpu->MEM[0xFF12] = 0xF3;
@@ -46,10 +47,19 @@ cpu_state* createCPU() {
     cpu->MEM[0xFF24] = 0x77;
     cpu->MEM[0xFF25] = 0xF3;
     cpu->MEM[0xFF26] = 0xF1;
-    cpu->MEM[0xFF40] = 0x91;
-    cpu->MEM[0xFF47] = 0xFC;
+    cpu->MEM[0xFF40] = 0x91; // LCDC
+    cpu->MEM[0xFF41] = 0x85; // STAT
+    cpu->MEM[0xFF42] = 0x00; // SCY
+    cpu->MEM[0xFF43] = 0x00; // SCX
+    cpu->MEM[0xFF44] = 0x00; // LY
+    cpu->MEM[0xFF45] = 0x00; // LYC
+    cpu->MEM[0xFF46] = 0xFF; // DMA
+    cpu->MEM[0xFF47] = 0xFC; // BGP
     cpu->MEM[0xFF48] = 0xFF;
     cpu->MEM[0xFF49] = 0xFF;
+    cpu->MEM[0xFF4A] = 0x00; // WY
+    cpu->MEM[0xFF4B] = 0x00; // WX
+    cpu->MEM[0xFFFF] = 0x00; // INTERRUPTS ENABLED
 
     return cpu;
 }
