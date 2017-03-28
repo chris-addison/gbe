@@ -102,30 +102,30 @@ static void ld_8_m(uint8 value, uint16 address, uint8 opcode, cpu_state *cpu) {
     cpu->wait = get_opcode(opcode).cycles;
 }
 
-//load 8 bit value into some address in memory and increment the value in the HL register
-static void ldi(uint8 value, uint8 *reg, uint8 opcode, cpu_state *cpu) {
-    *reg = value;
+//load 8 bit value into a register from some address in memory and increment the value in the HL register
+static void ldi(uint8 opcode, cpu_state *cpu) {
+    cpu->registers.A = readByte(cpu->registers.HL, cpu);
     cpu->registers.HL++;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
-//load 8 bit value into some address in memory and increment the value in the HL register
-static void ldi_m(uint8 value, uint16 address, uint8 opcode, cpu_state *cpu) {
-    writeByte(address, value, cpu);
+//load 8 bit value from a register into some address in memory and increment the value in the HL register
+static void ldi_m(uint8 opcode, cpu_state *cpu) {
+    writeByte(cpu->registers.HL, cpu->registers.A, cpu);
     cpu->registers.HL++;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
-//load 8 bit value into some register and decrement the value in the HL register
-static void ldd(uint8 value, uint8 *reg, uint8 opcode, cpu_state *cpu) {
-    *reg = value;
+//load 8 bit value into a register from some address in memory and decrement the value in the HL register
+static void ldd(uint8 opcode, cpu_state *cpu) {
+    cpu->registers.A = readByte(cpu->registers.HL, cpu);
     cpu->registers.HL--;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
-//load 8 bit value into some address in memory and decrement the value in the HL register
-static void ldd_m(uint8 value, uint16 address, uint8 opcode, cpu_state *cpu) {
-    writeByte(address, value, cpu);
+//load 8 bit value from a register into some address in memory and decrement the value in the HL register
+static void ldd_m(uint8 opcode, cpu_state *cpu) {
+    writeByte(cpu->registers.HL, cpu->registers.A, cpu);
     cpu->registers.HL--;
     cpu->wait = get_opcode(opcode).cycles;
 }
@@ -618,7 +618,7 @@ int executeNextInstruction(cpu_state * cpu) {
             ld_16(twoBytes(cpu), &cpu->registers.HL, opcode, cpu);
             break;
         case 0x22: //LDI (HL), A
-            ldi_m(cpu->registers.A, cpu->registers.HL, opcode, cpu);
+            ldi_m(opcode, cpu);
             break;
         case 0x23: //INC HL
             inc_16(&cpu->registers.HL, opcode, cpu);
@@ -642,7 +642,7 @@ int executeNextInstruction(cpu_state * cpu) {
             add_16(cpu->registers.HL, &cpu->registers.HL, opcode, cpu);
             break;
         case 0x2A: //LDI A, (HL)
-            ldi(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
+            ldi(opcode, cpu);
             break;
         case 0x2B: //DEC HL
             dec_16(&cpu->registers.HL, opcode, cpu);
@@ -666,7 +666,7 @@ int executeNextInstruction(cpu_state * cpu) {
             ld_16(twoBytes(cpu), &cpu->SP, opcode, cpu);
             break;
         case 0x32: //LDD (HL), A
-            ldd_m(cpu->registers.A, cpu->registers.HL, opcode, cpu);
+            ldd_m(opcode, cpu);
             break;
         case 0x33: //INC SP
             inc_16(&cpu->SP, opcode, cpu);
@@ -690,7 +690,7 @@ int executeNextInstruction(cpu_state * cpu) {
             add_16(cpu->SP, &cpu->registers.HL, opcode, cpu);
             break;
         case 0x3A: //LDD A, (HL)
-            ldd(readByte(cpu->registers.HL, cpu), &cpu->registers.A, opcode, cpu);
+            ldd(opcode, cpu);
             break;
         case 0x3B: //DEC SP
             dec_16(&cpu->SP, opcode, cpu);
