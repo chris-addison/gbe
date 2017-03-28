@@ -3,7 +3,7 @@ NAME		=	gbe
 TEST_NAME 	= 	test
 WINDOWS_EXE =	.exe
 DIRECTORY	=	src/
-FLAGS		=	--std=c11 -Wfatal-errors -Wall
+FLAGS		=	--std=c11 -Wfatal-errors -Wall -g
 X11			=	-lX11
 OPENGL		=	-lGL -lGLU -lm
 SDL 		=	`sdl2-config --cflags --libs`
