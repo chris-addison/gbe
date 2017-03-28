@@ -70,6 +70,13 @@ cpu_state* createCPU() {
     return cpu;
 }
 
+// Reset the cpu
+void resetCPU(cpu_state *cpu) {
+    // Re-initialise the cpu
+    initCPU(cpu);
+    // TDOD: reset timers and display stuff
+}
+
 // Execute a single cpu step
 int executeCPU(cpu_state *cpu) {
     #ifdef DEBUG
