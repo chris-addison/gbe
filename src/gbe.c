@@ -43,7 +43,7 @@ int cycleEmulator() {
     bool continue_running = true;
     // Run single instruction loop
     while (continue_running) {
-        if (cpu->wait <= 0) {
+        if (cpu->wait == 0 && !cpu->halt) {
             // Execute instruction
             int errNum = executeCPU(cpu);
             if (errNum) {

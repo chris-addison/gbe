@@ -509,9 +509,9 @@ static void daa(uint8 opcode, cpu_state *cpu) {
 
 //execute next instruction
 int executeNextInstruction(cpu_state * cpu) {
-    //don't execute if halt is called
+    // Don't execute if halt is called
     if (cpu->halt) {
-        return 0;
+        return 432;
     }
     //printInstruction(true, cpu->PC, cpu);
     //grab instruction
