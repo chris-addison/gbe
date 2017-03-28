@@ -18,6 +18,7 @@ static const char op[] = "op";
 static const char run[] = "run";
 static const char runTo[] = "runto";
 static const char mem[] = "mem";
+static const char reset[] = "reset";
 
 // Run-to some address variables
 bool runUntilStop = false;
@@ -138,6 +139,10 @@ bool debug(bool force, cpu_state * cpu) {
             printf("\tRAM:\t");
             printByte(cpu->RAM_bank);
             printf("\n");
+        } else if (!strcmp(reset, argv[0])) {
+            resetCPU(cpu);
+            printf("Emulator reset\n");
+            printInstruction(true, cpu->PC, cpu);
         } else {
             printf("Command: \"%s\" not recognised\n", command);
         }
