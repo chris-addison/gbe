@@ -7,10 +7,9 @@
 #include "cpu.h"
 #include <stdlib.h>
 
-// Create the cpu
-cpu_state* createCPU() {
-    cpu_state *cpu = (cpu_state *) malloc(sizeof(cpu_state));
-    //setup the PC and SP
+// Initialise the cpu
+static void initCPU(cpu_state *cpu) {
+    // Setup the PC and SP
     cpu->PC = 0x100;
     cpu->SP = 0xFFFE;
     cpu->wait = 0;
@@ -21,12 +20,12 @@ cpu_state* createCPU() {
     cpu->ime = false;
     cpu->imeCounter = 0;
     cpu->halt = false;
-    //setup startup values of registers
+    // Setup startup values of registers
     cpu->registers.AF = 0x01B0;
     cpu->registers.BC = 0x0013;
     cpu->registers.DE = 0x00D8;
     cpu->registers.HL = 0x014D;
-    //setup startup memory values - excludes values set to 0
+    // Setup startup memory values - excludes values set to 0
     cpu->MEM[0xFF04] = 0x00; // DIV
     cpu->MEM[0xFF05] = 0x00; // TIMA
     cpu->MEM[0xFF06] = 0x00; // TMA
@@ -60,6 +59,13 @@ cpu_state* createCPU() {
     cpu->MEM[0xFF4A] = 0x00; // WY
     cpu->MEM[0xFF4B] = 0x00; // WX
     cpu->MEM[0xFFFF] = 0x00; // INTERRUPTS ENABLED
+}
+
+// Create the cpu
+cpu_state* createCPU() {
+    cpu_state *cpu = (cpu_state *) malloc(sizeof(cpu_state));
+    // Initialise the cpu
+    initCPU(cpu);
 
     return cpu;
 }
