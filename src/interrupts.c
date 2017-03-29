@@ -107,7 +107,7 @@ void checkInterrupts(cpu_state *cpu) {
     cycleTimer(cpu);
     cycleClock(cpu);
     //printByte(readByte(INTERRUPT_FLAGS, cpu));
-    if (cpu->ime && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
+    if ((cpu->ime || cpu->halt) && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
         //printf("INTERRUPTS E: 0x%X\n", readByte(INTERRUPTS_ENABLED, cpu));
         uint8 interrupt = readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);
         if (interrupt & INTR_V_BLANK) {
