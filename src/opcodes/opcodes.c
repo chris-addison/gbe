@@ -3,6 +3,7 @@
 #include "../memory.h"
 #include "../cpu.h"
 #include "opcodes.h"
+#include "../debug/debug.h"
 #include "cb_opcodes.c"
 
 //read one unsigned byte from the PC
@@ -266,12 +267,34 @@ static void add_16_8(int8 s_byte, uint16 u_short, uint16 *reg, uint8 opcode, cpu
 
 //8 bit add between the A register, some value, and the carry flag
 static void adc(uint8 value, uint8 opcode, cpu_state *cpu) {
-    add_8(value + readFlag(CF, cpu), opcode, cpu);
+    bool flag = readFlag(CF, cpu);
+    add_8(value + flag, opcode, cpu);
+
+    // Set flags for carry bit + value non-destructively
+    //half-carry
+    if ((value & 0xF) + flag > 0x0F) {
+        setFlag(HF, cpu);
+    }
+    //carry flag
+    if (((uint16)value) + ((uint16)flag) > 0xFF) {
+        setFlag(CF, cpu);
+    }
 }
 
 //8 bit subtract between the A register, some value, and the carry flag
 static void sbc(uint8 value, uint8 opcode, cpu_state *cpu) {
+    bool flag = readFlag(CF, cpu);
     sub_8(value + readFlag(CF, cpu), opcode, cpu);
+
+    // Set flags for carry bit + value non-destructively
+    //half-carry
+    if ((value & 0xF) < flag) {
+        setFlag(HF, cpu);
+    }
+    //carry
+    if (value < flag) {
+        setFlag(CF, cpu);
+    }
 }
 
 //rotate register A left, old bit 7 to carry bit and bit 0
@@ -513,6 +536,10 @@ int executeNextInstruction(cpu_state * cpu) {
     if (cpu->halt) {
         return 432;
     }
+    /*uint8 temp = readByte(cpu->PC, cpu);
+    if (readFlag(CF, cpu) && (temp == 0xCE || temp == 0xDE)) {
+        debug(true, cpu);
+    }*/
     //printInstruction(true, cpu->PC, cpu);
     //grab instruction
     uint8 opcode = readNextByte(cpu);
