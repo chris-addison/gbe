@@ -16,20 +16,20 @@ It has a simple frontend api for displaying the emulator via a framebuffer.
 
 Games play in various degrees of accuracy.
 
-### No bugs found yet
-* Pokemon Blue/Green/Red/Yellow
-* Tetris
+### Mostly works
+* Pokemon Blue/Green/Red/Yellow [Saving game will crash]
+* Tetris [Score counter incorrect]
 * Metroid II
-* Super Mario Land
+* Super Mario Land [Graphical glitches]
 
-### Beyond title screen 
-* Kirby's Dream Land [Graphical glitches]
+### Beyond title screen
+* Kirby's Dream Land [Crash when pressing B button]
 
 ### Title screen
 
 ### Does not work
 * ANY GAMEBOY COLOUR GAMES
-* Zelda [Black screen]
+* Legend of Zelda: Link's Awakening [Stuck in loop during intro]
 
 ## TODO list (in no particular order)
 * Game saving
