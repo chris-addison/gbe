@@ -288,11 +288,11 @@ static void sbc(uint8 value, uint8 opcode, cpu_state *cpu) {
 
     // Set flags for carry bit + value non-destructively
     //half-carry
-    if ((value & 0xF) < flag) {
+    if ((value & 0xF) + flag > 0x0F) {
         setFlag(HF, cpu);
     }
-    //carry
-    if (value < flag) {
+    //carry flag
+    if (((uint16)value) + ((uint16)flag) > 0xFF) {
         setFlag(CF, cpu);
     }
 }
