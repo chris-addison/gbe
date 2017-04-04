@@ -383,8 +383,12 @@ static void push(uint16 value, uint8 opcode, cpu_state *cpu) {
 }
 
 //pop a short from the stack
-static void pop(uint16 *reg, uint8 opcode, cpu_state *cpu) {
+static void pop(uint16 *reg, bool AF, uint8 opcode, cpu_state *cpu) {
     *reg = readShortFromStack(cpu);
+    // Mask out lower bytes if writing to AF register
+    if (AF) {
+        *reg &= 0xFFF0;
+    }
     cpu->wait = get_opcode(opcode).cycles;
 }
 
@@ -1122,7 +1126,7 @@ int executeNextInstruction(cpu_state * cpu) {
             ret_c(!readFlag(ZF, cpu), opcode, cpu);
             break;
         case 0xC1: //POP BC
-            pop(&cpu->registers.BC, opcode, cpu);
+            pop(&cpu->registers.BC, false, opcode, cpu);
             break;
         case 0xC2: //JP NZ, a16
             jp_c(!readFlag(ZF, cpu), twoBytes(cpu), opcode, cpu);
@@ -1171,7 +1175,7 @@ int executeNextInstruction(cpu_state * cpu) {
             ret_c(!readFlag(CF, cpu), opcode, cpu);
             break;
         case 0xD1: //POP DE
-            pop(&cpu->registers.DE, opcode, cpu);
+            pop(&cpu->registers.DE, false, opcode, cpu);
             break;
         case 0xD2: //JP NC, a16
             jp_c(!readFlag(CF, cpu), twoBytes(cpu), opcode, cpu);
@@ -1210,7 +1214,7 @@ int executeNextInstruction(cpu_state * cpu) {
             ld_8_m(cpu->registers.A, 0xFF00 + oneByte(cpu), opcode, cpu);
             break;
         case 0xE1: //POP HL
-            pop(&cpu->registers.HL, opcode, cpu);
+            pop(&cpu->registers.HL, false, opcode, cpu);
             break;
         case 0xE2: //LD (C), A
             ld_8_m(cpu->registers.A, 0xFF00 + cpu->registers.C, opcode, cpu);
@@ -1243,7 +1247,7 @@ int executeNextInstruction(cpu_state * cpu) {
             ld_8(readByte(0xFF00 + readNextByte(cpu), cpu), &cpu->registers.A, opcode, cpu);
             break;
         case 0xF1: //POP AF
-            pop(&cpu->registers.AF, opcode, cpu);
+            pop(&cpu->registers.AF, true, opcode, cpu);
             break;
         case 0xF2: //LD A, (C)
             ld_8(readByte(0xFF00 + cpu->registers.C, cpu), &cpu->registers.A, opcode, cpu);
