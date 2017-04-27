@@ -5,7 +5,7 @@
 #include "opcodes.h"
 #include <stdio.h>
 
-//rotate given register left, old bit 7 to carry bit and bit 0
+// Rotate given register left, old bit 7 to carry bit and bit 0
 static void rlc(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     //set carry flag based on bit 7
     (*reg >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
@@ -15,6 +15,22 @@ static void rlc(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     clearFlag(HF, cpu);
     clearFlag(NF, cpu);
+    cpu->wait = get_cb_opcode(opcode).cycles;
+}
+
+// Rotate left byte at memory location held in HL, old bit 7 to carry bit and bit 0
+static void rlc_m(uint8 opcode, cpu_state *cpu) {
+    uint8 value = readByte(cpu->registers.HL, cpu);
+    // Set carry flag based on bit 7
+    (value >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    // Shift left and use carry flag/bit 7 as new bit 0
+    value = (value << 1) | readFlag(CF, cpu);
+    // Zero flag
+    (value) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    // Write updated value to memory address held in HL
+    writeByte(cpu->registers.HL, value, cpu);
     cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
@@ -234,6 +250,9 @@ int executeNextExtendedInstruction(cpu_state *cpu) {
             break;
         case 0x05: //RLC L
             rlc(&cpu->registers.L, opcode, cpu);
+            break;
+        case 0x06: //RLC (HL)
+            rlc_m(opcode, cpu);
             break;
         case 0x07: //RLC A
             rlc(&cpu->registers.A, opcode, cpu);
