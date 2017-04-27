@@ -34,22 +34,40 @@ static void rlc_m(uint8 opcode, cpu_state *cpu) {
     cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
-//rotate a given register left, old bit 7 to carry bit and old carry bit to bit 0
+// Rotate a given register left, old bit 7 to carry bit and old carry bit to bit 0
 static void rl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
-    //read carry flag state into temp variable
+    // Read carry flag state into temp variable
     bool flagState = readFlag(CF, cpu);
-    //update the carry flag
+    // Update the carry flag
     (*reg >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
-    //shift right
+    // Shift right
     *reg <<= 1;
-    //insert previous flag state into bit 0
+    // Insert previous flag state into bit 0
     *reg |= flagState;
-    //set or reset zero flag based on whether result is zero
+    // Set or reset zero flag based on whether result is zero
     (*reg) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
-    //reset half-carry flag
     clearFlag(HF, cpu);
-    //reset negative flag
     clearFlag(NF, cpu);
+    cpu->wait = get_cb_opcode(opcode).cycles;
+}
+
+// Rotate left a byte at address held in HL, old bit 7 to carry bit and old carry bit to bit 0
+static void rl_m(uint8 opcode, cpu_state *cpu) {
+    uint8 value = readByte(cpu->registers.HL, cpu);
+    // Read carry flag state into temp variable
+    bool flagState = readFlag(CF, cpu);
+    // Update the carry flag
+    (value >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    // Shift right
+    value <<= 1;
+    // Insert previous flag state into bit 0
+    value |= flagState;
+    // Set or reset zero flag based on whether result is zero
+    (value) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    // Write updated value to memory address held in HL
+    writeByte(cpu->registers.HL, value, cpu);
     cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
@@ -298,6 +316,9 @@ int executeNextExtendedInstruction(cpu_state *cpu) {
             break;
         case 0x15: //RL L
             rl(&cpu->registers.L, opcode, cpu);
+            break;
+        case 0x16: //RL (HL)
+            rl_m(opcode, cpu);
             break;
         case 0x17: //RL A
             rl(&cpu->registers.A, opcode, cpu);
