@@ -150,6 +150,22 @@ static void sla(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
+// Arithmetic left shift a byte at location held in HL. Set new bit 0 to 0 and put the old bit 7 into the carry flag
+static void sla_m(uint8 opcode, cpu_state *cpu) {
+    uint8 value = readByte(cpu->registers.HL, cpu);
+    // Set carry flag based on bit 7
+    (value >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    //shift left
+    value <<= 1;
+    // Set or reset zero flag based on whether result is zero
+    (value) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    // Write updated value to memory address held in HL
+    writeByte(cpu->registers.HL, value, cpu);
+    cpu->wait = get_cb_opcode(opcode).cycles;
+}
+
 // Arithmetic right shift a given register. Set new bit 7 to the previus bit 7 and put the old bit 0 into the carry flag
 static void sra(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     uint8 bit7 = *reg & 0x80; //0x80 = 0b10000000
@@ -361,11 +377,35 @@ int executeNextExtendedInstruction(cpu_state *cpu) {
         case 0x23: //SLA E
             sla(&cpu->registers.E, opcode, cpu);
             break;
+        case 0x24: //SLA H
+            sla(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x25: //SLA L
+            sla(&cpu->registers.L, opcode, cpu);
+            break;
+        case 0x26: //SLA (HL)
+            sla_m(opcode, cpu);
+            break;
         case 0x27: //SLA A
             sla(&cpu->registers.A, opcode, cpu);
             break;
+        case 0x28: //SRA B
+            sra(&cpu->registers.B, opcode, cpu);
+            break;
+        case 0x29: //SRA C
+            sra(&cpu->registers.C, opcode, cpu);
+            break;
         case 0x2A: //SRA D
             sra(&cpu->registers.D, opcode, cpu);
+            break;
+        case 0x2B: //SRA E
+            sra(&cpu->registers.E, opcode, cpu);
+            break;
+        case 0x2C: //SRA H
+            sra(&cpu->registers.H, opcode, cpu);
+            break;
+        case 0x2D: //SRA L
+            sra(&cpu->registers.L, opcode, cpu);
             break;
         case 0x2F: //SRA A
             sra(&cpu->registers.A, opcode, cpu);
