@@ -182,6 +182,25 @@ static void sra(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
+// Arithmetic right shift a byte at address in HL. Set new bit 7 to the previus bit 7 and put the old bit 0 into the carry flag
+static void sra_m(uint8 opcode, cpu_state *cpu) {
+    uint8 value = readByte(cpu->registers.HL, cpu);
+    uint8 bit7 = value & 0x80; //0x80 = 0b10000000
+    // Set carry flag based on bit 0
+    (value & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    // Shift right
+    value >>= 1;
+    // Set new bit seven to old bit 7
+    value |= bit7;
+    // Set or reset zero flag based on whether result is zero
+    (value) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    // Write updated value to memory address held in HL
+    writeByte(cpu->registers.HL, value, cpu);
+    cpu->wait = get_cb_opcode(opcode).cycles;
+}
+
 // Logical right shift of given register. Set new bit 7 to 0 and put the old bit 0 into carry flag
 static void srl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     // Set carry bit based on bit 0
@@ -406,6 +425,9 @@ int executeNextExtendedInstruction(cpu_state *cpu) {
             break;
         case 0x2D: //SRA L
             sra(&cpu->registers.L, opcode, cpu);
+            break;
+        case 0x2E: //SRA (HL)
+            sra_m(opcode, cpu);
             break;
         case 0x2F: //SRA A
             sra(&cpu->registers.A, opcode, cpu);
