@@ -214,6 +214,22 @@ static void srl(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     cpu->wait = get_cb_opcode(opcode).cycles;
 }
 
+// Logical right shift of given register. Set new bit 7 to 0 and put the old bit 0 into carry flag
+static void srl_m(uint8 opcode, cpu_state *cpu) {
+    uint8 value = readByte(cpu->registers.HL, cpu);
+    // Set carry bit based on bit 0
+    (value & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    // Shift right
+    value >>= 1;
+    // Set or reset zero flag based on whether result is zero
+    (value) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
+    clearFlag(HF, cpu);
+    clearFlag(NF, cpu);
+    // Write updated value to memory address held in HL
+    writeByte(cpu->registers.HL, value, cpu);
+    cpu->wait = get_cb_opcode(opcode).cycles;
+}
+
 // Swap the upper and lower nibbles of some register
 static void swap(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     clearFlag(NF, cpu);
@@ -473,6 +489,9 @@ int executeNextExtendedInstruction(cpu_state *cpu) {
             break;
         case 0x3D: //SRL L
             srl(&cpu->registers.L, opcode, cpu);
+            break;
+        case 0x3E: //SRL (HL)
+            srl_m(opcode, cpu);
             break;
         case 0x3F: //SRL A
             srl(&cpu->registers.A, opcode, cpu);
