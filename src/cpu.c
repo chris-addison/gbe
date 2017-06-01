@@ -20,6 +20,7 @@ static void initCPU(cpu_state *cpu) {
     cpu->ime = false;
     cpu->imeCounter = 0;
     cpu->halt = false;
+    cpu->halt_bug = false;
     // Setup startup values of registers
     cpu->registers.AF = 0x01B0;
     cpu->registers.BC = 0x0013;

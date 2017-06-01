@@ -7,6 +7,7 @@
 extern void updateIME(cpu_state *cpu);
 extern void setInterruptFlag(uint8 flag, cpu_state *cpu);
 extern void clearInterruptFlag(uint8 flag, cpu_state *cpu);
+extern uint8 availableInterrupts(cpu_state *cpu);
 extern void checkInterrupts(cpu_state *cpu);
 
 //interrupt bit offsets

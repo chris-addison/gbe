@@ -104,7 +104,7 @@ static void cycleClock(cpu_state *cpu) {
 
 // Return true if they are interrups enabled and set
 uint8 availableInterrupts(cpu_state *cpu) {
-    return readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);
+    return readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu) & 0x1F;
 }
 
 // Check interrupts and act on them

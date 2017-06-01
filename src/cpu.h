@@ -54,6 +54,7 @@ typedef struct {
     uint8 wait;
     uint8 imeCounter;
     bool halt;
+    bool halt_bug;
     bool RAM_enable;
     bool RAM_exists;
     bool mbc1_mode;

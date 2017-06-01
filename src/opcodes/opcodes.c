@@ -2,6 +2,7 @@
 #include "../types.h"
 #include "../memory.h"
 #include "../cpu.h"
+#include "../interrupts.h"
 #include "opcodes.h"
 #include "../debug/debug.h"
 #include "cb_opcodes.c"
@@ -25,7 +26,13 @@ static uint16 twoBytes(cpu_state *cpu) {
 
 //Halt the cpu until there is a interrupt
 static void halt(uint8 opcode, cpu_state *cpu) {
+    // Halt the cpu
     cpu->halt = true;
+    // If interrupts disabled, but there are servicable interrupts handle halt bug case
+    if (!cpu->ime && availableInterrupts(cpu)) {
+        cpu->halt_bug = true;
+        cpu->halt = false;
+    }
     cpu->wait = get_opcode(opcode).cycles;
     //debug(true, cpu);
 }

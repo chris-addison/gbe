@@ -41,7 +41,11 @@ uint8 readByte(uint16 address, cpu_state *cpu) {
 //read next byte from the instruction pointer
 uint8 readNextByte(cpu_state *cpu) {
     uint8 byte = readByte(cpu->PC, cpu);
-    cpu->PC++;
+    if (cpu->halt_bug) {
+        cpu->halt_bug = false;
+    } else {
+        cpu->PC++;
+    }
     return byte;
 }
 
