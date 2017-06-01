@@ -252,16 +252,15 @@ static void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
 
 // Add together a signed byte and an unsigned short, save the result in some short register, and set flags.
 static void add_16_8(int8 s_byte, uint16 u_short, uint16 *reg, uint8 opcode, cpu_state *cpu) {
-    unsigned int result = (unsigned int)(u_short + s_byte);
     // Set or clear half-carry flag based on result
-    ((u_short & 0xFFF) + s_byte > 0xFFF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
+    ((u_short & 0xF) + (s_byte & 0xF) > 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     // Set or clear carry flag based on result.
-    (result > 0xFFFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
+    ((u_short & 0xFF) + (s_byte & 0xFF) > 0xFF) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     // Clear flags
     clearFlag(ZF, cpu);
     clearFlag(NF, cpu);
     // Save reult to given register
-    *reg = (uint16)result;
+    *reg = u_short + s_byte;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
