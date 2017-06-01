@@ -102,31 +102,37 @@ static void cycleClock(cpu_state *cpu) {
     cycles_timer++;
 }
 
+// Return true if they are interrups enabled and set
+uint8 availableInterrupts(cpu_state *cpu) {
+    return readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);
+}
+
 // Check interrupts and act on them
 void checkInterrupts(cpu_state *cpu) {
     cycleTimer(cpu);
     cycleClock(cpu);
     //printByte(readByte(INTERRUPT_FLAGS, cpu));
-    if ((cpu->ime || cpu->halt) && (readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu))) {
-        //printf("INTERRUPTS E: 0x%X\n", readByte(INTERRUPTS_ENABLED, cpu));
-        uint8 interrupt = readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu);
-        if (interrupt & INTR_V_BLANK) {
+    uint8 interrupts = availableInterrupts(cpu);
+    if (cpu->ime && interrupts) {
+        if (interrupts & INTR_V_BLANK) {
             interruptVBlank(cpu);
         }
-        if (interrupt & INTR_STAT) {
+        if (interrupts & INTR_STAT) {
             printf("interrupt STAT\n");
             interruptSTAT(cpu);
         }
-        if (interrupt & INTR_TIMER) {
+        if (interrupts & INTR_TIMER) {
             printf("interrupt timer\n");
             interruptTimer(cpu);
         }
-        if (interrupt & INTR_SERIAL) {
+        if (interrupts & INTR_SERIAL) {
             printf("interrupt serial\n");
         }
-        if (interrupt & INTR_JOYPAD) {
+        if (interrupts & INTR_JOYPAD) {
             printf("interrupt joypad\n");
             interruptJoypad(cpu);
         }
+    } else if (cpu->halt && interrupts) {
+        cpu->halt = false;
     }
 }
