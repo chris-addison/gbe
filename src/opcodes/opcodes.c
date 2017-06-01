@@ -151,7 +151,7 @@ static void inc_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     clearFlag(NF, cpu);
     //set half-carry flag based on result
     ((*reg & 0xF) == 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
-    *reg += 1;
+    (*reg)++;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
@@ -170,8 +170,8 @@ static void inc_8_m(uint8 opcode, cpu_state *cpu) {
 
 //increment a short
 static void inc_16(uint16 *reg, uint8 opcode, cpu_state *cpu) {
-    //inc_16 doesn't set or clear any flags
-    *reg += 1; //can't use "++" as it takes higher priority over pointer dereference
+    // inc_16 doesn't set or clear any flags
+    (*reg)++;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
@@ -183,7 +183,7 @@ static void dec_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
     setFlag(NF, cpu);
     //half-carry flag
     (*reg & 0xF) ? clearFlag(HF, cpu) : setFlag(HF, cpu);
-    *reg -= 1;
+    (*reg)--;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
@@ -202,7 +202,7 @@ static void dec_8_m(uint8 opcode, cpu_state *cpu) {
 //decrement a short
 static void dec_16(uint16 *reg, uint8 opcode, cpu_state *cpu) {
     //dec_16 doesn't set or clear any flags
-    *reg -= 1; //can't use "-- as it takes higher priority over pointer dereference
+    (*reg)--;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
