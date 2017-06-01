@@ -491,44 +491,37 @@ static void or(uint8 value, uint8 opcode, cpu_state *cpu) {
     cpu->wait = get_opcode(opcode).cycles;
 }
 
-//decimal adjust register A. Hex to Binary Coded Decimal. This makes the max
-//value of every byte 9 to allow for easy translation into decimal values.
+// Decimal adjust register A. Hex to Binary Coded Decimal. This makes the max
+// Value of every byte 9 to allow for easy translation into decimal values.
 static void daa(uint8 opcode, cpu_state *cpu) {
-    uint16 regA = cpu->registers.A;
-    //check whether the last operation was subtraction
-    if (!readFlag(NF, cpu)) { //addition
-        //correct lower byte. If value is greater than 9, push the excess to the
-        //next byte. If half-carry flag set, restore the lost value. essentually,
-        //half carry happens when the byte has a vlue greater than 15. 16 is then
-        //carried over to the next byte. in BCD this is only a carry of 10, so
-        //to correct one must restore the excess 6 to the lower byte.
-        if (readFlag(HF, cpu) || ((cpu->registers.A & 0xF) > 0x09)) {
-            regA += 0x06;
-        }
-        //correct upper byte. Similar to above regarding the situation with the
-        //half-carry flag except in the larger byte this is the carry flag instead
-        if (readFlag(CF, cpu) || (cpu->registers.A > 0x9F)) {
-            regA += 0x60;
-        }
-    } else { //subtraction
-        //correct lower byte. Same idea as explained above, but in reverse
+    // Grab a copy of A register to work on
+    uint16 reg_a = cpu->registers.A;
+    // Check whether the last operation was subtraction
+    if (readFlag(NF, cpu)) { // Subtraction
         if (readFlag(HF, cpu)) {
-            regA = (regA - 0x06) & 0xFF;
+            reg_a -= 0x06;
+            reg_a &= 0xFF;
         }
-        //correct upper byte. Same idea as explained above, but in reverse
         if (readFlag(CF, cpu)) {
-            regA -= 0x60;
+            reg_a -= 0x60;
+        }
+    } else { // Addition
+        if (readFlag(HF, cpu) || (reg_a & 0x0F) > 0x09) {
+            reg_a += 0x06;
+        }
+        if (readFlag(CF, cpu) || reg_a > 0x9F) {
+            reg_a += 0x60;
         }
     }
-    // Assign back to register after masking value
-    cpu->registers.A = regA & 0xFF;
-    //carry flag - can only be set, not reset
-    if (regA & 0x100) {
+    // Check for carry
+    if ((reg_a & 0x0100) == 0x0100) {
         setFlag(CF, cpu);
     }
-    //half-carry flag
+    // Reset half-carry flag
     clearFlag(HF, cpu);
-    //zero flag
+    // Mask and set value
+    cpu->registers.A = (uint8)reg_a;
+    // Zero flag
     (cpu->registers.A) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     cpu->wait = get_opcode(opcode).cycles;
 }
