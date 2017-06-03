@@ -8,12 +8,49 @@
 #include "joypad.h"
 #include <stdio.h>
 
+// Handle reads from IO registers
+static uint8 readIORegisters(uint16 address, cpu_state *cpu) {
+    switch (address) {
+        // Redirected reads 
+        case JOYPAD:
+            return getJoypadState(cpu);
+        // Masked reads
+        case STAT:
+            return cpu->MEM[address] | 0x80;
+        case INTERRUPT_FLAGS:
+            return cpu->MEM[address] | 0xE0;
+        case TAC:
+            return cpu->MEM[address] | 0xF8;
+        // Pass through reads
+        case INTERRUPTS_ENABLED:
+        case WINDOW_X:
+        case WINDOW_Y:
+        case SP_PALETTE_1:
+        case SP_PALETTE_0:
+        case BG_PALETTE:
+        case SYC:
+        case SCANLINE:
+        case SCROLL_X:
+        case SCROLL_Y:        
+        case LCDC:        
+        case TMA:
+        case TIMA:
+        case DIV:
+            return cpu->MEM[address];
+        // Everything else
+        default:
+            // If IO register doesn't have read permissions or isn't defined, return 0xFF
+            return 0xFF;
+    }
+}
+
 //read a byte from a given memory address
 uint8 readByte(uint16 address, cpu_state *cpu) {
-    if (cpu->cart_type == 0x00 || address < 0x4000 || address > 0xC000) {
-        if (address == JOYPAD) {
-            return getJoypadState(cpu);
-        }
+    // Handle requests to IO registers
+    if (address >= 0xFF00) {
+        readIORegisters(address, cpu);
+    }
+    if (cpu->cart_type == 0x00 || address < 0x4000 || address > 0xC000) {        
         return cpu->MEM[address];
     } else if (address < 0x8000) { //handle mbc here
         //get address in rom bank
