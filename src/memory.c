@@ -47,7 +47,7 @@ static uint8 readIORegisters(uint16 address, cpu_state *cpu) {
 //read a byte from a given memory address
 uint8 readByte(uint16 address, cpu_state *cpu) {
     // Handle requests to IO registers
-    if (address >= 0xFF00) {
+    if (address >= 0xFF00 && address < 0xFF80) {
         readIORegisters(address, cpu);
     }
     if (cpu->cart_type == 0x00 || address < 0x4000 || address > 0xC000) {        
@@ -100,8 +100,73 @@ void transferOAM(uint8 value, cpu_state *cpu) {
     cpu->wait += 160;
 }
 
+static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
+    switch (address) {
+        // Redirected writes
+        case DMA:
+            transferOAM(value, cpu);
+            break;
+        #ifdef DISPLAY
+            case BG_PALETTE:
+                updateBackgroundColour(value);
+                break;
+            case SP_PALETTE_0:
+                updateSpritePalette(0, value);
+                break;
+            case SP_PALETTE_1:
+                updateSpritePalette(1, value);
+                break;           
+        #endif
+        // Masked writes
+        case JOYPAD:
+            //TODO: replace this with a updateJoypad function
+            cpu->MEM[address] &= 0x0F;
+            cpu->MEM[address] |= value & 0xF0;
+            break;
+        case STAT:
+            cpu->MEM[address] &= ~0b111;
+            cpu->MEM[address] |= value & 0b111;
+            break;        
+        case DIV:
+            cpu->MEM[address] = 0;
+            break;
+        // Pass through writes
+        case INTERRUPTS_ENABLED:
+        case WINDOW_X:
+        case WINDOW_Y:
+        #ifndef DISPLAY
+            case SP_PALETTE_1:
+            case SP_PALETTE_0:
+            case BG_PALETTE:
+        #endif
+        case SYC:
+        case SCANLINE:
+        case SCROLL_X:
+        case SCROLL_Y:
+        case LCDC:
+        case TAC:       
+        case TMA:
+        case TIMA:
+        case SB:
+        case INTERRUPT_FLAGS:
+            cpu->MEM[address] = value;
+            break;
+        // Everything else
+        default:
+            // If IO register doesn't have write permissions or isn't defined, do nothing
+            //cpu->MEM[address] = value;
+            //printf("Write to address %X\n", address);
+            //exit(0);
+            return;
+    }
+}
+
 //write a byte to the given memory address
 void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
+    if (address >= 0xFF00 && address < 0xFF80) {
+        writeIORegisters(address, value, cpu);
+        return;
+    }
     if (address >= 0xED00 && address < 0xED00 + 160) {
             printf("Writing OAM byte now: 0x%X\n", value);
         }
@@ -115,21 +180,6 @@ void writeByte(uint16 address, uint8 value, cpu_state *cpu) {
         cpu->MEM[address - 0x2000] = value;
     }
     if (cpu->cart_type == 0x00 || address >= 0xC000) {
-        // Update palette for the background
-        #ifdef DISPLAY
-            if (address == BG_PALETTE) {
-                updateBackgroundColour(value);
-            } else if (address == SP_PALETTE_0) {
-                updateSpritePalette(0, value);
-            } else if (address == SP_PALETTE_1) {
-                updateSpritePalette(1, value);
-            }
-        #endif
-        if (address == DMA) {
-            transferOAM(value, cpu);
-        } else if (address == DIV) {
-            value = 0;
-        }
         cpu->MEM[address] = value;
     } else { //handle the mbcs here
         //printf("%X:\thandle mbc address = %X, value = %X\n", cpu->PC, address, value);
