@@ -18,6 +18,7 @@ static void initCPU(cpu_state *cpu) {
     cpu->RAM_enable = false;
     // Setup interrupts
     cpu->ime = false;
+    cpu->screen_cycles = 0;
     cpu->imeCounter = 0;
     cpu->halt = false;
     cpu->halt_bug = false;

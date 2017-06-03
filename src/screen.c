@@ -10,62 +10,152 @@
 #endif
 #include <time.h>
 
-uint16 cycles = 0;
-bool displayActive = true;
-uint8 displayActiveCounter = 0;
-
-//read the current scanline(LY) from 0xFF44
+// Read the current scanline(LY) from 0xFF44
 static uint8 readScanline(cpu_state *cpu) {
-    return readByte(SCANLINE, cpu);
+    return cpu->MEM[SCANLINE];
+}
+
+// Return true if the display is active
+static bool displayActivated(cpu_state *cpu) {
+    // 7th bit of LCDC
+    return readBit(7, &cpu->MEM[LCDC]);
 }
 
 // Check to see if scanline equals the the LY Compare value. If equal set flag and fire
 // interrupt if enabled.
 static void updateCoincidenceFlag(cpu_state * cpu) {
-    if (readScanline(cpu) == readByte(SYC, cpu)) {
-        writeByte(STAT, readByte(STAT, cpu) | CONINCIDENCE_FLAG, cpu);
+    if (readScanline(cpu) == cpu->MEM[SYC]) {
+        cpu->MEM[STAT] |= CONINCIDENCE_FLAG;
         // Fire interrupt if enabled
-        if (readByte(STAT, cpu) & SCREEN_INTER_LYC) {
+        if (cpu->MEM[STAT] & SCREEN_INTER_LYC) {
             setInterruptFlag(INTR_STAT, cpu);
         }
     } else {
-        writeByte(STAT, readByte(STAT, cpu) & ~CONINCIDENCE_FLAG, cpu);
+        cpu->MEM[STAT] &= ~CONINCIDENCE_FLAG;
     }
 }
 
-//increment the current scanline(LY)
+// Increment the current scanline(LY)
 static void incrementScanline(cpu_state *cpu) {
-    writeByte(SCANLINE, readScanline(cpu) + 1, cpu);
+    cpu->MEM[SCANLINE]++;
     updateCoincidenceFlag(cpu);
 }
 
-//set the scanline(LY)
+// Set the scanline(LY)
 static void setScanline(uint8 scanline, cpu_state *cpu) {
-    writeByte(SCANLINE, scanline, cpu);
+    cpu->MEM[SCANLINE] = scanline;
     updateCoincidenceFlag(cpu);
 }
 
 // Set the current screen mode in the STAT register in memory
 static void setMode(uint8 mode, cpu_state *cpu) {
     // Fetch current STAT and set the correct lower two bits
-    writeByte(STAT, (readByte(STAT, cpu) & ~0b11) | mode, cpu);
+    cpu->MEM[STAT] = (cpu->MEM[STAT] & ~0b11) | mode;
     // Check what interrupts for STAT are enabled and fire if switching into that mode
-    if (mode == H_BLANK && readByte(STAT, cpu) & SCREEN_INTER_H_BLANK) {
+    if (mode == H_BLANK && (cpu->MEM[STAT] & SCREEN_INTER_H_BLANK)) {
         setInterruptFlag(INTR_STAT, cpu);
-    } else if (mode == V_BLANK && readByte(STAT, cpu) & SCREEN_INTER_V_BLANK) {
+    } else if (mode == V_BLANK && (cpu->MEM[STAT] & SCREEN_INTER_V_BLANK)) {
         setInterruptFlag(INTR_STAT, cpu);
-    } else if (mode == OAM && readByte(STAT, cpu) & SCREEN_INTER_OAM) {
+    } else if (mode == OAM && (cpu->MEM[STAT] & SCREEN_INTER_OAM)) {
         setInterruptFlag(INTR_STAT, cpu);
     }
 }
 
+// Timing and control flow taking from SameBoy, which is derived itself from GiiBiiAdvance
+// https://github.com/LIJI32/SameBoy/blob/master/Core/display.c
+// https://github.com/AntonioND/giibiiadvance
+
 // Single step for the logic to control the screen
 void updateScreen(cpu_state *cpu) {
-    //Order and number of cycles ref: http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
-    //TL;DR: flow is 143 * (OAM -> VRAM -> H_BLANK) -> 10 * V_BLANK
-    if (displayActive) { // DISPLAY ENABLED
-        uint8 screenMode = readByte(STAT, cpu) & 0b11; //grab last two bits for checking the screen mode
-        cycles++;
+    // Cycle the screen
+    cpu->screen_cycles++;
+    if (displayActivated(cpu)) { // DISPLAY ENABLED
+        // Update scanline
+        cpu->MEM[SCANLINE] = cpu->screen_cycles / LCDC_LINE_CYCLES;
+        // Handle end of the screen 
+        if (cpu->screen_cycles == LCDC_SCREEN_CYCLES) {
+            cpu->screen_cycles = 0;
+            // Set mode to be 0
+            cpu->MEM[STAT] &= ~STAT_MODE_MASK;
+            // Set scanline to 0
+            cpu->MEM[SCANLINE] = 0;
+
+            // Reset window line
+            #ifdef DISPLAY                
+                resetWindowLine();
+            #endif
+        // Handle V-blank
+        } else if (cpu->screen_cycles == LCDC_SCREEN_CYCLES * SCREEN_HEIGHT) {
+            // Set mode to 1 (V-BLANK)
+            cpu->MEM[STAT] &= ~STAT_MODE_MASK;
+            cpu->MEM[STAT] |= V_BLANK;
+            // Set v blank interrupt flag
+            setInterruptFlag(INTR_V_BLANK, cpu);
+
+            // Entering v-blank fires OAM interrupt if enabled
+            if (cpu->MEM[STAT] & SCREEN_INTER_OAM) {
+                //TODO: Interrupt 
+            }
+            
+            #ifdef DISPLAY
+                draw(cpu);
+            #endif
+        // Handle lines 0 to 143 (actually displayed lines)
+        } else if (cpu->screen_cycles < SCREEN_HEIGHT * LCDC_LINE_CYCLES) {
+            uint16 position = cpu->screen_cycles % LCDC_LINE_CYCLES;
+            if (position == 0) {
+                // Set mode to 2 (OAM)
+                cpu->MEM[STAT] &= ~STAT_MODE_MASK;
+                cpu->MEM[STAT] |= OAM;
+
+                // TODO: check window and increment window line
+                #ifdef DISPLAY
+                    loadScanline(cpu);
+                #endif                
+            } else if (position == LCDC_MODE2_CYCLES) {
+                // Set mode to 3 (VRAM)
+                cpu->MEM[STAT] &= ~STAT_MODE_MASK;
+                cpu->MEM[STAT] |= VRAM;
+
+                // Reset window line
+                #ifdef DISPLAY                
+                    resetWindowLine();
+                #endif
+            } else if (position == LCDC_MODE2_CYCLES + LCDC_MODE3_CYCLES) {
+                // Set mode to 0 (H-BLANK)
+                cpu->MEM[STAT] &= ~STAT_MODE_MASK;
+            }
+        // Handle line 153
+        } else if (cpu->screen_cycles >= (SCREEN_LINES - 1) * LCDC_LINE_CYCLES) {
+            cpu->MEM[SCANLINE] = 0;
+        // Handle lines 144 to 152
+        }
+
+        updateCoincidenceFlag(cpu);
+
+    } else { // DISPLAY DISABLED
+        // Keep scanline at 0
+        cpu->MEM[SCANLINE] = 0;
+        // Set mode to 0
+        cpu->MEM[STAT] &= ~STAT_MODE_MASK;
+        // Set coincidence flag
+        cpu->MEM[STAT] |= CONINCIDENCE_FLAG;        
+        // Still handle vblank
+        if (cpu->screen_cycles == LCDC_SCREEN_CYCLES) {
+            cpu->screen_cycles = 0;
+            setInterruptFlag(INTR_V_BLANK, cpu);
+            #ifdef DISPLAY
+                draw(cpu);
+            #endif
+        }
+
+        // Reset window line
+        #ifdef DISPLAY                
+            resetWindowLine();
+        #endif
+    }
+
+    /*uint8 screenMode = cpu->MEM[STAT] & 0b11; //grab last two bits for checking the screen mode
         switch (screenMode) {
             case OAM:
                 if (cycles >= 80) {
@@ -77,9 +167,7 @@ void updateScreen(cpu_state *cpu) {
                 if (cycles >= 172) {
                     // Load scanline during VRAM
                     #ifdef DISPLAY
-                        if (displayActive) {
-                            loadScanline(cpu);
-                        }
+                        loadScanline(cpu);
                     #endif
                     setMode(H_BLANK, cpu);
                     cycles = 0;
@@ -98,12 +186,7 @@ void updateScreen(cpu_state *cpu) {
                         // Only display if correct bit is set. Ths can only be togged during V Blank
                         #ifdef DISPLAY
                             resetWindowLine();
-                            if (readBit(7, &cpu->MEM[LCDC])) {
-                                draw(cpu);
-                            } else {
-                                displayActive = false;
-                                displayActiveCounter = 255;
-                            }
+                            draw(cpu);
                         #endif
                     } else {
                         setMode(OAM, cpu);
@@ -125,24 +208,8 @@ void updateScreen(cpu_state *cpu) {
                             loadTiles(cpu);
                         #endif
                     }
-                    cycles = 0;
+                    cycles = 0; 
                 }
                 break;
-        }
-    } else { // DISPLAY DISABLED
-        if (!readBit(7, &cpu->MEM[LCDC])) {
-            displayActiveCounter = 255;
-        } else {
-            displayActiveCounter--;
-            if (displayActiveCounter == 0) {
-                displayActive = true;
-                #ifdef DISPLAY
-                    resetWindowLine();
-                #endif
-                cycles = 0;
-                setScanline(0, cpu);
-                setMode(V_BLANK, cpu);
-            }
-        }
-    }
+        }*/
 }

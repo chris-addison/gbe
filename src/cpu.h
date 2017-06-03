@@ -44,6 +44,7 @@ typedef struct {
     } registers;
     uint8 *CART_RAM;
     uint8 *CART_ROM;
+    uint32 screen_cycles;
     uint16 PC;
     uint16 SP;
     uint16 cycles;
