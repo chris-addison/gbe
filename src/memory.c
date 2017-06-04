@@ -6,6 +6,7 @@
     #include "display.h"
 #endif
 #include "joypad.h"
+#include "interrupts.h"
 #include <stdio.h>
 
 // Handle reads from IO registers
@@ -109,12 +110,15 @@ static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
         #ifdef DISPLAY
             case BG_PALETTE:
                 updateBackgroundColour(value);
+                cpu->MEM[address] = value;
                 break;
             case SP_PALETTE_0:
                 updateSpritePalette(0, value);
+                cpu->MEM[address] = value;
                 break;
             case SP_PALETTE_1:
                 updateSpritePalette(1, value);
+                cpu->MEM[address] = value;
                 break;           
         #endif
         // Masked writes
@@ -124,8 +128,11 @@ static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
             cpu->MEM[address] |= value & 0xF0;
             break;
         case STAT:
-            cpu->MEM[address] &= ~0b111;
-            cpu->MEM[address] |= value & 0b111;
+            cpu->MEM[address] &= 0x7;
+            cpu->MEM[address] |= value & 0xF8;
+            // if ((cpu->MEM[address] & 0x3) < 2 && cpu->MEM[LCDC] & 0x80) {
+            //     setInterruptFlag(INTR_STAT, cpu);
+            // }
             break;        
         case DIV:
             cpu->MEM[address] = 0;
@@ -154,9 +161,11 @@ static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
         // Everything else
         default:
             // If IO register doesn't have write permissions or isn't defined, do nothing
-            //cpu->MEM[address] = value;
-            //printf("Write to address %X\n", address);
-            //exit(0);
+            //if (address < NR_10 || address > LCDC) {
+                //cpu->MEM[address] = value;
+                //printf("Write to address %X\n", address);
+                //exit(0);
+            //}
             return;
     }
 }
