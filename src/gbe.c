@@ -40,10 +40,9 @@ int startEmulator(int argc, char *argv[]) {
 
 // Step the emulator one instruction.
 int cycleEmulator() {
-    bool continue_running = true;
     // Run single instruction loop
-    while (continue_running) {
-        if (cpu->wait == 0 && !cpu->halt) {
+    if (!cpu->halt) {
+        if (cpu->wait == 0) {
             // Execute instruction
             int errNum = executeCPU(cpu);
             if (errNum) {
@@ -51,13 +50,12 @@ int cycleEmulator() {
             }
             // Update the IME (Interrupt Master Enable). This allows it to be set at the correct offset.
             updateIME(cpu);
-            // Instruction complete return 0
-            continue_running = false;
+        } else {
+            cycleCPU(cpu);
         }
-        updateScreen(cpu);
-        checkInterrupts(cpu);
-        cycleCPU(cpu);
     }
+    updateScreen(cpu);
+    checkInterrupts(cpu);
     return 0;
 }
 

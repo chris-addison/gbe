@@ -12,7 +12,7 @@
 // Handle reads from IO registers
 static uint8 readIORegisters(uint16 address, cpu_state *cpu) {
     switch (address) {
-        // Redirected reads 
+        // Redirected reads
         case JOYPAD:
             return getJoypadState(cpu);
         // Masked reads
@@ -32,8 +32,8 @@ static uint8 readIORegisters(uint16 address, cpu_state *cpu) {
         case SYC:
         case SCANLINE:
         case SCROLL_X:
-        case SCROLL_Y:        
-        case LCDC:        
+        case SCROLL_Y:
+        case LCDC:
         case TMA:
         case TIMA:
         case DIV:
@@ -51,7 +51,7 @@ uint8 readByte(uint16 address, cpu_state *cpu) {
     if (address >= 0xFF00 && address < 0xFF80) {
         readIORegisters(address, cpu);
     }
-    if (cpu->cart_type == 0x00 || address < 0x4000 || address > 0xC000) {        
+    if (cpu->cart_type == 0x00 || address < 0x4000 || address > 0xC000) {
         return cpu->MEM[address];
     } else if (address < 0x8000) { //handle mbc here
         //get address in rom bank
@@ -119,7 +119,7 @@ static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
             case SP_PALETTE_1:
                 updateSpritePalette(1, value);
                 cpu->MEM[address] = value;
-                break;           
+                break;
         #endif
         // Masked writes
         case JOYPAD:
@@ -133,7 +133,7 @@ static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
             // if ((cpu->MEM[address] & 0x3) < 2 && cpu->MEM[LCDC] & 0x80) {
             //     setInterruptFlag(INTR_STAT, cpu);
             // }
-            break;        
+            break;
         case DIV:
             cpu->MEM[address] = 0;
             break;
@@ -151,7 +151,7 @@ static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
         case SCROLL_X:
         case SCROLL_Y:
         case LCDC:
-        case TAC:       
+        case TAC:
         case TMA:
         case TIMA:
         case SB:
