@@ -24,7 +24,7 @@ static bool displayActivated(cpu_state *cpu) {
 // Check to see if scanline equals the the LY Compare value. If equal set flag and fire
 // interrupt if enabled.
 static void updateCoincidenceFlag(cpu_state * cpu) {
-    if (readScanline(cpu) == cpu->MEM[SYC]) {
+    if (cpu->MEM[SCANLINE] == cpu->MEM[SYC]) {
         cpu->MEM[STAT] |= CONINCIDENCE_FLAG;
         // Fire interrupt if enabled
         if (cpu->MEM[STAT] & SCREEN_INTER_LYC) {
@@ -50,13 +50,14 @@ static void setScanline(uint8 scanline, cpu_state *cpu) {
 // Set the current screen mode in the STAT register in memory
 static void setMode(uint8 mode, cpu_state *cpu) {
     // Fetch current STAT and set the correct lower two bits
-    cpu->MEM[STAT] = (cpu->MEM[STAT] & ~0b11) | mode;
+    cpu->MEM[STAT] &= ~0b11;
+    cpu->MEM[STAT] |= mode & 0b11;
     // Check what interrupts for STAT are enabled and fire if switching into that mode
-    if (mode == H_BLANK && (cpu->MEM[STAT] & SCREEN_INTER_H_BLANK)) {
+    if (mode == H_BLANK && cpu->MEM[STAT] & SCREEN_INTER_H_BLANK) {
         setInterruptFlag(INTR_STAT, cpu);
-    } else if (mode == V_BLANK && (cpu->MEM[STAT] & SCREEN_INTER_V_BLANK)) {
+    } else if (mode == V_BLANK && cpu->MEM[STAT] & SCREEN_INTER_V_BLANK) {
         setInterruptFlag(INTR_STAT, cpu);
-    } else if (mode == OAM && (cpu->MEM[STAT] & SCREEN_INTER_OAM)) {
+    } else if (mode == OAM && cpu->MEM[STAT] & SCREEN_INTER_OAM) {
         setInterruptFlag(INTR_STAT, cpu);
     }
 }
@@ -72,7 +73,7 @@ void updateScreen(cpu_state *cpu) {
     if (displayActivated(cpu)) { // DISPLAY ENABLED
         // Update scanline
         cpu->MEM[SCANLINE] = cpu->screen_cycles / LCDC_LINE_CYCLES;
-        // Handle end of the screen 
+        // Handle end of the screen
         if (cpu->screen_cycles == LCDC_SCREEN_CYCLES) {
             cpu->screen_cycles = 0;
             // Set mode to be 0
@@ -81,7 +82,7 @@ void updateScreen(cpu_state *cpu) {
             cpu->MEM[SCANLINE] = 0;
 
             // Reset window line
-            #ifdef DISPLAY                
+            #ifdef DISPLAY
                 resetWindowLine();
             #endif
         // Handle V-blank
@@ -94,9 +95,9 @@ void updateScreen(cpu_state *cpu) {
 
             // Entering v-blank fires OAM interrupt if enabled
             if (cpu->MEM[STAT] & SCREEN_INTER_OAM) {
-                //TODO: Interrupt 
+                //TODO: Interrupt
             }
-            
+
             #ifdef DISPLAY
                 draw(cpu);
             #endif
@@ -111,14 +112,14 @@ void updateScreen(cpu_state *cpu) {
                 // TODO: check window and increment window line
                 #ifdef DISPLAY
                     loadScanline(cpu);
-                #endif                
+                #endif
             } else if (position == LCDC_MODE2_CYCLES) {
                 // Set mode to 3 (VRAM)
                 cpu->MEM[STAT] &= ~STAT_MODE_MASK;
                 cpu->MEM[STAT] |= VRAM;
 
                 // Reset window line
-                #ifdef DISPLAY                
+                #ifdef DISPLAY
                     resetWindowLine();
                 #endif
             } else if (position == LCDC_MODE2_CYCLES + LCDC_MODE3_CYCLES) {
@@ -139,7 +140,7 @@ void updateScreen(cpu_state *cpu) {
         // Set mode to 0
         cpu->MEM[STAT] &= ~STAT_MODE_MASK;
         // Set coincidence flag
-        cpu->MEM[STAT] |= CONINCIDENCE_FLAG;        
+        cpu->MEM[STAT] |= CONINCIDENCE_FLAG;
         // Still handle vblank
         if (cpu->screen_cycles == LCDC_SCREEN_CYCLES) {
             cpu->screen_cycles = 0;
@@ -150,7 +151,7 @@ void updateScreen(cpu_state *cpu) {
         }
 
         // Reset window line
-        #ifdef DISPLAY                
+        #ifdef DISPLAY
             resetWindowLine();
         #endif
     }
@@ -177,7 +178,7 @@ void updateScreen(cpu_state *cpu) {
                 if (cycles >= 204) {
                     incrementScanline(cpu);
                     //switch to vblank when the scanline hits 144
-                    if (readScanline(cpu) > 143) {
+                    if (cpu->MEM[SCANLINE] > 143) {
                         //write new status to the the STAT register
                         setMode(V_BLANK, cpu);
                         //set an interrupt flag
@@ -198,7 +199,7 @@ void updateScreen(cpu_state *cpu) {
                 if (cycles >= 204) {
                     incrementScanline(cpu);
                     //reset the scanline and switch the mode back to OAM
-                    if (readScanline(cpu) > 153) {
+                    if (cpu->MEM[SCANLINE] > 153) {
                         //reset the scanline back to 0
                         setScanline(0, cpu);
                         //write new status to the the STAT register
@@ -208,7 +209,7 @@ void updateScreen(cpu_state *cpu) {
                             loadTiles(cpu);
                         #endif
                     }
-                    cycles = 0; 
+                    cycles = 0;
                 }
                 break;
         }*/

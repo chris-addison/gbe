@@ -431,21 +431,19 @@ static void reti(uint8 opcode, cpu_state *cpu) {
     cpu->ime = true;
 }
 
-//enable interrupts after this instruction and the next one are finished
+// Enable interrupts 4 cycles after this instruction
 static void ei(uint8 opcode, cpu_state *cpu) {
-    //make sure interrupts aren't enabled and aren't changing
-    if (!cpu->ime && !cpu->imeCounter) {
-        cpu->imeCounter = 2;
-    }
+    // Disable interrupts for 4 cycles, then re-enable
+    cpu->ime = false;
+    cpu->ime_enable = true;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
-//disable interrupts after this instruction and the next one are finished
+// Disable interrupts immediately
 static void di(uint8 opcode, cpu_state *cpu) {
-    //make sure interrupts are enabled and not changing
-    if (cpu->ime && !cpu->imeCounter) {
-        cpu->imeCounter = 2;
-    }
+    // Interrupts are disabled immediately
+    cpu->ime = false;
+    cpu->ime_enable = false;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
