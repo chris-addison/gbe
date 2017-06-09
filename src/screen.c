@@ -5,9 +5,7 @@
 #include "screen.h"
 #include "memory.h"
 #include "interrupts.h"
-#ifdef DISPLAY
-    #include "display.h"
-#endif
+#include "display.h"
 #include <time.h>
 
 // Read the current scanline(LY) from 0xFF44
@@ -73,6 +71,7 @@ void updateScreen(cpu_state *cpu) {
     if (displayActivated(cpu)) { // DISPLAY ENABLED
         // Update scanline
         cpu->MEM[SCANLINE] = cpu->screen_cycles / LCDC_LINE_CYCLES;
+        printf("SCANLINE: %d\n", cpu->MEM[SCANLINE]);
         // Handle end of the screen
         if (cpu->screen_cycles == LCDC_SCREEN_CYCLES) {
             cpu->screen_cycles = 0;
@@ -82,9 +81,7 @@ void updateScreen(cpu_state *cpu) {
             cpu->MEM[SCANLINE] = 0;
 
             // Reset window line
-            #ifdef DISPLAY
-                resetWindowLine();
-            #endif
+            resetWindowLine();
         // Handle V-blank
         } else if (cpu->screen_cycles == LCDC_SCREEN_CYCLES * SCREEN_HEIGHT) {
             // Set mode to 1 (V-BLANK)
@@ -98,9 +95,7 @@ void updateScreen(cpu_state *cpu) {
                 //TODO: Interrupt
             }
 
-            #ifdef DISPLAY
-                draw(cpu);
-            #endif
+            draw(cpu);
         // Handle lines 0 to 143 (actually displayed lines)
         } else if (cpu->screen_cycles < SCREEN_HEIGHT * LCDC_LINE_CYCLES) {
             uint16 position = cpu->screen_cycles % LCDC_LINE_CYCLES;
@@ -110,18 +105,15 @@ void updateScreen(cpu_state *cpu) {
                 cpu->MEM[STAT] |= OAM;
 
                 // TODO: check window and increment window line
-                #ifdef DISPLAY
-                    loadScanline(cpu);
-                #endif
+                printf("increment scanline!\n");
+                loadScanline(cpu);
             } else if (position == LCDC_MODE2_CYCLES) {
                 // Set mode to 3 (VRAM)
                 cpu->MEM[STAT] &= ~STAT_MODE_MASK;
                 cpu->MEM[STAT] |= VRAM;
 
                 // Reset window line
-                #ifdef DISPLAY
-                    resetWindowLine();
-                #endif
+                resetWindowLine();
             } else if (position == LCDC_MODE2_CYCLES + LCDC_MODE3_CYCLES) {
                 // Set mode to 0 (H-BLANK)
                 cpu->MEM[STAT] &= ~STAT_MODE_MASK;
@@ -145,15 +137,11 @@ void updateScreen(cpu_state *cpu) {
         if (cpu->screen_cycles == LCDC_SCREEN_CYCLES) {
             cpu->screen_cycles = 0;
             setInterruptFlag(INTR_V_BLANK, cpu);
-            #ifdef DISPLAY
-                draw(cpu);
-            #endif
+            draw(cpu);
         }
 
         // Reset window line
-        #ifdef DISPLAY
-            resetWindowLine();
-        #endif
+        resetWindowLine();
     }
 
     /*uint8 screenMode = cpu->MEM[STAT] & 0b11; //grab last two bits for checking the screen mode

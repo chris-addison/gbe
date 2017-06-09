@@ -2,9 +2,7 @@
 #include "types.h"
 #include "cpu.h"
 #include "screen.h"
-#ifdef DISPLAY
-    #include "display.h"
-#endif
+#include "display.h"
 #include "joypad.h"
 #include "interrupts.h"
 #include <stdio.h>
@@ -107,20 +105,18 @@ static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
         case DMA:
             transferOAM(value, cpu);
             break;
-        #ifdef DISPLAY
-            case BG_PALETTE:
-                updateBackgroundColour(value);
-                cpu->MEM[address] = value;
-                break;
-            case SP_PALETTE_0:
-                updateSpritePalette(0, value);
-                cpu->MEM[address] = value;
-                break;
-            case SP_PALETTE_1:
-                updateSpritePalette(1, value);
-                cpu->MEM[address] = value;
-                break;
-        #endif
+        case BG_PALETTE:
+            updateBackgroundColour(value);
+            cpu->MEM[address] = value;
+            break;
+        case SP_PALETTE_0:
+            updateSpritePalette(0, value);
+            cpu->MEM[address] = value;
+            break;
+        case SP_PALETTE_1:
+            updateSpritePalette(1, value);
+            cpu->MEM[address] = value;
+            break;
         // Masked writes
         case JOYPAD:
             //TODO: replace this with a updateJoypad function
@@ -144,11 +140,6 @@ static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
         case INTERRUPTS_ENABLED:
         case WINDOW_X:
         case WINDOW_Y:
-        #ifndef DISPLAY
-            case SP_PALETTE_1:
-            case SP_PALETTE_0:
-            case BG_PALETTE:
-        #endif
         case SYC:
         case SCANLINE:
         case SCROLL_X:
