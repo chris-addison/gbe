@@ -18,7 +18,7 @@ static void initCPU(cpu_state *cpu) {
     cpu->RAM_enable = false;
     // Setup interrupts
     cpu->ime = false;
-    cpu->imeCounter = 0;
+    cpu->ime_enable = false;
     cpu->halt = false;
     cpu->halt_bug = false;
     // Setup startup values of registers

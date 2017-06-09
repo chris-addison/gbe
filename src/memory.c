@@ -130,9 +130,12 @@ static void writeIORegisters(uint16 address, uint8 value, cpu_state *cpu) {
         case STAT:
             cpu->MEM[address] &= 0x7;
             cpu->MEM[address] |= value & 0xF8;
-            // if ((cpu->MEM[address] & 0x3) < 2 && cpu->MEM[LCDC] & 0x80) {
-            //     setInterruptFlag(INTR_STAT, cpu);
-            // }
+
+            // Bug in grey GameBoy
+            // http://gbdev.gg8.se/wiki/articles/Video_Display#FF41_-_STAT_-_LCDC_Status_.28R.2FW.29
+            if ((cpu->MEM[address] & 0x3) < 2 && cpu->MEM[LCDC] & 0x80) {
+                setInterruptFlag(INTR_STAT, cpu);
+            }
             break;
         case DIV:
             cpu->MEM[address] = 0;

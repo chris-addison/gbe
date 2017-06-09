@@ -52,7 +52,6 @@ typedef struct {
     uint8 cart_type;
     uint8 mbc;
     uint8 wait;
-    uint8 imeCounter;
     bool halt;
     bool halt_bug;
     bool RAM_enable;
@@ -60,6 +59,7 @@ typedef struct {
     bool mbc1_mode;
     bool mbc1_small_ram;
     bool ime;
+    bool ime_enable;
 } cpu_state;
 
 // Create and return a new cpu state

@@ -10,27 +10,26 @@ uint16 timer_counter = 0;
 const uint16 TIMER_DURATION[] = {1024, 16, 64, 256};
 
 //set the ime (interrupt master enable)
-void updateIME(cpu_state *cpu) {
-    //ime must be set or reset after the instruction after EI or DI.
-    //by setting imeCounter to 2 with EI or DI this will set or reset
-    //the flag at the correct timing.
-    if (cpu->imeCounter > 0) {
-        cpu->imeCounter--;
-        if (cpu->imeCounter == 0) {
-            //toggle flag. EI and DI instructions must check flag state.
-            cpu->ime = !cpu->ime;
-        }
+bool updateIME(cpu_state *cpu) {
+    // Grab current state of ime
+    bool ime_state = cpu->ime;
+    if (cpu->ime_enable) {
+        // Toggle state
+        cpu->ime = true;
+        cpu->ime_enable = false;
     }
+    // Return active state of the IME (IME doesn't take effect until after the next instruction has started executing)
+    return ime_state;
 }
 
 //set interrupt flag
 void setInterruptFlag(uint8 flag, cpu_state *cpu) {
-    writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) | flag, cpu);
+    cpu->MEM[INTERRUPT_FLAGS] |= flag;
 }
 
 //clear interrupt flag
 void clearInterruptFlag(uint8 flag, cpu_state *cpu) {
-    writeByte(INTERRUPT_FLAGS, readByte(INTERRUPT_FLAGS, cpu) & ~flag, cpu);
+    cpu->MEM[INTERRUPT_FLAGS] &= ~flag;
 }
 
 // Save the PC, jump to interrupt handler, and reset the ime
@@ -75,19 +74,18 @@ static void interruptJoypad(cpu_state *cpu) {
 
 // Run timer
 static void cycleTimer(cpu_state *cpu) {
-    uint8 timerControl = readByte(TAC, cpu);
     // Run timer if enabled
-    if (readBit(2, &timerControl)) {
-        if (timer_counter >= TIMER_DURATION[timerControl & 0b11]) {
+    if (readBit(2, &cpu->MEM[TAC])) {
+        if (timer_counter >= TIMER_DURATION[cpu->MEM[TAC] & 0b11]) {
             timer_counter = 0;
-            if (readByte(TIMA, cpu) == 255) {
+            if (cpu->MEM[TIMA] == 255) {
                 // Load value from TMA register into TIMA register
-                writeByte(TIMA, readByte(TMA, cpu), cpu);
+                cpu->MEM[TIMA] = cpu->MEM[TMA];
                 // Set interrupt
                 setInterruptFlag(INTR_TIMER, cpu);
             } else {
                 // Increment the TIMA register
-                writeByte(TIMA, readByte(TIMA, cpu) + 1, cpu);
+                cpu->MEM[TIMA]++;
             }
         }
         timer_counter++;
@@ -102,18 +100,17 @@ static void cycleClock(cpu_state *cpu) {
     cycles_timer++;
 }
 
-// Return true if they are interrups enabled and set
+// Return all servicable interrupts (enabled and set)
 uint8 availableInterrupts(cpu_state *cpu) {
-    return readByte(INTERRUPT_FLAGS, cpu) & readByte(INTERRUPTS_ENABLED, cpu) & 0x1F;
+    return cpu->MEM[INTERRUPT_FLAGS] & cpu->MEM[INTERRUPTS_ENABLED] & 0x1F;
 }
 
 // Check interrupts and act on them
-void checkInterrupts(cpu_state *cpu) {
+void handleInterrupts(cpu_state *cpu, bool active_ime, uint8 interrupts) {
     cycleTimer(cpu);
     cycleClock(cpu);
     //printByte(readByte(INTERRUPT_FLAGS, cpu));
-    uint8 interrupts = availableInterrupts(cpu);
-    if (cpu->ime && interrupts) {
+    if (active_ime && interrupts) {
         if (interrupts & INTR_V_BLANK) {
             interruptVBlank(cpu);
         }
@@ -132,7 +129,5 @@ void checkInterrupts(cpu_state *cpu) {
             printf("interrupt joypad\n");
             interruptJoypad(cpu);
         }
-    } else if (cpu->halt && interrupts) {
-        cpu->halt = false;
     }
 }

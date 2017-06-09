@@ -14,47 +14,43 @@ uint16 cycles = 0;
 bool displayActive = true;
 uint8 displayActiveCounter = 0;
 
-//read the current scanline(LY) from 0xFF44
-static uint8 readScanline(cpu_state *cpu) {
-    return readByte(SCANLINE, cpu);
-}
-
 // Check to see if scanline equals the the LY Compare value. If equal set flag and fire
 // interrupt if enabled.
 static void updateCoincidenceFlag(cpu_state * cpu) {
-    if (readScanline(cpu) == readByte(SYC, cpu)) {
-        writeByte(STAT, readByte(STAT, cpu) | CONINCIDENCE_FLAG, cpu);
+    if (cpu->MEM[SCANLINE] == cpu->MEM[SYC]) {
+        cpu->MEM[STAT] |= CONINCIDENCE_FLAG;
         // Fire interrupt if enabled
-        if (readByte(STAT, cpu) & SCREEN_INTER_LYC) {
+        if (cpu->MEM[STAT] & SCREEN_INTER_LYC) {
             setInterruptFlag(INTR_STAT, cpu);
         }
     } else {
-        writeByte(STAT, readByte(STAT, cpu) & ~CONINCIDENCE_FLAG, cpu);
+        cpu->MEM[STAT] &= ~CONINCIDENCE_FLAG;
     }
 }
 
-//increment the current scanline(LY)
+// Increment the current scanline(LY)
 static void incrementScanline(cpu_state *cpu) {
-    writeByte(SCANLINE, readScanline(cpu) + 1, cpu);
+    cpu->MEM[SCANLINE]++;
     updateCoincidenceFlag(cpu);
 }
 
-//set the scanline(LY)
+// Set the scanline(LY)
 static void setScanline(uint8 scanline, cpu_state *cpu) {
-    writeByte(SCANLINE, scanline, cpu);
+    cpu->MEM[SCANLINE] = scanline;
     updateCoincidenceFlag(cpu);
 }
 
 // Set the current screen mode in the STAT register in memory
 static void setMode(uint8 mode, cpu_state *cpu) {
     // Fetch current STAT and set the correct lower two bits
-    writeByte(STAT, (readByte(STAT, cpu) & ~0b11) | mode, cpu);
+    cpu->MEM[STAT] &= ~0b11;
+    cpu->MEM[STAT] |= mode & 0b11;
     // Check what interrupts for STAT are enabled and fire if switching into that mode
-    if (mode == H_BLANK && readByte(STAT, cpu) & SCREEN_INTER_H_BLANK) {
+    if (mode == H_BLANK && cpu->MEM[STAT] & SCREEN_INTER_H_BLANK) {
         setInterruptFlag(INTR_STAT, cpu);
-    } else if (mode == V_BLANK && readByte(STAT, cpu) & SCREEN_INTER_V_BLANK) {
+    } else if (mode == V_BLANK && cpu->MEM[STAT] & SCREEN_INTER_V_BLANK) {
         setInterruptFlag(INTR_STAT, cpu);
-    } else if (mode == OAM && readByte(STAT, cpu) & SCREEN_INTER_OAM) {
+    } else if (mode == OAM && cpu->MEM[STAT] & SCREEN_INTER_OAM) {
         setInterruptFlag(INTR_STAT, cpu);
     }
 }
@@ -64,7 +60,7 @@ void updateScreen(cpu_state *cpu) {
     //Order and number of cycles ref: http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
     //TL;DR: flow is 143 * (OAM -> VRAM -> H_BLANK) -> 10 * V_BLANK
     if (displayActive) { // DISPLAY ENABLED
-        uint8 screenMode = readByte(STAT, cpu) & 0b11; //grab last two bits for checking the screen mode
+        uint8 screenMode = cpu->MEM[STAT] & 0b11; //grab last two bits for checking the screen mode
         cycles++;
         switch (screenMode) {
             case OAM:
@@ -89,7 +85,7 @@ void updateScreen(cpu_state *cpu) {
                 if (cycles >= 204) {
                     incrementScanline(cpu);
                     //switch to vblank when the scanline hits 144
-                    if (readScanline(cpu) > 143) {
+                    if (cpu->MEM[SCANLINE] > 143) {
                         //write new status to the the STAT register
                         setMode(V_BLANK, cpu);
                         //set an interrupt flag
@@ -115,7 +111,7 @@ void updateScreen(cpu_state *cpu) {
                 if (cycles >= 204) {
                     incrementScanline(cpu);
                     //reset the scanline and switch the mode back to OAM
-                    if (readScanline(cpu) > 153) {
+                    if (cpu->MEM[SCANLINE] > 153) {
                         //reset the scanline back to 0
                         setScanline(0, cpu);
                         //write new status to the the STAT register
