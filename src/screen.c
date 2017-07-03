@@ -14,9 +14,25 @@ static uint8 readScanline(cpu_state *cpu) {
 }
 
 // Return true if the display is active
-static bool displayActivated(cpu_state *cpu) {
+static bool displayEnabled(cpu_state *cpu) {
     // 7th bit of LCDC
     return readBit(7, &cpu->MEM[LCDC]);
+}
+
+// Check if a STAT interrupt should happen with the given STAT state
+static bool checkSTATInterrupt(uint8 stat) {
+    if ((stat & STAT_INTR_H_BLANK) && (stat & STAT_INTR_LYC)) {
+        return true;
+    }
+    uint8 mode = stat & STAT_MODE_MASK;
+    if (mode == H_BLANK) {
+        return (stat & STAT_INTR_H_BLANK);
+    } else if (mode == V_BLANK) {
+        return (stat & STAT_INTR_V_BLANK);
+    } else if (mode == OAM) {
+        return (stat & STAT_INTR_OAM);
+    }
+    return false;
 }
 
 // Check to see if scanline equals the the LY Compare value. If equal set flag and fire
@@ -25,7 +41,7 @@ static void updateCoincidenceFlag(cpu_state * cpu) {
     if (cpu->MEM[SCANLINE] == cpu->MEM[SYC]) {
         cpu->MEM[STAT] |= CONINCIDENCE_FLAG;
         // Fire interrupt if enabled
-        if (cpu->MEM[STAT] & SCREEN_INTER_LYC) {
+        if (cpu->MEM[STAT] & STAT_INTR_LYC) {
             setInterruptFlag(INTR_STAT, cpu);
         }
     } else {
@@ -48,16 +64,8 @@ static void setScanline(uint8 scanline, cpu_state *cpu) {
 // Set the current screen mode in the STAT register in memory
 static void setMode(uint8 mode, cpu_state *cpu) {
     // Fetch current STAT and set the correct lower two bits
-    cpu->MEM[STAT] &= ~0b11;
-    cpu->MEM[STAT] |= mode & 0b11;
-    // Check what interrupts for STAT are enabled and fire if switching into that mode
-    if (mode == H_BLANK && cpu->MEM[STAT] & SCREEN_INTER_H_BLANK) {
-        setInterruptFlag(INTR_STAT, cpu);
-    } else if (mode == V_BLANK && cpu->MEM[STAT] & SCREEN_INTER_V_BLANK) {
-        setInterruptFlag(INTR_STAT, cpu);
-    } else if (mode == OAM && cpu->MEM[STAT] & SCREEN_INTER_OAM) {
-        setInterruptFlag(INTR_STAT, cpu);
-    }
+    cpu->MEM[STAT] &= ~STAT_MODE_MASK;
+    cpu->MEM[STAT] |= mode & STAT_MODE_MASK;
 }
 
 // Timing and control flow taking from SameBoy, which is derived itself from GiiBiiAdvance
@@ -68,137 +76,40 @@ static void setMode(uint8 mode, cpu_state *cpu) {
 void updateScreen(cpu_state *cpu) {
     // Cycle the screen
     cpu->screen_cycles++;
-    if (displayActivated(cpu)) { // DISPLAY ENABLED
-        // Update scanline
-        cpu->MEM[SCANLINE] = cpu->screen_cycles / LCDC_LINE_CYCLES;
-        printf("SCANLINE: %d\n", cpu->MEM[SCANLINE]);
-        // Handle end of the screen
-        if (cpu->screen_cycles == LCDC_SCREEN_CYCLES) {
-            cpu->screen_cycles = 0;
-            // Set mode to be 0
-            cpu->MEM[STAT] &= ~STAT_MODE_MASK;
-            // Set scanline to 0
-            cpu->MEM[SCANLINE] = 0;
-
-            // Reset window line
-            resetWindowLine();
-        // Handle V-blank
-        } else if (cpu->screen_cycles == LCDC_SCREEN_CYCLES * SCREEN_HEIGHT) {
-            // Set mode to 1 (V-BLANK)
-            cpu->MEM[STAT] &= ~STAT_MODE_MASK;
-            cpu->MEM[STAT] |= V_BLANK;
-            // Set v blank interrupt flag
-            setInterruptFlag(INTR_V_BLANK, cpu);
-
-            // Entering v-blank fires OAM interrupt if enabled
-            if (cpu->MEM[STAT] & SCREEN_INTER_OAM) {
-                //TODO: Interrupt
-            }
-
-            draw(cpu);
-        // Handle lines 0 to 143 (actually displayed lines)
-        } else if (cpu->screen_cycles < SCREEN_HEIGHT * LCDC_LINE_CYCLES) {
-            uint16 position = cpu->screen_cycles % LCDC_LINE_CYCLES;
-            if (position == 0) {
-                // Set mode to 2 (OAM)
-                cpu->MEM[STAT] &= ~STAT_MODE_MASK;
-                cpu->MEM[STAT] |= OAM;
-
-                // TODO: check window and increment window line
-                printf("increment scanline!\n");
+    // LCDC behavior different for display on vs off
+    if (displayEnabled(cpu)) {
+        uint16 cycles = cpu->screen_cycles % LCDC_LINE_CYCLES;
+        if (cpu->MEM[SCANLINE] < SCREEN_HEIGHT - 1) {
+            if (cpu->screen_cycles > 0 && cycles == 0) {
+                incrementScanline(cpu);
+            } else if (cycles == LCDC_OAM_CYCLES) {
+                setMode(VRAM, cpu);
+            } else if (cycles == LCDC_OAM_CYCLES + LCDC_VRAM_CYCLES) {
+                setMode(H_BLANK, cpu);
+            } else if (cycles == LCDC_OAM_CYCLES + LCDC_VRAM_CYCLES + LCDC_H_BLANK_CYCLES) {
+                setMode(OAM, cpu);
                 loadScanline(cpu);
-            } else if (position == LCDC_MODE2_CYCLES) {
-                // Set mode to 3 (VRAM)
-                cpu->MEM[STAT] &= ~STAT_MODE_MASK;
-                cpu->MEM[STAT] |= VRAM;
-
-                // Reset window line
-                resetWindowLine();
-            } else if (position == LCDC_MODE2_CYCLES + LCDC_MODE3_CYCLES) {
-                // Set mode to 0 (H-BLANK)
-                cpu->MEM[STAT] &= ~STAT_MODE_MASK;
             }
-        // Handle line 153
-        } else if (cpu->screen_cycles >= (SCREEN_LINES - 1) * LCDC_LINE_CYCLES) {
-            cpu->MEM[SCANLINE] = 0;
-        // Handle lines 144 to 152
+        } else if (cpu->MEM[SCANLINE] == SCREEN_HEIGHT - 1) {
+            draw(cpu);
         }
-
-        updateCoincidenceFlag(cpu);
-
-    } else { // DISPLAY DISABLED
-        // Keep scanline at 0
+    } else {
+        // Reset scanline
         cpu->MEM[SCANLINE] = 0;
+
         // Set mode to 0
         cpu->MEM[STAT] &= ~STAT_MODE_MASK;
-        // Set coincidence flag
-        cpu->MEM[STAT] |= CONINCIDENCE_FLAG;
-        // Still handle vblank
-        if (cpu->screen_cycles == LCDC_SCREEN_CYCLES) {
-            cpu->screen_cycles = 0;
+
+        // Still handle v_blank when display is disabled
+        if (cpu->screen_cycles >= LCDC_SCREEN_CYCLES) {
+            cpu->screen_cycles -= LCDC_SCREEN_CYCLES;
             setInterruptFlag(INTR_V_BLANK, cpu);
             draw(cpu);
         }
 
         // Reset window line
-        resetWindowLine();
+        cpu->window_line = 0xFF;
     }
 
-    /*uint8 screenMode = cpu->MEM[STAT] & 0b11; //grab last two bits for checking the screen mode
-        switch (screenMode) {
-            case OAM:
-                if (cycles >= 80) {
-                    setMode(VRAM, cpu);
-                    cycles = 0;
-                }
-                break;
-            case VRAM:
-                if (cycles >= 172) {
-                    // Load scanline during VRAM
-                    #ifdef DISPLAY
-                        loadScanline(cpu);
-                    #endif
-                    setMode(H_BLANK, cpu);
-                    cycles = 0;
-                }
-                break;
-            case H_BLANK:
-                if (cycles >= 204) {
-                    incrementScanline(cpu);
-                    //switch to vblank when the scanline hits 144
-                    if (cpu->MEM[SCANLINE] > 143) {
-                        //write new status to the the STAT register
-                        setMode(V_BLANK, cpu);
-                        //set an interrupt flag
-                        setInterruptFlag(INTR_V_BLANK, cpu);
-                        // Draw the frame at beginning of v blank.
-                        // Only display if correct bit is set. Ths can only be togged during V Blank
-                        #ifdef DISPLAY
-                            resetWindowLine();
-                            draw(cpu);
-                        #endif
-                    } else {
-                        setMode(OAM, cpu);
-                    }
-                    cycles = 0;
-                }
-                break;
-            case V_BLANK:
-                if (cycles >= 204) {
-                    incrementScanline(cpu);
-                    //reset the scanline and switch the mode back to OAM
-                    if (cpu->MEM[SCANLINE] > 153) {
-                        //reset the scanline back to 0
-                        setScanline(0, cpu);
-                        //write new status to the the STAT register
-                        setMode(OAM, cpu);
-                        //load tiles as V Blank is now over
-                        #ifdef DISPLAY
-                            loadTiles(cpu);
-                        #endif
-                    }
-                    cycles = 0;
-                }
-                break;
-        }*/
+
 }

@@ -22,6 +22,7 @@ static void initCPU(cpu_state *cpu) {
     cpu->screen_cycles = 0;
     cpu->halt = false;
     cpu->halt_bug = false;
+    cpu->window_line = 0;
     // Setup startup values of registers
     cpu->registers.AF = 0x01B0;
     cpu->registers.BC = 0x0013;

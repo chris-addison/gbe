@@ -53,6 +53,7 @@ typedef struct {
     uint8 cart_type;
     uint8 mbc;
     uint8 wait;
+    uint8 window_line;
     bool halt;
     bool halt_bug;
     bool RAM_enable;

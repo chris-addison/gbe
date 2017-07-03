@@ -19,15 +19,15 @@ extern void updateScreen(cpu_state *cpu);
 #define CONINCIDENCE_FLAG   0b100
 
 // Screen interrupt flags
-#define SCREEN_INTER_H_BLANK    0b1000
-#define SCREEN_INTER_V_BLANK    0b10000
-#define SCREEN_INTER_OAM        0b100000
-#define SCREEN_INTER_LYC        0b1000000
+#define STAT_INTR_H_BLANK   0b1000
+#define STAT_INTR_V_BLANK   0b10000
+#define STAT_INTR_OAM       0b100000
+#define STAT_INTR_LYC       0b1000000
 
 // LCDC mode lengths in cycles
-#define LCDC_MODE0_CYCLES   172
-#define LCDC_MODE2_CYCLES   80
-#define LCDC_MODE3_CYCLES   204
+#define LCDC_H_BLANK_CYCLES 204
+#define LCDC_OAM_CYCLES     80
+#define LCDC_VRAM_CYCLES    172
 #define LCDC_LINE_CYCLES    456
 #define LCDC_SCREEN_CYCLES  70224
 
