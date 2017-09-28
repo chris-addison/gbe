@@ -8,7 +8,7 @@
 extern void printByte(uint8 byte);
 extern void printByteSigned(int8 byte);
 extern void printShort(uint16 twoBytes);
-extern void printInstruction(bool showPC, uint16 PC, cpu_state *cpu);
-extern void printInstructionToFile(uint16 PC, FILE *file, cpu_state *cpu);
+extern void printInstruction(bool showPC, uint16 PC, Cpu *cpu);
+extern void printInstructionToFile(uint16 PC, FILE *file, Cpu *cpu);
 
 #endif /* COMMON_H */

@@ -10,7 +10,7 @@ SDL 		=	`sdl2-config --cflags --libs`
 DEFINES		=
 
 # Common object to build and include
-COMMON		=	gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o joypad.o
+COMMON		=	gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o mbc.o joypad.o
 DEBUG 		=	debug.o
 DISPLAY 	= 	display.o
 
@@ -82,6 +82,9 @@ memory.o: $(DIRECTORY)memory.c $(DIRECTORY)memory.h
 
 common.o: $(DIRECTORY)common.c $(DIRECTORY)common.h
 	$(CC) $(FLAGS) -c $(DIRECTORY)common.c $(DEFINES)
+
+mbc.o: $(DIRECTORY)mbc.c $(DIRECTORY)mbc.h
+	$(CC) $(FLAGS) -c $(DIRECTORY)mbc.c $(DEFINES)
 
 display.o: $(DIRECTORY)display.c $(DIRECTORY)display.h
 	$(CC) $(FLAGS) -c $(DIRECTORY)display.c $(DEFINES)

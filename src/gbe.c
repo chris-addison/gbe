@@ -11,7 +11,7 @@
 #include "joypad.h"
 #include <stdlib.h>
 
-cpu_state *cpu;
+Cpu *cpu;
 
 int startEmulator(int argc, char *argv[]) {
     // Catch case when no file provided
@@ -25,9 +25,6 @@ int startEmulator(int argc, char *argv[]) {
 
     // Set up cpu
     cpu = createCPU();
-
-    // Load cartridge
-    cartridgeLoad(cpu, rom);
 
     // Read and print cartridge info and setup memory banks
     cartridgeInfo(cpu, rom);
@@ -78,7 +75,9 @@ void emulatorInterrupt(uint32 interruptFlag) {
 
 void stopEmulator() {
     //free cpu, cartridge at end
-    free(cpu->CART_ROM);
-    free(cpu->CART_RAM);
+    free(cpu->memory.ram);
+    free(cpu->memory.ram);
+    free(cpu->memory.wram);
+    free(cpu->memory.vram);
     free(cpu);
 }

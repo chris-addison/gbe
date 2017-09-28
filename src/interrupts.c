@@ -10,7 +10,7 @@ uint16 timer_counter = 0;
 const uint16 TIMER_DURATION[] = {1024, 16, 64, 256};
 
 //set the ime (interrupt master enable)
-bool updateIME(cpu_state *cpu) {
+bool updateIME(Cpu *cpu) {
     // Grab current state of ime
     bool ime_state = cpu->ime;
     if (cpu->ime_enable) {
@@ -23,17 +23,17 @@ bool updateIME(cpu_state *cpu) {
 }
 
 //set interrupt flag
-void setInterruptFlag(uint8 flag, cpu_state *cpu) {
-    cpu->MEM[INTERRUPT_FLAGS] |= flag;
+void setInterruptFlag(uint8 flag, Cpu *cpu) {
+    cpu->memory.io[INTERRUPT_FLAGS - IO_BASE] |= flag;
 }
 
 //clear interrupt flag
-void clearInterruptFlag(uint8 flag, cpu_state *cpu) {
-    cpu->MEM[INTERRUPT_FLAGS] &= ~flag;
+void clearInterruptFlag(uint8 flag, Cpu *cpu) {
+    cpu->memory.io[INTERRUPT_FLAGS - IO_BASE] &= ~flag;
 }
 
 // Save the PC, jump to interrupt handler, and reset the ime
-static void interruptVBlank(cpu_state *cpu) {
+static void interruptVBlank(Cpu *cpu) {
     clearInterruptFlag(INTR_V_BLANK, cpu);
     cpu->halt = false;
     cpu->ime = false;
@@ -43,7 +43,7 @@ static void interruptVBlank(cpu_state *cpu) {
 }
 
 // Save the PC, just ot interrupt handler, and reset ime
-static void interruptSTAT(cpu_state *cpu) {
+static void interruptSTAT(Cpu *cpu) {
     clearInterruptFlag(INTR_STAT, cpu);
     cpu->halt = false;
     cpu->ime = false;
@@ -53,7 +53,7 @@ static void interruptSTAT(cpu_state *cpu) {
 }
 
 // Save the PC, just ot interrupt handler, and reset ime
-static void interruptTimer(cpu_state *cpu) {
+static void interruptTimer(Cpu *cpu) {
     clearInterruptFlag(INTR_TIMER, cpu);
     cpu->halt = false;
     cpu->ime = false;
@@ -63,7 +63,7 @@ static void interruptTimer(cpu_state *cpu) {
 }
 
 // Save the PC, just ot interrupt handler, and reset ime
-static void interruptJoypad(cpu_state *cpu) {
+static void interruptJoypad(Cpu *cpu) {
     clearInterruptFlag(INTR_JOYPAD, cpu);
     cpu->halt = false;
     cpu->ime = false;
@@ -73,19 +73,19 @@ static void interruptJoypad(cpu_state *cpu) {
 }
 
 // Run timer
-static void cycleTimer(cpu_state *cpu) {
+static void cycleTimer(Cpu *cpu) {
     // Run timer if enabled
-    if (readBit(2, &cpu->MEM[TAC])) {
-        if (timer_counter >= TIMER_DURATION[cpu->MEM[TAC] & 0b11]) {
+    if (readBit(2, &cpu->memory.io[TAC - IO_BASE])) {
+        if (timer_counter >= TIMER_DURATION[cpu->memory.io[TAC - IO_BASE] & 0b11]) {
             timer_counter = 0;
-            if (cpu->MEM[TIMA] == 255) {
+            if (cpu->memory.io[TIMA - IO_BASE] == 255) {
                 // Load value from TMA register into TIMA register
-                cpu->MEM[TIMA] = cpu->MEM[TMA];
+                cpu->memory.io[TIMA - IO_BASE] = cpu->memory.io[TMA - IO_BASE];
                 // Set interrupt
                 setInterruptFlag(INTR_TIMER, cpu);
             } else {
                 // Increment the TIMA register
-                cpu->MEM[TIMA]++;
+                cpu->memory.io[TIMA - IO_BASE]++;
             }
         }
         timer_counter++;
@@ -93,20 +93,20 @@ static void cycleTimer(cpu_state *cpu) {
 }
 
 // Cycle the clock for DIV
-static void cycleClock(cpu_state *cpu) {
+static void cycleClock(Cpu *cpu) {
     if (cycles_timer == 255) {
-        cpu->MEM[DIV] += 1;
+        cpu->memory.io[DIV - IO_BASE]++;
     }
     cycles_timer++;
 }
 
 // Return all servicable interrupts (enabled and set)
-uint8 availableInterrupts(cpu_state *cpu) {
-    return cpu->MEM[INTERRUPT_FLAGS] & cpu->MEM[INTERRUPTS_ENABLED] & 0x1F;
+uint8 availableInterrupts(Cpu *cpu) {
+    return cpu->memory.io[INTERRUPT_FLAGS - IO_BASE] & cpu->memory.ie & 0x1F;
 }
 
 // Check interrupts and act on them
-void handleInterrupts(cpu_state *cpu, bool active_ime, uint8 interrupts) {
+void handleInterrupts(Cpu *cpu, bool active_ime, uint8 interrupts) {
     cycleTimer(cpu);
     cycleClock(cpu);
     //printByte(readByte(INTERRUPT_FLAGS, cpu));

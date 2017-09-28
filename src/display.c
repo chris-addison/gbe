@@ -1,8 +1,8 @@
+#include <stdio.h>
 #include "types.h"
 #include "memory.h"
 #include "display.h"
 #include "window.h"
-#include "stdio.h"
 
 const uint8 COLOURS[] = {0xFF, 0xC0, 0x60, 0x00};
 uint8 backgroundColourOffset[] = {0, 1, 2, 3};
@@ -37,8 +37,8 @@ void updateSpritePalette(uint8 palette, uint8 value) {
 }
 
 // Load all tiles. 384 in total as set 0 overlaps set 1 by 128 tiles.
-void loadTiles(cpu_state *cpu) {
-    uint8 *vram = cpu->MEM + 0x8000;
+void loadTiles(Cpu *cpu) {
+    uint8 *vram = cpu->memory.vramBank;
     for (int tileNum = 0; tileNum < 384; tileNum++) {
         for (int y = 0; y < 8; y++) {
             uint8 byteLow = *(vram + 2*y + tileNum*16);
@@ -53,18 +53,19 @@ void loadTiles(cpu_state *cpu) {
 }
 
 // Load Background into framebuffer
-static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
+static void loadBackgroundLine(uint8 scanLine, bool tileSet, Cpu *cpu) {
     // Check if background enabled
-    if (readBit(0, &cpu->MEM[LCDC])) {
+    if (readBit(0, &cpu->memory.io[LCDC - IO_BASE])) {
         // Select map location
-        uint16 mapLocation = (readBit(3, &cpu->MEM[LCDC])) ? 0x9C00 : 0x9800;
+        uint16 mapLocation = (readBit(3, &cpu->memory.io[LCDC - IO_BASE])) ? BG_MAP_DATA2_BASE : BG_MAP_DATA1_BASE;
+        mapLocation -= VRAM_BASE;
         // Draw tileset onto the window
         // Wrap the y offset at 32 to wrap the background vertically. Map is 32x32. Same for xOffset below.
-        uint16 yOffset = (((scanLine + cpu->MEM[SCROLL_Y]) >> 3) % 32) << 5;
-        uint16 xOffset = (cpu->MEM[SCROLL_X] >> 3) % 32;
-        short x = cpu->MEM[SCROLL_X] % 8;
-        short y = (scanLine + cpu->MEM[SCROLL_Y]) % 8;
-        uint16 tile = cpu->MEM[mapLocation + xOffset + yOffset];
+        uint16 yOffset = (((scanLine + cpu->memory.io[SCROLL_Y - IO_BASE]) >> 3) % 32) << 5;
+        uint16 xOffset = (cpu->memory.io[SCROLL_X - IO_BASE] >> 3) % 32;
+        short x = cpu->memory.io[SCROLL_X - IO_BASE] % 8;
+        short y = (scanLine + cpu->memory.io[SCROLL_Y - IO_BASE]) % 8;
+        uint16 tile = cpu->memory.vramBank[mapLocation + xOffset + yOffset];
         // Tile set 0 is numbered -128 to 128. In tiles array it takes index 128 to 383.
         if (!tileSet) {
             tile = ((int8) tile) + 256;
@@ -84,7 +85,7 @@ static void loadBackgroundLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
             if (x == 8) {
                 x = 0;
                 xOffset = (xOffset + 1) % 32; // Wrap the x offset at 32 to wrap background horizonally. See above.
-                tile = cpu->MEM[mapLocation + xOffset + yOffset];
+                tile = cpu->memory.vramBank[mapLocation + xOffset + yOffset];
                 // Tile set 0 is numbered -128 to 128. In tiles array it takes index 128 to 383.
                 if (!tileSet) {
                     tile = ((int8) tile) + 256;
@@ -113,22 +114,23 @@ void resetWindowLine() {
 }
 
 // Load window into frameBuffer
-static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
+static void loadWindowLine(uint8 scanLine, bool tileSet, Cpu *cpu) {
     // Check if window is enabled
-    if (readBit(5, &cpu->MEM[LCDC])) {
-        int16 windowX = cpu->MEM[WINDOW_X] - 7;
-        uint8 windowY = cpu->MEM[WINDOW_Y];
+    if (readBit(5, &cpu->memory.io[LCDC - IO_BASE])) {
+        int16 windowX = cpu->memory.io[WINDOW_X - IO_BASE] - 7;
+        uint8 windowY = cpu->memory.io[WINDOW_Y - IO_BASE];
         // Skip line if the window is below, or off screen
         if (scanLine < windowY || windowX > 159 || windowY > 143) {
             return;
         }
-        uint16 mapLocation = (readBit(6, &cpu->MEM[LCDC])) ? 0x9C00 : 0x9800;
+        uint16 mapLocation = (readBit(6, &cpu->memory.io[LCDC - IO_BASE])) ? BG_MAP_DATA2_BASE : BG_MAP_DATA1_BASE;
+        mapLocation -= VRAM_BASE;
         // Draw tileset onto the window
         uint16 xOffset = windowX >> 3;
         uint16 yOffset = (display_window_line >> 3) << 5;
         short x = 0;
         short y = display_window_line % 8;
-        uint16 tile = cpu->MEM[mapLocation + xOffset + yOffset];
+        uint16 tile = cpu->memory.vramBank[mapLocation + xOffset + yOffset];
         // Tile set 0 is numbered -128 to 128. In tiles array it takes index 128 to 383.
         if (!tileSet) {
             tile = ((int8) tile) + 256;
@@ -147,7 +149,7 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
             if (x == 8) {
                 x = 0;
                 xOffset += 1;
-                tile = cpu->MEM[mapLocation + xOffset + yOffset];
+                tile = cpu->memory.vramBank[mapLocation + xOffset + yOffset];
                 // Tile set 0 is numbered -128 to 128. In tiles array it takes index 128 to 383.
                 if (!tileSet) {
                     tile = ((int8) tile) + 256;
@@ -159,25 +161,25 @@ static void loadWindowLine(uint8 scanLine, bool tileSet, cpu_state *cpu) {
 }
 
 // Add spites onto the current scanline in framebuffer
-static void loadSpriteLine(uint8 scanLine, cpu_state *cpu) {
+static void loadSpriteLine(uint8 scanLine, Cpu *cpu) {
     // Check if sprites enabled
-    if (readBit(1, &cpu->MEM[LCDC])) {
+    if (readBit(1, &cpu->memory.io[LCDC - IO_BASE])) {
         // Check if 8 or 16 pixels high
-        bool sprite8x16 = (readBit(2, &cpu->MEM[LCDC]));
+        bool sprite8x16 = (readBit(2, &cpu->memory.io[LCDC - IO_BASE]));
         // Iterate through all sprites data in OAM
         for (uint8 sprite = 0; sprite < 40; sprite++) {
             // 4 bytes per sprite data.
             // First byte is y, second is x, third is title number, fourth is attributes
-            uint16 spriteOffset = 0xFE00 + (sprite * 4);
+            uint16 spriteOffset = sprite * 4;
 
             // y coord. Offset by -16
-            int16 spriteY = cpu->MEM[spriteOffset] - 16;
+            int16 spriteY = cpu->memory.oam[spriteOffset] - 16;
             // x coord. Offset by -8
-            int16 spriteX = cpu->MEM[spriteOffset + 1] - 8;
+            int16 spriteX = cpu->memory.oam[spriteOffset + 1] - 8;
             // Tile number
-            uint8 tile = cpu->MEM[spriteOffset + 2];
+            uint8 tile = cpu->memory.oam[spriteOffset + 2];
             // Attributes
-            uint8 attributes = cpu->MEM[spriteOffset + 3];
+            uint8 attributes = cpu->memory.oam[spriteOffset + 3];
 
             // Get attributes
             bool flipX = readBit(5, &attributes);
@@ -235,16 +237,16 @@ static void loadSpriteLine(uint8 scanLine, cpu_state *cpu) {
 }
 
 // Load scanline into the frame buffer
-void loadScanline(cpu_state *cpu) {
-    uint8 scanLine = cpu->MEM[SCANLINE];
-    bool tileSet = readBit(4, &cpu->MEM[LCDC]);
+void loadScanline(Cpu *cpu) {
+    uint8 scanLine = cpu->memory.io[SCANLINE - IO_BASE];
+    bool tileSet = readBit(4, &cpu->memory.io[LCDC - IO_BASE]);
     loadBackgroundLine(scanLine, tileSet, cpu);
     loadWindowLine(scanLine, tileSet, cpu);
     loadSpriteLine(scanLine, cpu);
 }
 
 // Draw framebuffer to screen
-void draw(cpu_state *cpu) {
+void draw(Cpu *cpu) {
     //loadTiles(cpu);
     //for (uint8 i = 0; i < DISPLAY_HEIGHT; i++) {
         //loadScanline(i, cpu);

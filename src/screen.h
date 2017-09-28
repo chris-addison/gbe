@@ -3,7 +3,7 @@
 
 #include "cpu.h"
 
-extern void updateScreen(cpu_state *cpu);
+extern void updateScreen(Cpu *cpu);
 
 // Screen constants
 #define H_BLANK             0b000

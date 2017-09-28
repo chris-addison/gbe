@@ -8,24 +8,24 @@
 #include "cb_opcodes.c"
 
 //read one unsigned byte from the PC
-static uint8 oneByte(cpu_state *cpu) {
+static uint8 oneByte(Cpu *cpu) {
     return readNextByte(cpu);
 }
 
 //read one signed byte from the PC
-static int8 oneByteSigned(cpu_state *cpu) {
+static int8 oneByteSigned(Cpu *cpu) {
     return (int8)readNextByte(cpu);
 }
 
 //read a short from memory
-static uint16 twoBytes(cpu_state *cpu) {
+static uint16 twoBytes(Cpu *cpu) {
     uint16 lsb = (uint16)readNextByte(cpu); //read least significant byte first
     uint16 msb = ((uint16)readNextByte(cpu)) << 8; //then read most significant byte
     return lsb | msb;
 }
 
 //Halt the cpu until there is a interrupt
-static void halt(uint8 opcode, cpu_state *cpu) {
+static void halt(uint8 opcode, Cpu *cpu) {
     // Halt the cpu
     cpu->halt = true;
     // If interrupts disabled, but there are servicable interrupts handle halt bug case
@@ -38,7 +38,7 @@ static void halt(uint8 opcode, cpu_state *cpu) {
 }
 
 //compare instruction
-static void cp(uint8 b, uint8 opcode, cpu_state *cpu) {
+static void cp(uint8 b, uint8 opcode, Cpu *cpu) {
     uint8 a = cpu->registers.A;
     //set flags
     (a - b == 0) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
@@ -53,7 +53,7 @@ static void cp(uint8 b, uint8 opcode, cpu_state *cpu) {
 }
 
 //set the carry flag
-static void scf(uint8 opcode, cpu_state *cpu) {
+static void scf(uint8 opcode, Cpu *cpu) {
     //set carry flag
     setFlag(CF, cpu);
     //reset negative flag
@@ -65,7 +65,7 @@ static void scf(uint8 opcode, cpu_state *cpu) {
 }
 
 //complement the carry flag
-static void ccf(uint8 opcode, cpu_state *cpu) {
+static void ccf(uint8 opcode, Cpu *cpu) {
     //complement the state of the carry flag.
     (readFlag(CF, cpu)) ? clearFlag(CF, cpu) : setFlag(CF, cpu);
     //reset negative flag
@@ -77,7 +77,7 @@ static void ccf(uint8 opcode, cpu_state *cpu) {
 }
 
 //jump to a 16bit address if condition is set
-static void jp_c(bool set, uint16 address, uint8 opcode, cpu_state *cpu) {
+static void jp_c(bool set, uint16 address, uint8 opcode, Cpu *cpu) {
     if (set) {
         cpu->PC = address;
         cpu->wait = get_opcode(opcode).cyclesMax;
@@ -88,7 +88,7 @@ static void jp_c(bool set, uint16 address, uint8 opcode, cpu_state *cpu) {
 }
 
 //jump relative to PC if condition is met
-static void jr_c(bool set, int8 address, uint8 opcode, cpu_state *cpu) {
+static void jr_c(bool set, int8 address, uint8 opcode, Cpu *cpu) {
     if (set) {
         cpu->PC += address;
         cpu->wait = get_opcode(opcode).cyclesMax;
@@ -99,59 +99,59 @@ static void jr_c(bool set, int8 address, uint8 opcode, cpu_state *cpu) {
 }
 
 //load 8 bit value into some register
-static void ld_8(uint8 value, uint8 *reg, uint8 opcode, cpu_state *cpu) {
+static void ld_8(uint8 value, uint8 *reg, uint8 opcode, Cpu *cpu) {
     *reg = value;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //load 8 bit value into some address in memory
-static void ld_8_m(uint8 value, uint16 address, uint8 opcode, cpu_state *cpu) {
+static void ld_8_m(uint8 value, uint16 address, uint8 opcode, Cpu *cpu) {
     writeByte(address, value, cpu);
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //load 8 bit value into a register from some address in memory and increment the value in the HL register
-static void ldi(uint8 opcode, cpu_state *cpu) {
+static void ldi(uint8 opcode, Cpu *cpu) {
     cpu->registers.A = readByte(cpu->registers.HL, cpu);
     cpu->registers.HL++;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //load 8 bit value from a register into some address in memory and increment the value in the HL register
-static void ldi_m(uint8 opcode, cpu_state *cpu) {
+static void ldi_m(uint8 opcode, Cpu *cpu) {
     writeByte(cpu->registers.HL, cpu->registers.A, cpu);
     cpu->registers.HL++;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //load 8 bit value into a register from some address in memory and decrement the value in the HL register
-static void ldd(uint8 opcode, cpu_state *cpu) {
+static void ldd(uint8 opcode, Cpu *cpu) {
     cpu->registers.A = readByte(cpu->registers.HL, cpu);
     cpu->registers.HL--;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //load 8 bit value from a register into some address in memory and decrement the value in the HL register
-static void ldd_m(uint8 opcode, cpu_state *cpu) {
+static void ldd_m(uint8 opcode, Cpu *cpu) {
     writeByte(cpu->registers.HL, cpu->registers.A, cpu);
     cpu->registers.HL--;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //load 16 bit value into some destination register
-static void ld_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
+static void ld_16(uint16 value, uint16 *reg, uint8 opcode, Cpu *cpu) {
     *reg = value;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //load 16 bit value into some addres in memory
-static void ld_16_m(uint16 value, uint16 address, uint8 opcode, cpu_state *cpu) {
+static void ld_16_m(uint16 value, uint16 address, uint8 opcode, Cpu *cpu) {
     writeShort(address, value, cpu);
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //increment a byte in a register
-static void inc_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
+static void inc_8(uint8 *reg, uint8 opcode, Cpu *cpu) {
     //set or reset zero flag based on whether result is zero
     ((uint8)(*reg + 1)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //reset negative flag
@@ -163,7 +163,7 @@ static void inc_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
 }
 
 //increment a byte at the memory location stored in HL
-static void inc_8_m(uint8 opcode, cpu_state *cpu) {
+static void inc_8_m(uint8 opcode, Cpu *cpu) {
     //set or reset zero flag based on whether result is zero
     ((uint8)(readByte(cpu->registers.HL, cpu) + 1)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //reset negative flag
@@ -176,14 +176,14 @@ static void inc_8_m(uint8 opcode, cpu_state *cpu) {
 }
 
 //increment a short
-static void inc_16(uint16 *reg, uint8 opcode, cpu_state *cpu) {
+static void inc_16(uint16 *reg, uint8 opcode, Cpu *cpu) {
     // inc_16 doesn't set or clear any flags
     (*reg)++;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //decrement a byte in memory
-static void dec_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
+static void dec_8(uint8 *reg, uint8 opcode, Cpu *cpu) {
     //zero flag
     (*reg - 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //negative flag
@@ -195,7 +195,7 @@ static void dec_8(uint8 *reg, uint8 opcode, cpu_state *cpu) {
 }
 
 //decrement a byte at the memory location stored in HL
-static void dec_8_m(uint8 opcode, cpu_state *cpu) {
+static void dec_8_m(uint8 opcode, Cpu *cpu) {
     //zero flag
     (readByte(cpu->registers.HL, cpu) - 1) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //negative flag
@@ -207,14 +207,14 @@ static void dec_8_m(uint8 opcode, cpu_state *cpu) {
 }
 
 //decrement a short
-static void dec_16(uint16 *reg, uint8 opcode, cpu_state *cpu) {
+static void dec_16(uint16 *reg, uint8 opcode, Cpu *cpu) {
     //dec_16 doesn't set or clear any flags
     (*reg)--;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //add together some 8 bit unsigned value and the A register
-static void add_8(uint8 value, uint8 opcode, cpu_state *cpu) {
+static void add_8(uint8 value, uint8 opcode, Cpu *cpu) {
     //zero flag
     ((uint8)(cpu->registers.A + value)) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
     //reset negative flag
@@ -229,7 +229,7 @@ static void add_8(uint8 value, uint8 opcode, cpu_state *cpu) {
 }
 
 //subtract an unsigned 8 bit value from the A register
-static void sub_8(uint8 value, uint8 opcode, cpu_state *cpu) {
+static void sub_8(uint8 value, uint8 opcode, Cpu *cpu) {
     //zero flag
     (cpu->registers.A == value) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
     //set negative flag
@@ -244,7 +244,7 @@ static void sub_8(uint8 value, uint8 opcode, cpu_state *cpu) {
 }
 
 //add together two unsigned 16 bit values and set flags
-static void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
+static void add_16(uint16 value, uint16 *reg, uint8 opcode, Cpu *cpu) {
     //zero flag isn't touched
     //reset negative flag
     clearFlag(NF, cpu);
@@ -258,7 +258,7 @@ static void add_16(uint16 value, uint16 *reg, uint8 opcode, cpu_state *cpu) {
 }
 
 // Add together a signed byte and an unsigned short, save the result in some short register, and set flags.
-static void add_16_8(int8 s_byte, uint16 u_short, uint16 *reg, uint8 opcode, cpu_state *cpu) {
+static void add_16_8(int8 s_byte, uint16 u_short, uint16 *reg, uint8 opcode, Cpu *cpu) {
     // Set or clear half-carry flag based on result
     ((u_short & 0xF) + (s_byte & 0xF) > 0xF) ? setFlag(HF, cpu) : clearFlag(HF, cpu);
     // Set or clear carry flag based on result.
@@ -272,7 +272,7 @@ static void add_16_8(int8 s_byte, uint16 u_short, uint16 *reg, uint8 opcode, cpu
 }
 
 //8 bit add between the A register, some value, and the carry flag
-static void adc(uint8 value, uint8 opcode, cpu_state *cpu) {
+static void adc(uint8 value, uint8 opcode, Cpu *cpu) {
     bool flag = readFlag(CF, cpu);
     add_8(value + flag, opcode, cpu);
 
@@ -288,7 +288,7 @@ static void adc(uint8 value, uint8 opcode, cpu_state *cpu) {
 }
 
 //8 bit subtract between the A register, some value, and the carry flag
-static void sbc(uint8 value, uint8 opcode, cpu_state *cpu) {
+static void sbc(uint8 value, uint8 opcode, Cpu *cpu) {
     bool flag = readFlag(CF, cpu);
     sub_8(value + readFlag(CF, cpu), opcode, cpu);
 
@@ -304,7 +304,7 @@ static void sbc(uint8 value, uint8 opcode, cpu_state *cpu) {
 }
 
 //rotate register A left, old bit 7 to carry bit and bit 0
-static void rlca(uint8 opcode, cpu_state *cpu) {
+static void rlca(uint8 opcode, Cpu *cpu) {
     //set carry flag based on bit 7
     (cpu->registers.A >> 7) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //shift left and use carry flag/bit 7 as new bit 0
@@ -319,7 +319,7 @@ static void rlca(uint8 opcode, cpu_state *cpu) {
 }
 
 //rotate the A register left, old bit 7 to carry bit and old carry bit to bit 0
-static void rla(uint8 opcode, cpu_state *cpu) {
+static void rla(uint8 opcode, Cpu *cpu) {
     //read carry flag state into temp variable
     bool flagState = readFlag(CF, cpu);
     //update the carry flag
@@ -338,7 +338,7 @@ static void rla(uint8 opcode, cpu_state *cpu) {
 }
 
 //rotate register A left, old bit 0 to carry bit and bit 7
-static void rrca(uint8 opcode, cpu_state *cpu) {
+static void rrca(uint8 opcode, Cpu *cpu) {
     //set carry flag based on bit 7
     (cpu->registers.A & 0b1) ? setFlag(CF, cpu) : clearFlag(CF, cpu);
     //shift left and use carry flag/bit 7 as new bit 0
@@ -353,7 +353,7 @@ static void rrca(uint8 opcode, cpu_state *cpu) {
 }
 
 //right rotate the A register. New 7th bit is set by the carry flag and the carry flag is set by old 1st bit.
-static void rra(uint8 opcode, cpu_state *cpu) {
+static void rra(uint8 opcode, Cpu *cpu) {
     //read carry flag state into temp variable
     bool flagState = readFlag(CF, cpu);
     //update the carry flag
@@ -372,7 +372,7 @@ static void rra(uint8 opcode, cpu_state *cpu) {
 }
 
 //complement the A register
-static void cpl(uint8 opcode, cpu_state *cpu) {
+static void cpl(uint8 opcode, Cpu *cpu) {
     //set negative flag
     setFlag(NF, cpu);
     //set half-carry flag
@@ -383,13 +383,13 @@ static void cpl(uint8 opcode, cpu_state *cpu) {
 }
 
 //push a short onto the stack
-static void push(uint16 value, uint8 opcode, cpu_state *cpu) {
+static void push(uint16 value, uint8 opcode, Cpu *cpu) {
     writeShortToStack(value, cpu);
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //pop a short from the stack
-static void pop(uint16 *reg, bool AF, uint8 opcode, cpu_state *cpu) {
+static void pop(uint16 *reg, bool AF, uint8 opcode, Cpu *cpu) {
     *reg = readShortFromStack(cpu);
     // Mask out lower bytes if writing to AF register
     if (AF) {
@@ -399,7 +399,7 @@ static void pop(uint16 *reg, bool AF, uint8 opcode, cpu_state *cpu) {
 }
 
 //standard call. Save PC to the stack
-static void call_c(bool set, uint16 pointer, uint8 opcode, cpu_state *cpu) {
+static void call_c(bool set, uint16 pointer, uint8 opcode, Cpu *cpu) {
     if (set) {
         //write PC to stack
         writeShortToStack(cpu->PC, cpu);
@@ -413,7 +413,7 @@ static void call_c(bool set, uint16 pointer, uint8 opcode, cpu_state *cpu) {
 }
 
 //return after call. Restore PC from stack
-static void ret_c(bool set, uint8 opcode, cpu_state *cpu) {
+static void ret_c(bool set, uint8 opcode, Cpu *cpu) {
     if (set) {
         //restore PC from stack
         cpu->PC = readShortFromStack(cpu);
@@ -425,14 +425,14 @@ static void ret_c(bool set, uint8 opcode, cpu_state *cpu) {
 }
 
 //return after call and enable interrupts
-static void reti(uint8 opcode, cpu_state *cpu) {
+static void reti(uint8 opcode, Cpu *cpu) {
     cpu->PC = readShortFromStack(cpu);
     cpu->wait = get_opcode(opcode).cycles;
     cpu->ime = true;
 }
 
 // Enable interrupts 4 cycles after this instruction
-static void ei(uint8 opcode, cpu_state *cpu) {
+static void ei(uint8 opcode, Cpu *cpu) {
     // Disable interrupts for 4 cycles, then re-enable
     cpu->ime = false;
     cpu->ime_enable = true;
@@ -440,7 +440,7 @@ static void ei(uint8 opcode, cpu_state *cpu) {
 }
 
 // Disable interrupts immediately
-static void di(uint8 opcode, cpu_state *cpu) {
+static void di(uint8 opcode, Cpu *cpu) {
     // Interrupts are disabled immediately
     cpu->ime = false;
     cpu->ime_enable = false;
@@ -448,14 +448,14 @@ static void di(uint8 opcode, cpu_state *cpu) {
 }
 
 //restart at given address. Save previous PC to the stack
-static void rst(uint8 pc, uint8 opcode, cpu_state *cpu) {
+static void rst(uint8 pc, uint8 opcode, Cpu *cpu) {
     writeShortToStack(cpu->PC, cpu);
     cpu->PC = (uint16)pc;
     cpu->wait = get_opcode(opcode).cycles;
 }
 
 //xor A register with given value and set flags
-static void xor(uint8 value, uint8 opcode, cpu_state *cpu) {
+static void xor(uint8 value, uint8 opcode, Cpu *cpu) {
     cpu->registers.A ^= value;
     //set or reset zero flag based on whether result is zero
     (cpu->registers.A) ? clearFlag(ZF, cpu) : setFlag(ZF, cpu);
@@ -469,7 +469,7 @@ static void xor(uint8 value, uint8 opcode, cpu_state *cpu) {
 }
 
 //perform logical and on the A register with a given value and set values
-static void and(uint8 value, uint8 opcode, cpu_state *cpu) {
+static void and(uint8 value, uint8 opcode, Cpu *cpu) {
     cpu->registers.A &= value;
     //set or reset zero flag based on whether result is zero
     (!cpu->registers.A) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
@@ -483,7 +483,7 @@ static void and(uint8 value, uint8 opcode, cpu_state *cpu) {
 }
 
 //perform logical or on the A register with a given value and set flags
-static void or(uint8 value, uint8 opcode, cpu_state *cpu) {
+static void or(uint8 value, uint8 opcode, Cpu *cpu) {
     cpu->registers.A |= value;
     //set or reset zero flag based on whether result is zero
     (!cpu->registers.A) ? setFlag(ZF, cpu) : clearFlag(ZF, cpu);
@@ -498,7 +498,7 @@ static void or(uint8 value, uint8 opcode, cpu_state *cpu) {
 
 // Decimal adjust register A. Hex to Binary Coded Decimal. This makes the max
 // Value of every byte 9 to allow for easy translation into decimal values.
-static void daa(uint8 opcode, cpu_state *cpu) {
+static void daa(uint8 opcode, Cpu *cpu) {
     // Grab a copy of A register to work on
     uint16 reg_a = cpu->registers.A;
     // Check whether the last operation was subtraction
@@ -532,7 +532,7 @@ static void daa(uint8 opcode, cpu_state *cpu) {
 }
 
 //execute next instruction
-int executeNextInstruction(cpu_state * cpu) {
+int executeNextInstruction(Cpu * cpu) {
     // Don't execute if halt is called
     if (cpu->halt) {
         return 432;

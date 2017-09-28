@@ -23,41 +23,41 @@ input current_inputs = {};
 // 0x7 is down
 // 0xD is left
 // 0xE is right
-uint8 getJoypadState(cpu_state *cpu) {
+uint8 getJoypadState(Cpu *cpu) {
     // Get the inputs from the frontend
-    cpu->MEM[JOYPAD] |= 0x0F;
-    //printf("Status: 0x%X\n", cpu->MEM[JOYPAD]);
+    cpu->memory.io[JOYPAD - IO_BASE] |= 0x0F;
+    //printf("Status: 0x%X\n", cpu->memory.io[JOYPAD - IO_BASE]);
     // Select the column
-    if (readBit(4, &cpu->MEM[JOYPAD])) {
+    if (readBit(4, &cpu->memory.io[JOYPAD - IO_BASE])) {
         getInput(&current_inputs);
         if (current_inputs.a) {
-            cpu->MEM[JOYPAD] &= 0xFE;
+            cpu->memory.io[JOYPAD - IO_BASE] &= 0xFE;
         }
         if (current_inputs.b) {
-            cpu->MEM[JOYPAD] &= 0xFD;
+            cpu->memory.io[JOYPAD - IO_BASE] &= 0xFD;
         }
         if (current_inputs.start) {
-            cpu->MEM[JOYPAD] &= 0xF7;
+            cpu->memory.io[JOYPAD - IO_BASE] &= 0xF7;
         }
         if (current_inputs.select) {
-            cpu->MEM[JOYPAD] &= 0xFB;
+            cpu->memory.io[JOYPAD - IO_BASE] &= 0xFB;
         }
-    } else if (readBit(5, &cpu->MEM[JOYPAD])) {
+    } else if (readBit(5, &cpu->memory.io[JOYPAD - IO_BASE])) {
         getInput(&current_inputs);
         if (current_inputs.up) {
-            cpu->MEM[JOYPAD] &= 0xFB;
+            cpu->memory.io[JOYPAD - IO_BASE] &= 0xFB;
         }
         if (current_inputs.down) {
-            cpu->MEM[JOYPAD] &= 0xF7;
+            cpu->memory.io[JOYPAD - IO_BASE] &= 0xF7;
         }
         if (current_inputs.left) {
-            cpu->MEM[JOYPAD] &= 0xFD;
+            cpu->memory.io[JOYPAD - IO_BASE] &= 0xFD;
         }
         if (current_inputs.right) {
-            cpu->MEM[JOYPAD] &= 0xFE;
+            cpu->memory.io[JOYPAD - IO_BASE] &= 0xFE;
         }
     }
 
     // No column selected, so return nothing.
-    return cpu->MEM[JOYPAD];
+    return cpu->memory.io[JOYPAD - IO_BASE];
 }

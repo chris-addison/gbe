@@ -1,6 +1,7 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 #include "../types.h"
 #include "../cpu.h"
+#include "../memory_map.h"
 #include "../memory.h"
 #include "../common.h"
 #include "debug.h"
@@ -31,7 +32,7 @@ static void clearStdin() {
 }
 
 // Simple gdb-like debug
-bool debug(bool force, cpu_state * cpu) {
+bool debug(bool force, Cpu * cpu) {
     // Only debug if stepping one instruction at a time.
     // If reach target address for runto then enter stepping again
     if (!force && (runUntilStop || (runToTarget && (targetAddress != cpu->PC)))) {
@@ -121,17 +122,17 @@ bool debug(bool force, cpu_state * cpu) {
             printf("\nPC:\t");
             printShort(cpu->PC);
             printf("\nLCDC:\t");
-            printByte(cpu->MEM[LCDC]);
+            printByte(readByte(LCDC, cpu));
             printf("\tLY:\t");
-            printByte(cpu->MEM[SCANLINE]);
+            printByte(readByte(SCANLINE, cpu));
             printf("\tSTAT:\t");
-            printByte(cpu->MEM[STAT]);
+            printByte(readByte(STAT, cpu));
             printf("\nIME:\t");
             printf("%d", cpu->ime);
             printf("\tIE:\t");
-            printByte(cpu->MEM[INTERRUPTS_ENABLED]);
+            printByte(readByte(INTERRUPTS_ENABLED, cpu));
             printf("\tIF:\t");
-            printByte(cpu->MEM[INTERRUPT_FLAGS]);
+            printByte(readByte(INTERRUPT_FLAGS, cpu));
             printf("\nROM:\t");
             printShort(cpu->ROM_bank);
             printf("\tRAM enabled:\t");

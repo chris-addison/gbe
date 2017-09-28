@@ -1,61 +1,85 @@
-#include "cartridge.h"
-#include "types.h"
-#include "common.h"
-#include <stdio.h>
 #include <stdlib.h>
-
-// Load the first bank of the rom
-void cartridgeLoad(cpu_state *cpu, FILE *rom) {
-    // All cartridge types load 0 -> 0x4000. Catch bad roms/files.
-    if (!fread(cpu->MEM, 1, 0x4000, rom)) {
-        printf("Incorrect sized rom!\n");
-        exit(1248);
-    }
-}
+#include <stdio.h>
+#include "cartridge.h"
+#include "cpu.h"
+#include "memory_map.h"
+#include "memory.h"
 
 // Read cartridge info and setup the cpu based on it
-void cartridgeInfo(cpu_state *cpu, FILE *rom) {
-    //fetch and store the title
+void cartridgeInfo(Cpu *cpu, FILE *rom) {
+    // Read in cartridge header
+    fseek(rom, CART_HEADER_BASE, SEEK_SET);
+    uint8 header[CART_HEADER_BOUND];
+    if (fread(header, 1, sizeof(header), rom) < CART_HEADER_BOUND) {
+        printf("Header incorrectly read\n");
+        exit(795);
+    }
+    rewind(rom);
+
+    // Fetch and store the title
     char title[16];
     for (int i = 0; i < 16; i++) {
-        title[i] = (&cpu->MEM[0x134])[i];
+        title[i] = (header + 0x34)[i];
     }
     printf("Now playing: %s\n", title);
 
-    //check if it's gbc only rom
-    if (cpu->MEM[0x143] == 0xC0) {
+    // Check if it's gbc only rom
+    if (header[0x43] == 0xC0) {
         printf("GBC cartridges not supported!\n");
         exit(523);
     }
 
-    //get cartridge type
-    cpu->cart_type = cpu->MEM[0x147];
+    // Get cartridge type
+    cpu->cart_type = header[0x47];
     printf("Cartridge type: %d\n", cpu->cart_type);
 
-    //get cartridge internal rom and ram
-    uint8 ROM_value = cpu->MEM[0x148];
-    unsigned int ROM_size = 32 << ROM_value;
-    uint8 RAM_value = cpu->MEM[0x149];
-    uint8 RAM_size = 0;
-    //ram size folows no pattern, so set it with a switch
-    switch(RAM_value) {
-        case 0x00:  RAM_size = 0;   break;
-        case 0x01:  RAM_size = 2;   break;
-        case 0x02:  RAM_size = 8;   break;
-        case 0x03:  RAM_size = 32;  break;
-        case 0x04:  RAM_size = 128; break;
-        case 0x05:  RAM_size = 64;  break;
+    // Get size of cartridge internal rom and ram
+    uint8 romValue = header[0x48];
+    uint16 romBanks = 0;
+    switch (romValue) {
+        case 0x00:  romBanks = 1; break;
+        case 0x01:
+        case 0x02:
+        case 0x03:
+        case 0x04:
+        case 0x05:
+        case 0x06:
+        case 0x07:
+        case 0x08:  romBanks = (2 << romValue); break;
+        case 0x52:  romBanks = 72; break;
+        case 0x53:  romBanks = 80; break;
+        case 0x54:  romBanks = 96; break;
         default:
             printf("Invalid cartridge!\n");
             exit(22);
     }
-    printf("ROM size: %dKB\nInternal RAM size: %dKB\n", ROM_size, RAM_size);
-    //setup the cpu_state for the type of cartridge the game is.
-    switch(cpu->cart_type) {
-        case 0x00: cpu->mbc = 0; break;
+    uint32 romSize = romBanks * ROM_BANK_SIZE;
+
+    uint8 ramValue = header[0x49];
+    uint8 ramSize = 0;
+    //ram size folows no pattern, so set it with a switch
+    switch (ramValue) {
+        case 0x00:  ramSize = 0;   break;
+        case 0x01:  ramSize = 2;   break;
+        case 0x02:  ramSize = 8;   break;
+        case 0x03:  ramSize = 32;  break;
+        case 0x04:  ramSize = 128; break;
+        case 0x05:  ramSize = 64;  break;
+        default:
+            printf("Invalid cartridge!\n");
+            exit(22);
+    }
+    printf("ROM size: %dKB\nInternal RAM size: %dKB\n", romSize, ramSize);
+    //setup the cpu for the type of cartridge the game is.
+    switch (cpu->cart_type) {
+        case 0x00:
+        case 0x08:
+        case 0x09: cpu->mbc = 0; break;
         case 0x01:
         case 0x02:
         case 0x03: cpu->mbc = 1; break;
+        case 0x05:
+        case 0x06: cpu->mbc = 2; break;
         case 0x11:
         case 0x12:
         case 0x13: cpu->mbc = 3; break;
@@ -66,23 +90,23 @@ void cartridgeInfo(cpu_state *cpu, FILE *rom) {
             printf("Cartridge type not supported\n");
             exit(13);
     }
-    cpu->RAM_exists = (RAM_value != 0);
-    cpu->mbc1_small_ram = (RAM_value == 2);
-    if (cpu->mbc == 0) {
-        //read the rest of the game data into address space 0x4000 to 0x7FFF
-        fread(cpu->MEM + 0x4000, 1, 0x4000, rom);
-    } else if (cpu->mbc == 1 || cpu->mbc == 2 || cpu->mbc == 3 || cpu->mbc == 5) {
-        //malloc the rest of the cartridge
-        cpu->CART_ROM = (uint8 *) malloc(ROM_size * 1024 * sizeof(uint8));
-		//malloc the external ram
-		if (cpu->RAM_exists) {
-			cpu->CART_RAM = (uint8 *) malloc(RAM_size * 1024 * sizeof(uint8));
-		}
-        //read into newly malloced array
-        if (!fread(cpu->CART_ROM + 0x4000, 1, (ROM_size * 1024) - 0x4000, rom)) {
-            //if the header returns an incorrect cartridge size
-            printf("Cartridge not supported1\n");
-            exit(13);
+    setupMBCCallbacks(cpu);
+    cpu->RAM_exists = (ramValue != 0);
+    cpu->mbc1_small_ram = (ramValue == 2);
+    cpu->memory.rom = (uint8 *) malloc(romSize * sizeof(uint8));
+    if (!cpu->memory.rom) {
+        printf("Unable to malloc space for rom");
+        exit(631);
+    }
+    if (fread(cpu->memory.rom, 1, romSize, rom) < romSize) {
+        printf("File size does not match cartridge size\n");
+        exit(750);
+    }
+    if (cpu->RAM_exists) {
+        cpu->memory.ram = (uint8 *) malloc(ramSize * 1024 * sizeof(uint8));
+        if (!cpu->memory.ram) {
+            printf("Unabled to malloc space for ram\n");
+            exit(632);
         }
     }
 }
