@@ -4,6 +4,7 @@
 #include "cpu.h"
 #include "memory_map.h"
 #include "memory.h"
+#include "mbc.h"
 
 // Read cartridge info and setup the cpu based on it
 void cartridgeInfo(Cpu *cpu, FILE *rom) {
@@ -57,7 +58,7 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
 
     uint8 ramValue = header[0x49];
     uint8 ramSize = 0;
-    //ram size folows no pattern, so set it with a switch
+    // Ram size folows no pattern, so set it with a switch
     switch (ramValue) {
         case 0x00:  ramSize = 0;   break;
         case 0x01:  ramSize = 2;   break;
@@ -70,7 +71,8 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
             exit(22);
     }
     printf("ROM size: %dKB\nInternal RAM size: %dKB\n", romSize, ramSize);
-    //setup the cpu for the type of cartridge the game is.
+
+    // Setup the cpu for the type of cartridge the game is.
     switch (cpu->cart_type) {
         case 0x00:
         case 0x08:
@@ -91,8 +93,11 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
             exit(13);
     }
     setupMBCCallbacks(cpu);
+
     cpu->RAM_exists = (ramValue != 0);
     cpu->mbc1_small_ram = (ramValue == 2);
+
+    // Allocate and read in cartridge
     cpu->memory.rom = (uint8 *) malloc(romSize * sizeof(uint8));
     if (!cpu->memory.rom) {
         printf("Unable to malloc space for rom");
@@ -102,6 +107,8 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
         printf("File size does not match cartridge size\n");
         exit(750);
     }
+
+    // Allocate ram
     if (cpu->RAM_exists) {
         cpu->memory.ram = (uint8 *) malloc(ramSize * 1024 * sizeof(uint8));
         if (!cpu->memory.ram) {

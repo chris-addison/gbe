@@ -75,7 +75,7 @@ void emulatorInterrupt(uint32 interruptFlag) {
 
 void stopEmulator() {
     //free cpu, cartridge at end
-    free(cpu->memory.ram);
+    free(cpu->memory.rom);
     free(cpu->memory.ram);
     free(cpu->memory.wram);
     free(cpu->memory.vram);

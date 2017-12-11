@@ -14,7 +14,7 @@
 static uint8 readIORegisters(uint16 address, Cpu *cpu) {
     uint8 index = address - IO_BASE;
     if (index > IO_BOUND) {
-        printf("Error: readIORegisters passed incorrect address\n");
+        printf("Error: readIORegisters passed incorrect address: %X\n", address);
     }
     switch (address) {
         // Redirected reads
@@ -28,8 +28,6 @@ static uint8 readIORegisters(uint16 address, Cpu *cpu) {
         case TAC:
             return cpu->memory.io[index] | 0xF8;
         // Pass through reads
-        case INTERRUPTS_ENABLED:
-            return cpu->memory.ie;
         case WINDOW_X:
         case WINDOW_Y:
         case SP_PALETTE_1:
@@ -91,7 +89,7 @@ uint8 readByte(uint16 address, Cpu *cpu) {
         return cpu->memory.hram[address - HRAM_BASE];
     } else {
         // 0xFFFF IE
-        return readIORegisters(address, cpu);
+        return cpu->memory.ie;
     }
 }
 
@@ -120,7 +118,7 @@ void transferOAM(uint8 value, Cpu *cpu) {
 static void writeIORegisters(uint16 address, uint8 value, Cpu *cpu) {
     uint8 index = address - IO_BASE;
     if (index > IO_BOUND) {
-        printf("Error: writeIORegisters passed incorrect address\n");
+        printf("Error: writeIORegisters passed incorrect address: %X\n", address);
         return;
     }
     switch (address) {
@@ -162,7 +160,6 @@ static void writeIORegisters(uint16 address, uint8 value, Cpu *cpu) {
             cpu->memory.io[index] = 0;
             break;
         // Pass through writes
-        case INTERRUPTS_ENABLED:
         case WINDOW_X:
         case WINDOW_Y:
         #ifndef DISPLAY
@@ -227,7 +224,7 @@ void writeByte(uint16 address, uint8 value, Cpu *cpu) {
         cpu->memory.hram[address - HRAM_BASE] = value;
     } else {
         // 0xFFFF IE
-        writeIORegisters(address, value, cpu);
+        cpu->memory.ie = value;
     }
 }
 
