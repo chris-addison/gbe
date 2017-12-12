@@ -14,6 +14,8 @@ static void writeMBC1(uint16 address, uint8 value, Cpu *cpu);
 //static uint8 readMBC5(uint16 address, Cpu *cpu);
 //static void writeMBC5(uint16 address, uint8 value, Cpu *cpu);
 
+static void switchBank(uint16 bank, Cpu *cpu);
+
 // Setup read/write callbacks to the correct function to handle the given mbc number
 void setupMBCCallbacks(Cpu *cpu) {
     cpu->readMBC = readBasic;
@@ -49,5 +51,19 @@ static void writeNone(uint16 address, uint8 value, Cpu *cpu) {
 }
 
 static void writeMBC1(uint16 address, uint8 value, Cpu *cpu) {
+    if (address >= VRAM_BASE) {
+        printf("Invalid address for MBC write: %X\n", address);
+        return;
+    }
 
+    if (address < 0x2000) {
+        cpu->RAM_enable = (value == 0x0A);
+    } else if (address < 0x4000) {
+        uint8 bank = value & 0x1F;
+        if (!bank) bank = 0x01;
+        cpu->currentRomBank = bank;
+        // TODO: map bank
+    } else {
+
+    }
 }

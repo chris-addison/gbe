@@ -28,8 +28,10 @@ static void initCPU(Cpu *cpu) {
     cpu->PC = 0x100;
     cpu->SP = 0xFFFE;
     cpu->wait = 0;
-    cpu->ROM_bank = 1;
-    cpu->RAM_bank = 0;
+    cpu->currentRomBank = 1;
+    cup->maxRomBank = 1;
+    cpu->currentRamBank = 0;
+    cpu->maxRamBank = 0;
     cpu->RAM_enable = false;
     cpu->readMBC = NULL;
     cpu->writeMBC = NULL;

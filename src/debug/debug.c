@@ -134,11 +134,11 @@ bool debug(bool force, Cpu * cpu) {
             printf("\tIF:\t");
             printByte(readByte(INTERRUPT_FLAGS, cpu));
             printf("\nROM:\t");
-            printShort(cpu->ROM_bank);
+            printShort(cpu->currentRomBank);
             printf("\tRAM enabled:\t");
             (cpu->RAM_enable) ? printf("1") : printf("0");
             printf("\tRAM:\t");
-            printByte(cpu->RAM_bank);
+            printByte(cpu->currentRamBank);
             printf("\n");
         } else if (!strcmp(reset, argv[0])) {
             resetCPU(cpu);

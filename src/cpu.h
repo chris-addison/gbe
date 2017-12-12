@@ -65,8 +65,10 @@ struct Cpu {
     uint16 PC;
     uint16 SP;
     uint16 cycles;
-    uint16 ROM_bank;
-    uint8 RAM_bank;
+    uint16 currentRomBank;
+    uint16 maxRomBank;
+    uint8 currentRamBank;
+    uint8 maxRamBank;
     uint8 cart_type;
     uint8 mbc;
     uint8 wait;

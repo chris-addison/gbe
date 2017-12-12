@@ -36,9 +36,8 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
 
     // Get size of cartridge internal rom and ram
     uint8 romValue = header[0x48];
-    uint16 romBanks = 0;
     switch (romValue) {
-        case 0x00:  romBanks = 1; break;
+        case 0x00:
         case 0x01:
         case 0x02:
         case 0x03:
@@ -46,15 +45,12 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
         case 0x05:
         case 0x06:
         case 0x07:
-        case 0x08:  romBanks = (2 << romValue); break;
-        case 0x52:  romBanks = 72; break;
-        case 0x53:  romBanks = 80; break;
-        case 0x54:  romBanks = 96; break;
+        case 0x08: cpu->maxRomBanks = (2 << romValue); break;
         default:
             printf("Invalid cartridge!\n");
             exit(22);
     }
-    uint32 romSize = romBanks * ROM_BANK_SIZE;
+    uint32 romSize = cpu->maxRomBanks * ROM_BANK_SIZE;
 
     uint8 ramValue = header[0x49];
     uint8 ramSize = 0;
@@ -70,6 +66,7 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
             printf("Invalid cartridge!\n");
             exit(22);
     }
+    cpu->maxRamBanks = (ramSize / 8);
     printf("ROM size: %dKB\nInternal RAM size: %dKB\n", romSize, ramSize);
 
     // Setup the cpu for the type of cartridge the game is.
