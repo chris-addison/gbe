@@ -76,7 +76,7 @@ struct Cpu {
     bool halt_bug;
     bool RAM_enable;
     bool RAM_exists;
-    bool mbc1_mode;
+    bool mbc1Mode;
     bool mbc1_small_ram;
     bool ime;
     bool ime_enable;

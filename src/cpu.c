@@ -28,13 +28,16 @@ static void initCPU(Cpu *cpu) {
     cpu->PC = 0x100;
     cpu->SP = 0xFFFE;
     cpu->wait = 0;
+
+    // Setup mbc stuff
     cpu->currentRomBank = 1;
-    cup->maxRomBank = 1;
+    cpu->maxRomBank = 1;
     cpu->currentRamBank = 0;
     cpu->maxRamBank = 0;
     cpu->RAM_enable = false;
     cpu->readMBC = NULL;
     cpu->writeMBC = NULL;
+    cpu->mbc1Mode = false;
 
     // Setup interrupts
     cpu->ime = false;

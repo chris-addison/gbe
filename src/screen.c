@@ -94,7 +94,7 @@ void updateScreen(Cpu *cpu) {
                         // Only display if correct bit is set. Ths can only be togged during V Blank
                         #ifdef DISPLAY
                             resetWindowLine();
-                            if (readBit(7, &cpu->memory.io[LCDC - IO_BASE]) {
+                            if (readBit(7, &cpu->memory.io[LCDC - IO_BASE])) {
                                 draw(cpu);
                             } else {
                                 displayActive = false;

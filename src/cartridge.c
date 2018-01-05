@@ -32,7 +32,7 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
 
     // Get cartridge type
     cpu->cart_type = header[0x47];
-    printf("Cartridge type: %d\n", cpu->cart_type);
+    printf("Cartridge type: 0x%X\n", cpu->cart_type);
 
     // Get size of cartridge internal rom and ram
     uint8 romValue = header[0x48];
@@ -45,12 +45,12 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
         case 0x05:
         case 0x06:
         case 0x07:
-        case 0x08: cpu->maxRomBanks = (2 << romValue); break;
+        case 0x08: cpu->maxRomBank = (2 << romValue); break;
         default:
             printf("Invalid cartridge!\n");
             exit(22);
     }
-    uint32 romSize = cpu->maxRomBanks * ROM_BANK_SIZE;
+    uint32 romSize = cpu->maxRomBank * ROM_BANK_SIZE;
 
     uint8 ramValue = header[0x49];
     uint8 ramSize = 0;
@@ -66,7 +66,7 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
             printf("Invalid cartridge!\n");
             exit(22);
     }
-    cpu->maxRamBanks = (ramSize / 8);
+    cpu->maxRamBank = (ramSize / 8);
     printf("ROM size: %dKB\nInternal RAM size: %dKB\n", romSize, ramSize);
 
     // Setup the cpu for the type of cartridge the game is.
@@ -104,6 +104,7 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
         printf("File size does not match cartridge size\n");
         exit(750);
     }
+    cpu->memory.romBank = cpu->memory.rom + ROM_BANK_SIZE;
 
     // Allocate ram
     if (cpu->RAM_exists) {
@@ -112,5 +113,6 @@ void cartridgeInfo(Cpu *cpu, FILE *rom) {
             printf("Unabled to malloc space for ram\n");
             exit(632);
         }
+        cpu->memory.ramBank = cpu->memory.ram;
     }
 }
