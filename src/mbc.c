@@ -117,7 +117,11 @@ static void writeMBC3(uint16 address, uint8 value, Cpu *cpu) {
         if (!bank) bank = 0x01;
         switchRomBank(bank, cpu);
     } else if (address < 0x6000) {
-        switchRamBank(value, cpu);
+        if (value < 8) {
+            switchRamBank(value, cpu);
+        } else {
+            printf("Select RTC bank\n");
+        }
     } else { // < 0x8000
         // TODO: Latch RTC
         printf("RTC latch\n");
