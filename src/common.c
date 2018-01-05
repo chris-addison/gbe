@@ -26,7 +26,7 @@ void printShort(uint16 twoBytes) {
 }
 
 //print given instruction
-void printInstruction(bool showPC, uint16 PC, cpu_state *cpu) {
+void printInstruction(bool showPC, uint16 PC, Cpu *cpu) {
     if (showPC) {
         printf("0x%04X:  ", PC);
     }
@@ -45,7 +45,7 @@ void printInstruction(bool showPC, uint16 PC, cpu_state *cpu) {
 }
 
 //print given instruction to file
-void printInstructionToFile(uint16 PC, FILE *file, cpu_state *cpu) {
+void printInstructionToFile(uint16 PC, FILE *file, Cpu *cpu) {
     //skip the wait instructions
 	if (PC >= 0x36C && PC <= 0x36F) {
 		return;

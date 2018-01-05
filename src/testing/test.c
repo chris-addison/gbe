@@ -1,10 +1,11 @@
 #include "../common.h"
 #include "../cpu.h"
 #include "../types.h"
+#include "../memory.h"
 #include "test.h"
 
 // Performs basic reset on the cpu
-static void resetCPU(cpu_state *cpu) {
+static void resetCPU(Cpu *cpu) {
     cpu->registers.AF = 0x00;
     cpu->registers.BC = 0x00;
     cpu->registers.DE = 0x00;
@@ -12,13 +13,13 @@ static void resetCPU(cpu_state *cpu) {
     cpu->PC = 0x100;
     cpu->SP = 0xFFFE;
     cpu->wait = 0;
-    cpu->ROM_bank = 1;
-    cpu->RAM_bank = 0;
+    cpu->currentRomBank = 1;
+    cpu->currentRamBank = 0;
     cpu->RAM_enable = false;
 }
 
 // Prints success or failed along with name of test
-static void testing(char* name, bool success, test_state *state, cpu_state *cpu) {
+static void testing(char* name, bool success, test_state *state, Cpu *cpu) {
     printf("TEST:\t%s\t[%s]\n", name, (success) ? "SUCCESS" : "FAIL");
     state->failled_tests += !success;
     state->passed_tests += success;
@@ -45,7 +46,7 @@ static bool assertUint16(uint16 actual, uint16 expected) {
 }
 
 // Assert flag is either set or reset
-static bool assertFlag(uint8 flag, bool state, cpu_state *cpu) {
+static bool assertFlag(uint8 flag, bool state, Cpu *cpu) {
     bool result = ((cpu->registers.F >> flag) & 0b1) == state;
     if (!result) {
         char *name;
@@ -61,7 +62,7 @@ static bool assertFlag(uint8 flag, bool state, cpu_state *cpu) {
 }
 
 // Test setFlag, clearFlag, readFlag methods
-static bool testFlags(cpu_state *cpu) {
+static bool testFlags(Cpu *cpu) {
     setFlag(CF, cpu);
     bool result = assertFlag(CF, true, cpu);
     result &= assertFlag(ZF, false, cpu);
@@ -106,7 +107,7 @@ static bool testFlags(cpu_state *cpu) {
 }
 
 // Test exexute method (catch any missed breaks, or incorrect function arguments)
-/*static bool testExecute(cpu_state *cpu) {
+/*static bool testExecute(Cpu *cpu) {
     bool result = true;
     for (int i = 0; i < 256; i++) {
         //printf("Current insruction: 0x%X\n", i);
@@ -121,7 +122,7 @@ static bool testFlags(cpu_state *cpu) {
 }*/
 
 // Test ld_8, ld_8_m methods
-static bool testLD_8(cpu_state *cpu) {
+static bool testLD_8(Cpu *cpu) {
     // Test to pointer
     uint8 actual = rand() % 0x100;
     uint8 expected = rand() % 0x100;
@@ -132,14 +133,14 @@ static bool testLD_8(cpu_state *cpu) {
     result &= assertFlag(HF, false, cpu);
     result &= assertFlag(CF, false, cpu);
     // Test to memory address
-    cpu->MEM[0xFFFF] = rand() % 0x100;
+    writeByte(0xFFFF, rand() % 0x100, cpu);
     expected = rand() % 0x100;
     ld_8_m(expected, 0xFFFF, 0, cpu);
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, false, cpu);
     result &= assertFlag(CF, false, cpu);
-    return assertUint8(cpu->MEM[0xFFFF], expected) && result;
+    return assertUint8(readByte(0xFFFF, cpu), expected) && result;
 }
 
 //TODO: test read, write of bytes
@@ -147,12 +148,12 @@ static bool testLD_8(cpu_state *cpu) {
 //TODO: test read, write of shorts
 
 // Test ldi, ldi_m methods
-static bool testLDI(cpu_state *cpu) {
+static bool testLDI(Cpu *cpu) {
     // Test to pointer
     uint8 actual = rand() % 0x100;
     uint8 expected = rand() % 0x100;
     uint16 expectedHL = cpu->registers.HL + 1;
-    ldi(expected, &actual, 0, cpu);
+    ldi(0, cpu);
     bool result = assertUint8(actual, expected);
     result &= assertUint16(cpu->registers.HL, expectedHL);
     result &= assertFlag(ZF, false, cpu);
@@ -160,25 +161,25 @@ static bool testLDI(cpu_state *cpu) {
     result &= assertFlag(HF, false, cpu);
     result &= assertFlag(CF, false, cpu);
     // Test to memory address
-    cpu->MEM[0xFFFF] = rand() % 0x100;
+    writeByte(0xFFFF, rand() % 0x100, cpu);
     expected = rand() % 0x100;
     expectedHL = cpu->registers.HL + 1;
-    ldi_m(expected, 0xFFFF, 0, cpu);
+    ldi_m(0, cpu);
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, false, cpu);
     result &= assertFlag(CF, false, cpu);
     result &= assertUint16(cpu->registers.HL, expectedHL);
-    return assertUint8(cpu->MEM[0xFFFF], expected) && result;
+    return assertUint8(readByte(0xFFFF, cpu), expected) && result;
 }
 
 // Test ldd, ldd_m method
-static bool testLDD(cpu_state *cpu) {
+static bool testLDD(Cpu *cpu) {
     // Test to pointer
     uint8 actual = rand() % 0x100;
     uint8 expected = rand() % 0x100;
     uint16 expectedHL = cpu->registers.HL - 1;
-    ldd(expected, &actual, 0, cpu);
+    ldd(0, cpu);
     bool result = assertUint8(actual, expected);
     result &= assertUint16(cpu->registers.HL, expectedHL);
     result &= assertFlag(ZF, false, cpu);
@@ -186,20 +187,20 @@ static bool testLDD(cpu_state *cpu) {
     result &= assertFlag(HF, false, cpu);
     result &= assertFlag(CF, false, cpu);
     // Test to memory address
-    cpu->MEM[0xFFFF] = rand() % 0x100;
+    writeByte(0xFFFF, rand() % 0x100, cpu);
     expected = rand() % 0x100;
     expectedHL = cpu->registers.HL - 1;
-    ldd_m(expected, 0xFFFF, 0, cpu);
+    ldd_m(0, cpu);
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, false, cpu);
     result &= assertFlag(CF, false, cpu);
     result &= assertUint16(cpu->registers.HL, expectedHL);
-    return assertUint8(cpu->MEM[0xFFFF], expected) && result;
+    return assertUint8(readByte(0xFFFF, cpu), expected) && result;
 }
 
 // Test ld_16, ld_16_m methods
-static bool testLD_16(cpu_state *cpu) {
+static bool testLD_16(Cpu *cpu) {
     // Test to pointer
     uint16 actual = rand() % 0x10000;
     uint16 expected = rand() % 0x10000;
@@ -210,27 +211,26 @@ static bool testLD_16(cpu_state *cpu) {
     result &= assertFlag(HF, false, cpu);
     result &= assertFlag(CF, false, cpu);
     // Test to memory address
-    cpu->MEM[0xFFF0] = rand() % 0x100;
-    cpu->MEM[0xFFF1] = rand() % 0x100;
+    writeShort(0xFF00, rand() % 0x10000, cpu);
     expected = rand() % 0x10000;
     ld_16_m(expected, 0xFFF0, 0, cpu);
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, false, cpu);
     result &= assertFlag(CF, false, cpu);
-    return assertUint16((cpu->MEM[0xFFF1] << 8) + cpu->MEM[0xFFF0], expected) && result;
+    return assertUint16(readShort(0xFF00, cpu), expected) && result;
 }
 
 //TODO: test LD HL, (SP+e)
 
 // Test pop, push methods
-static bool testPUSH_POP(cpu_state *cpu) {
+static bool testPUSH_POP(Cpu *cpu) {
     uint16 expected = rand() % 0x10000;
     push(expected, 0, cpu);
     // Check memory
-    bool result = assertUint16((cpu->MEM[cpu->SP + 1] << 8) + cpu->MEM[cpu->SP], expected);
+    bool result = assertUint16(readShort(cpu->SP, cpu), expected);
     uint16 returnedValue = 0;
-    pop(&returnedValue, 0, cpu);
+    pop(&returnedValue, false, 0, cpu);
     // Check result of pop
     result &= assertUint16(returnedValue, expected);
     result &= assertFlag(ZF, false, cpu);
@@ -241,7 +241,7 @@ static bool testPUSH_POP(cpu_state *cpu) {
 }
 
 // Test add_8 method
-static bool testADD_8(cpu_state *cpu) {
+static bool testADD_8(Cpu *cpu) {
     // Simple add
     cpu->registers.A = 0x00;
     uint8 testValue = 0x01;
@@ -282,7 +282,7 @@ static bool testADD_8(cpu_state *cpu) {
 }
 
 // Test adc method
-static bool testADC(cpu_state *cpu) {
+static bool testADC(Cpu *cpu) {
     cpu->registers.A = 0x00;
     setFlag(CF, cpu); // Will need to test this method too!
     uint8 testValue = 0xFF;
@@ -296,7 +296,7 @@ static bool testADC(cpu_state *cpu) {
 }
 
 // Test sub_8 method
-static bool testSUB_8(cpu_state *cpu) {
+static bool testSUB_8(Cpu *cpu) {
     // Simple add
     cpu->registers.A = 0x01;
     uint8 testValue = 0x01;
@@ -337,7 +337,7 @@ static bool testSUB_8(cpu_state *cpu) {
 }
 
 // Test sbc method
-static bool testSBC(cpu_state *cpu) {
+static bool testSBC(Cpu *cpu) {
     cpu->registers.A = 0x10;
     setFlag(CF, cpu); // Will need to test this method too!
     uint8 testValue = 0x0F;
@@ -351,7 +351,7 @@ static bool testSBC(cpu_state *cpu) {
 }
 
 // Test and method
-static bool testAND(cpu_state *cpu) {
+static bool testAND(Cpu *cpu) {
     // Test simple
     cpu->registers.A = 0xFF;
     uint8 testValue = 0xFF;
@@ -383,7 +383,7 @@ static bool testAND(cpu_state *cpu) {
 }
 
 // Test or method
-static bool testOR(cpu_state *cpu) {
+static bool testOR(Cpu *cpu) {
     // Test simple
     cpu->registers.A = 0xFF;
     uint8 testValue = 0xFF;
@@ -415,7 +415,7 @@ static bool testOR(cpu_state *cpu) {
 }
 
 // Test xor method
-static bool testXOR(cpu_state *cpu) {
+static bool testXOR(Cpu *cpu) {
     // Test simple
     cpu->registers.A = 0x0F;
     uint8 testValue = 0xF0;
@@ -447,7 +447,7 @@ static bool testXOR(cpu_state *cpu) {
 }
 
 // Test cp method
-static bool testCP(cpu_state *cpu) {
+static bool testCP(Cpu *cpu) {
     // Test no flag
     cpu->registers.A = 0x02;
     uint8 testValue = 0x01;
@@ -477,7 +477,7 @@ static bool testCP(cpu_state *cpu) {
 }
 
 // Test inc_8 method
-static bool testINC_8(cpu_state *cpu) {
+static bool testINC_8(Cpu *cpu) {
     // Test simple
     cpu->registers.A = 0x11;
     inc_8(&cpu->registers.A, 0, cpu);
@@ -506,7 +506,7 @@ static bool testINC_8(cpu_state *cpu) {
 }
 
 // Test dec_8 method
-static bool testDEC_8(cpu_state *cpu) {
+static bool testDEC_8(Cpu *cpu) {
     // Test simple
     cpu->registers.A = 0x11;
     dec_8(&cpu->registers.A, 0, cpu);
@@ -535,7 +535,7 @@ static bool testDEC_8(cpu_state *cpu) {
 }
 
 // Test add_16 method
-static bool testADD_16(cpu_state *cpu) {
+static bool testADD_16(Cpu *cpu) {
     // Simple add
     cpu->registers.BC = 0x0000;
     uint16 testValue = 0x0001;
@@ -576,7 +576,7 @@ static bool testADD_16(cpu_state *cpu) {
 }
 
 // Test inc_16 method
-static bool testINC_16(cpu_state *cpu) {
+static bool testINC_16(Cpu *cpu) {
     // Test simple
     cpu->registers.BC = 0x1111;
     inc_16(&cpu->registers.BC, 0, cpu);
@@ -597,7 +597,7 @@ static bool testINC_16(cpu_state *cpu) {
 }
 
 // Test dec_16 method
-static bool testDEC_16(cpu_state *cpu) {
+static bool testDEC_16(Cpu *cpu) {
     // Test simple
     cpu->registers.BC = 0x1111;
     dec_16(&cpu->registers.BC, 0, cpu);
@@ -618,7 +618,7 @@ static bool testDEC_16(cpu_state *cpu) {
 }
 
 // Test swap method
-static bool testSWAP(cpu_state *cpu) {
+static bool testSWAP(Cpu *cpu) {
     cpu->registers.A = 0x12;
     swap(&cpu->registers.A, 0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x21);
@@ -638,7 +638,7 @@ static bool testSWAP(cpu_state *cpu) {
 }
 
 // Test daa method. There are a lot of paths to test, so this is a little large.
-static bool testDAA(cpu_state * cpu) {
+static bool testDAA(Cpu * cpu) {
     // Test simple lower nibble
     cpu->registers.A = 0x0A;
     daa(0, cpu);
@@ -725,7 +725,7 @@ static bool testDAA(cpu_state * cpu) {
 }
 
 // Test cpl method
-static bool testCPL(cpu_state *cpu) {
+static bool testCPL(Cpu *cpu) {
     cpu->registers.A = 0xF0;
     cpl(0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x0F);
@@ -737,7 +737,7 @@ static bool testCPL(cpu_state *cpu) {
 }
 
 // Test ccf method
-static bool testCCF(cpu_state *cpu) {
+static bool testCCF(Cpu *cpu) {
     ccf(0, cpu);
     bool result = assertFlag(CF, true, cpu);
     result &= assertFlag(ZF, false, cpu);
@@ -752,7 +752,7 @@ static bool testCCF(cpu_state *cpu) {
 }
 
 // Test scf method
-static bool testSCF(cpu_state *cpu) {
+static bool testSCF(Cpu *cpu) {
     scf(0, cpu);
     bool result = assertFlag(CF, true, cpu);
     result &= assertFlag(ZF, false, cpu);
@@ -774,7 +774,7 @@ static bool testSCF(cpu_state *cpu) {
 //TODO: Test DI, EI - Will need a stronger testing harness for these along with halt and stop
 
 // Test rlca method
-static bool testRLCA(cpu_state *cpu) {
+static bool testRLCA(Cpu *cpu) {
     cpu->registers.A = 0x00;
     setFlag(CF, cpu);
     rlca(0, cpu);
@@ -794,7 +794,7 @@ static bool testRLCA(cpu_state *cpu) {
 }
 
 // Test rla method
-static bool testRLA(cpu_state *cpu) {
+static bool testRLA(Cpu *cpu) {
     cpu->registers.A = 0x00;
     rla(0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x00);
@@ -821,7 +821,7 @@ static bool testRLA(cpu_state *cpu) {
 }
 
 // Test rrca method
-static bool testRRCA(cpu_state *cpu) {
+static bool testRRCA(Cpu *cpu) {
     cpu->registers.A = 0x00;
     setFlag(CF, cpu);
     rrca(0, cpu);
@@ -841,7 +841,7 @@ static bool testRRCA(cpu_state *cpu) {
 }
 
 // Test rra method
-static bool testRRA(cpu_state *cpu) {
+static bool testRRA(Cpu *cpu) {
     cpu->registers.A = 0x00;
     rra(0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x00);
@@ -868,7 +868,7 @@ static bool testRRA(cpu_state *cpu) {
 }
 
 // Test rlc method
-static bool testRLC(cpu_state *cpu) {
+static bool testRLC(Cpu *cpu) {
     cpu->registers.A = 0x00;
     setFlag(CF, cpu);
     rlc(&cpu->registers.A, 0, cpu);
@@ -888,7 +888,7 @@ static bool testRLC(cpu_state *cpu) {
 }
 
 // Test rl method
-static bool testRL(cpu_state *cpu) {
+static bool testRL(Cpu *cpu) {
     cpu->registers.A = 0x00;
     rl(&cpu->registers.A, 0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x00);
@@ -915,7 +915,7 @@ static bool testRL(cpu_state *cpu) {
 }
 
 // Test rrc, rrc_m methods
-static bool testRRC(cpu_state *cpu) {
+static bool testRRC(Cpu *cpu) {
     cpu->registers.A = 0x00;
     setFlag(CF, cpu);
     rrc(&cpu->registers.A, 0, cpu);
@@ -931,17 +931,17 @@ static bool testRRC(cpu_state *cpu) {
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, false, cpu);
-    cpu->MEM[cpu->registers.HL] = 0x00;
+    writeByte(cpu->registers.HL, 0x00, cpu);
     setFlag(CF, cpu);
     rrc_m(0, cpu);
-    result &= assertUint8(cpu->MEM[cpu->registers.HL], 0x00);
+    result &= assertUint8(readBye(cpu->registers.HL, cpu), 0x00);
     result &= assertFlag(CF, false, cpu);
     result &= assertFlag(ZF, true, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, false, cpu);
-    cpu->MEM[cpu->registers.HL] = 0x21;
+    writeByte(cpu->registers.HL, 0x21, cpu);
     rrc_m(0, cpu);
-    result &= assertUint8(cpu->MEM[cpu->registers.HL], 0x90);
+    result &= assertUint8(readBye(cpu->registers.HL, cpu), 0x90);
     result &= assertFlag(CF, true, cpu);
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
@@ -950,7 +950,7 @@ static bool testRRC(cpu_state *cpu) {
 }
 
 // Test rr method
-static bool testRR(cpu_state *cpu) {
+static bool testRR(Cpu *cpu) {
     cpu->registers.A = 0x00;
     rr(&cpu->registers.A, 0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x00);
@@ -977,7 +977,7 @@ static bool testRR(cpu_state *cpu) {
 }
 
 // Test sla method
-static bool testSLA(cpu_state *cpu) {
+static bool testSLA(Cpu *cpu) {
     cpu->registers.A = 0x00;
     sla(&cpu->registers.A, 0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x00);
@@ -996,7 +996,7 @@ static bool testSLA(cpu_state *cpu) {
 }
 
 // Test sra method
-static bool testSRA(cpu_state *cpu) {
+static bool testSRA(Cpu *cpu) {
     cpu->registers.A = 0x00;
     sra(&cpu->registers.A, 0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x00);
@@ -1015,7 +1015,7 @@ static bool testSRA(cpu_state *cpu) {
 }
 
 // Test srl method
-static bool testSRL(cpu_state *cpu) {
+static bool testSRL(Cpu *cpu) {
     cpu->registers.A = 0x00;
     srl(&cpu->registers.A, 0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x00);
@@ -1034,7 +1034,7 @@ static bool testSRL(cpu_state *cpu) {
 }
 
 // Test bit, bit_m methods
-static bool testBIT(cpu_state *cpu) {
+static bool testBIT(Cpu *cpu) {
     cpu->registers.A = 0x0C;
     bit(3, &cpu->registers.A, 0, cpu);
     bool result = assertFlag(CF, false, cpu);
@@ -1046,7 +1046,7 @@ static bool testBIT(cpu_state *cpu) {
     result &= assertFlag(ZF, true, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, true, cpu);
-    cpu->MEM[cpu->registers.HL] = 0x0C;
+    writeByte(cpu->registers.HL, 0x0C, cpu);
     bit_m(3, 0, cpu);
     result &= assertFlag(CF, false, cpu);
     result &= assertFlag(ZF, false, cpu);
@@ -1061,7 +1061,7 @@ static bool testBIT(cpu_state *cpu) {
 }
 
 // Test set, set_m method
-static bool testSET(cpu_state *cpu) {
+static bool testSET(Cpu *cpu) {
     cpu->registers.A = 0x11;
     set(1, &cpu->registers.A, 0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x13);
@@ -1069,7 +1069,7 @@ static bool testSET(cpu_state *cpu) {
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, false, cpu);
-    cpu->MEM[cpu->registers.HL] = 0x11;
+    writeByte(cpu->registers.HL, 0x11, cpu);
     set_m(1, 0, cpu);
     result &= assertUint8(cpu->registers.A, 0x13);
     result &= assertFlag(CF, false, cpu);
@@ -1080,7 +1080,7 @@ static bool testSET(cpu_state *cpu) {
 }
 
 // Test res, res_m method
-static bool testRES(cpu_state *cpu) {
+static bool testRES(Cpu *cpu) {
     cpu->registers.A = 0x13;
     res(1, &cpu->registers.A, 0, cpu);
     bool result = assertUint8(cpu->registers.A, 0x11);
@@ -1088,7 +1088,7 @@ static bool testRES(cpu_state *cpu) {
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
     result &= assertFlag(HF, false, cpu);
-    cpu->MEM[cpu->registers.HL] = 0x13;
+    writeByte(cpu->registers.HL, 0x13, cpu);
     res_m(1, 0, cpu);
     result &= assertUint8(cpu->registers.A, 0x11);
     result &= assertFlag(CF, false, cpu);
@@ -1099,7 +1099,7 @@ static bool testRES(cpu_state *cpu) {
 }
 
 // Test jp_c method
-static bool testJP(cpu_state *cpu) {
+static bool testJP(Cpu *cpu) {
     jp_c(false, 0x1234, 0, cpu);
     bool result = assertUint16(cpu->PC, 0x0100);
     result &= assertFlag(CF, false, cpu);
@@ -1116,7 +1116,7 @@ static bool testJP(cpu_state *cpu) {
 }
 
 // Test jr_c method
-static bool testJR(cpu_state *cpu) {
+static bool testJR(Cpu *cpu) {
     jr_c(false, 1, 0, cpu);
     bool result = assertUint16(cpu->PC, 0x0100);
     result &= assertFlag(CF, false, cpu);
@@ -1139,7 +1139,7 @@ static bool testJR(cpu_state *cpu) {
 }
 
 // Test call_c method
-static bool testCALL(cpu_state *cpu) {
+static bool testCALL(Cpu *cpu) {
     call_c(false, 0x1234, 0, cpu);
     bool result = assertUint16(cpu->PC, 0x0100);
     result &= assertUint16(cpu->SP, 0xFFFE);
@@ -1150,7 +1150,7 @@ static bool testCALL(cpu_state *cpu) {
     call_c(true, 0x5678, 0, cpu);
     result &= assertUint16(cpu->PC, 0x5678);
     result &= assertUint16(cpu->SP, 0xFFFC);
-    result &= assertUint16((cpu->MEM[cpu->SP+1] << 8) + cpu->MEM[cpu->SP], 0x0100);
+    result &= assertUint16(readShort(cpu->SP, cpu), 0x0100);
     result &= assertFlag(CF, false, cpu);
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
@@ -1159,11 +1159,11 @@ static bool testCALL(cpu_state *cpu) {
 }
 
 // Test rst method
-static bool testRST(cpu_state *cpu) {
+static bool testRST(Cpu *cpu) {
     rst(0x00, 0, cpu);
     bool result = assertUint16(cpu->PC, 0x0000);
     result &= assertUint16(cpu->SP, 0xFFFC);
-    result &= assertUint16((cpu->MEM[cpu->SP+1] << 8) + cpu->MEM[cpu->SP], 0x0100);
+    result &= assertUint16(readShort(cpu->SP, cpu), 0x0100);
     result &= assertFlag(CF, false, cpu);
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
@@ -1174,12 +1174,12 @@ static bool testRST(cpu_state *cpu) {
 //TODO: test reti
 
 // Test ret_c method
-static bool testRET(cpu_state *cpu) {
+static bool testRET(Cpu *cpu) {
     call_c(true, 0x2020, 0, cpu);
     ret_c(false, 0, cpu);
     bool result = assertUint16(cpu->PC, 0x2020);
     result &= assertUint16(cpu->SP, 0xFFFC);
-    result &= assertUint16((cpu->MEM[cpu->SP+1] << 8) + cpu->MEM[cpu->SP], 0x0100);
+    result &= assertUint16(readShort(cpu->SP, cpu), 0x0100);
     result &= assertFlag(CF, false, cpu);
     result &= assertFlag(ZF, false, cpu);
     result &= assertFlag(NF, false, cpu);
@@ -1200,7 +1200,7 @@ int main(int argc, char *argv[]) {
         srand(time(NULL));
     #endif
     printf("\n[START TESTING]\n");
-    struct cpu_state *cpu = createCPU();
+    struct Cpu *cpu = createCPU();
     // Reset cpu before starting tests
     resetCPU(cpu);
     // Setup struct to hold test information

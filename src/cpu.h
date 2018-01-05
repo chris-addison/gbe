@@ -2,17 +2,35 @@
 #define CPU_H
 
 #include "types.h"
+#include "memory_map.h"
 
 // Constant positions of flags in flags array
-#define CF 4
-#define HF 5
-#define NF 6
-#define ZF 7
+enum {
+    CF = 4,
+    HF = 5,
+    NF = 6,
+    ZF = 7
+};
+
+typedef struct Cpu Cpu;
 
 // Struct to hold the cpu state
-typedef struct {
-    uint8 MEM[0x10000];
-    struct registers {
+struct Cpu {
+    struct Memory {
+        uint8 oam[OAM_BOUND];
+        uint8 io[IO_BOUND];
+        uint8 hram[HRAM_BOUND];
+        uint8 *romBank;
+        uint8 *ramBank;
+        uint8 *wramBank;
+        uint8 *vramBank;
+        uint8 *rom; // malloc'ed
+        uint8 *ram; // malloc'ed
+        uint8 *wram; // malloc'ed
+        uint8 *vram; // malloc'ed
+        uint8 ie;
+    } memory;
+    struct Registers {
         union {
             struct {
                 uint8 F;
@@ -42,13 +60,15 @@ typedef struct {
             uint16 HL;
         };
     } registers;
-    uint8 *CART_RAM;
-    uint8 *CART_ROM;
+    uint8 (*readMBC)(uint16 address, Cpu *cpu);
+    void (*writeMBC)(uint16 address, uint8 value, Cpu *cpu);
     uint16 PC;
     uint16 SP;
     uint16 cycles;
-    uint16 ROM_bank;
-    uint8 RAM_bank;
+    uint16 currentRomBank;
+    uint16 maxRomBank;
+    uint8 currentRamBank;
+    uint8 maxRamBank;
     uint8 cart_type;
     uint8 mbc;
     uint8 wait;
@@ -56,20 +76,20 @@ typedef struct {
     bool halt_bug;
     bool RAM_enable;
     bool RAM_exists;
-    bool mbc1_mode;
+    bool mbc1Mode;
     bool mbc1_small_ram;
     bool ime;
     bool ime_enable;
-} cpu_state;
+};
 
 // Create and return a new cpu state
-extern cpu_state* createCPU();
+extern Cpu *createCPU();
 // Reset the given cpu state back to initial values
-extern void resetCPU(cpu_state *cpu);
+extern void resetCPU(Cpu *cpu);
 // Execute an instruction
-extern int executeCPU(cpu_state *cpu);
+extern int executeCPU(Cpu *cpu);
 // Cycle the cpu while instruction is taking place
 // Used to emulate the time taken to exec each instruction
-extern void cycleCPU(cpu_state *cpu);
+extern void cycleCPU(Cpu *cpu);
 
 #endif /* CPU_H */
