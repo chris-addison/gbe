@@ -84,6 +84,7 @@ static void writeMBC1(uint16 address, uint8 value, Cpu *cpu) {
     } else if (address < 0x4000) {
         uint8 bank = value & 0x1F;
         if (!bank) bank = 0x01;
+        bank |= (cpu->currentRomBank & 0x60);
         switchRomBank(bank, cpu);
     } else if (address < 0x6000) {
         uint8 upperTwoBits = (value & 0x3);
