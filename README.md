@@ -17,7 +17,7 @@ It has a simple frontend api for displaying the emulator via a framebuffer.
 Games play in various degrees of accuracy.
 
 ### Mostly works
-* Pokemon Blue/Green/Red/Yellow [Saving game will crash]
+* Pokemon Blue/Green/Red/Yellow [Graphical glitches]
 * Tetris
 * Metroid II
 * Super Mario Land [Graphical glitches]
