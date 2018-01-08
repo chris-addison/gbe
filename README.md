@@ -18,9 +18,10 @@ Games play in various degrees of accuracy.
 
 ### Mostly works
 * Pokemon Blue/Green/Red/Yellow [Saving game will crash]
-* Tetris [Score counter incorrect]
+* Tetris
 * Metroid II
 * Super Mario Land [Graphical glitches]
+* Legend of Zelda: Link's Awakening [Graphical glitches]
 
 ### Beyond title screen
 * Kirby's Dream Land [Crash when pressing B button]
@@ -29,7 +30,6 @@ Games play in various degrees of accuracy.
 
 ### Does not work
 * ANY GAMEBOY COLOUR GAMES
-* Legend of Zelda: Link's Awakening [Stuck in loop during intro]
 
 ## TODO list (in no particular order)
 * Game saving
