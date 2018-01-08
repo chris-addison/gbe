@@ -5,9 +5,7 @@
 #include "screen.h"
 #include "memory.h"
 #include "interrupts.h"
-#ifdef DISPLAY
-    #include "display.h"
-#endif
+#include "display.h"
 #include <time.h>
 
 uint16 cycles = 0;
@@ -72,11 +70,9 @@ void updateScreen(Cpu *cpu) {
             case VRAM:
                 if (cycles >= 172) {
                     // Load scanline during VRAM
-                    #ifdef DISPLAY
-                        if (displayActive) {
-                            loadScanline(cpu);
-                        }
-                    #endif
+                    if (displayActive) {
+                        loadScanline(cpu);
+                    }
                     setMode(H_BLANK, cpu);
                     cycles = 0;
                 }
@@ -92,15 +88,13 @@ void updateScreen(Cpu *cpu) {
                         setInterruptFlag(INTR_V_BLANK, cpu);
                         // Draw the frame at beginning of v blank.
                         // Only display if correct bit is set. Ths can only be togged during V Blank
-                        #ifdef DISPLAY
-                            resetWindowLine();
-                            if (readBit(7, &cpu->memory.io[LCDC - IO_BASE])) {
-                                draw(cpu);
-                            } else {
-                                displayActive = false;
-                                displayActiveCounter = 255;
-                            }
-                        #endif
+                        resetWindowLine();
+                        if (readBit(7, &cpu->memory.io[LCDC - IO_BASE])) {
+                            draw(cpu);
+                        } else {
+                            displayActive = false;
+                            displayActiveCounter = 255;
+                        }
                     } else {
                         setMode(OAM, cpu);
                     }
@@ -117,9 +111,7 @@ void updateScreen(Cpu *cpu) {
                         //write new status to the the STAT register
                         setMode(OAM, cpu);
                         //load tiles as V Blank is now over
-                        #ifdef DISPLAY
-                            loadTiles(cpu);
-                        #endif
+                        loadTiles(cpu);
                     }
                     cycles = 0;
                 }
@@ -132,9 +124,7 @@ void updateScreen(Cpu *cpu) {
             displayActiveCounter--;
             if (displayActiveCounter == 0) {
                 displayActive = true;
-                #ifdef DISPLAY
-                    resetWindowLine();
-                #endif
+                resetWindowLine();
                 cycles = 0;
                 setScanline(0, cpu);
                 setMode(V_BLANK, cpu);

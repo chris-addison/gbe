@@ -10,9 +10,8 @@ SDL 		=	`sdl2-config --cflags --libs`
 DEFINES		=
 
 # Common object to build and include
-COMMON		=	gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o mbc.o joypad.o
+COMMON		=	gbe.o opcodes.o cartridge.o memory.o debug.o cpu.o screen.o interrupts.o common.o mbc.o joypad.o display.o
 DEBUG 		=	debug.o
-DISPLAY 	= 	display.o
 
 # run cli by default
 all: sdl
@@ -28,13 +27,13 @@ cli_windows: cli.o $(COMMON) $(DEBUG)
 	$(CC) $(FLAGS) -o $(NAME)$(WINDOWS_EXE) $^
 
 # experimental x11
-x11: DEFINES += -DDISPLAY -DLINUX -DOPENGL
-x11: x11.o  $(COMMON) $(DISPLAY) gl.o
+x11: DEFINES += -DLINUX -DOPENGL
+x11: x11.o  $(COMMON) gl.o
 	$(CC) $(FLAGS) -o $(NAME) $^ $(X11) $(OPENGL)
 
 # experimental sdl
-sdl: DEFINES += -DDISPLAY -DLINUX -DSDL
-sdl: sdl.o $(COMMON) $(DISPLAY)
+sdl: DEFINES += -DLINUX -DSDL
+sdl: sdl.o $(COMMON)
 	$(CC) $(FLAGS) -o $(NAME) $^ $(SDL)
 
 # testing builds
