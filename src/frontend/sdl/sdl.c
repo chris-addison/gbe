@@ -1,5 +1,7 @@
-#include "SDL2/SDL.h"
 #include <inttypes.h>
+#include "SDL_render.h"
+#include "SDL_timer.h"
+#include "SDL.h"
 #include "../frontend.h"
 #include "../../window.h"
 #include "../../display.h"
@@ -110,7 +112,7 @@ void handeKeyEvent(SDL_Event *event) {
     if (event->type == SDL_KEYDOWN) {
         emulatorInterrupt(EMULATOR_INTER_JOYPAD);
     }
-    // Set wether the key is pressed or not.
+    // Set whether the key is pressed or not.
     if (event->key.keysym.sym == SDLK_RETURN) {
         local_input.start   = (event->type == SDL_KEYDOWN);
     } else if (event->key.keysym.sym == SDLK_RSHIFT) {

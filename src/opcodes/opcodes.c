@@ -1,11 +1,9 @@
 /* -*-mode:c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-#include "../types.h"
+#include <stdio.h>
+#include "../common.h"
 #include "../memory.h"
-#include "../cpu.h"
 #include "../interrupts.h"
 #include "opcodes.h"
-#include "../debug/debug.h"
-#include "cb_opcodes.c"
 
 //read one unsigned byte from the PC
 static uint8 oneByte(Cpu *cpu) {

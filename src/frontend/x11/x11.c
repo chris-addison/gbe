@@ -43,10 +43,10 @@ void getInput(input *current_input) {
                     printf("wtf: %s\n", (current_input->start) ? "Start pressed" : "Start not pressed");
                     break;
                 case 52: // z key
-                    current_input->A = (event.type == KeyPress && printf("A"));                                        
+                    current_input->a = (event.type == KeyPress && printf("A"));
                     break;
                 case 53: // x key
-                    current_input->B = (event.type == KeyPress && printf("B"));                     
+                    current_input->b = (event.type == KeyPress && printf("B"));
                     break;
                 case 62: // Shift key
                     current_input->select = (event.type == KeyPress && printf("Select"));                     
@@ -62,6 +62,8 @@ void getInput(input *current_input) {
                     break;
                 case 116: // Down arrow
                     current_input->down = (event.type == KeyPress && printf("Down"));                     
+                    break;
+                default:
                     break;
             }
         }
